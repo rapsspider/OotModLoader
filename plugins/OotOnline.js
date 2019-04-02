@@ -219,7 +219,7 @@ class OotOnline {
         return this._PuppetMap;
     }
 
-    setupTunics(){
+    setupTunics() {
         let temp = {};
         if (CONFIG.TunicColors.kokiri !== "") {
             logger.log("Setting Kokiri tunic color to " + CONFIG.TunicColors.kokiri + ".");
@@ -544,10 +544,15 @@ class OotOnline {
             });
 
             api.registerEventHandler("onLinkRespawn", function (event) {
+                inst._puppetSpawnHandle = true;
+                logger.log("Preparing for puppet spawning...");
+                Object.keys(inst._tunic_colors).forEach(function (index) {
+                    emulator.sendViaSocket({ packet_id: "changeColor", data: inst._tunic_colors[index], writeHandler: "range", addr: "0x000F7AD8", offset: index * 3 });
+                });
             });
 
-            api.registerEventHandler("onFrameCount", function(event){
-                if (event.data.data.bool){
+            api.registerEventHandler("onFrameCount", function (event) {
+                if (event.data.data.bool) {
                     inst._puppetSpawnHandle = true;
                     logger.log("Preparing for puppet spawning...");
                     Object.keys(inst._tunic_colors).forEach(function (index) {
@@ -640,7 +645,7 @@ class OotOnline {
                 inst._playerToPuppetMap = {};
             });
 
-            api.registerEventHandler("onConfigUpdate", function(event){
+            api.registerEventHandler("onConfigUpdate", function (event) {
                 inst.setupTunics();
                 Object.keys(inst._tunic_colors).forEach(function (index) {
                     emulator.sendViaSocket({ packet_id: "changeColor", data: inst._tunic_colors[index], writeHandler: "range", addr: "0x000F7AD8", offset: index * 3 });
