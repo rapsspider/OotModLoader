@@ -19,8 +19,10 @@ ipcRenderer.on('onConsoleMessage', function (wtfisthis, event) {
 
 ipcRenderer.on('onBizHawkInstall', function (wtfisthis, event) {
     if (!event.done){
+        document.getElementById("connect").disabled = true; 
         document.getElementById("connect").textContent = "Installing BizHawk...";
     }else{
+        document.getElementById("connect").disabled = false;
         document.getElementById("connect").textContent = "Connect to Server";
     }
 });

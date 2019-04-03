@@ -67,7 +67,6 @@ class Client {
                         }
                         delete inst._packetBuffer[key];
                     });
-
                 }
             }, 50);
             inst._bandwidth_tick = setInterval(function () {

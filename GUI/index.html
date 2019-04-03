@@ -47,16 +47,13 @@
     <div id="tabs">
         <ul>
             <li><a href="#tabs-1">General Settings</a></li>
+            <li><a href="#tabs-server">Server</a></li>
             <li><a href="#tabs-2">Customization</a></li>
             <li><a href="#tabs-3">Status</a></li>
             <li><a href="#tabs-4">Lobby Browser</a></li>
             <li><a href="#tabs-5">Console</a></li>
         </ul>
         <div id="tabs-1">
-            <h1>Server Settings</h1>
-            <label for="server">Server: </label><input type="text" name="server" id="_master_server_ip" /><br />
-            <label for="port">Port: </label><input type="text" name="port" id="_master_server_port" /><br />
-            <label for="isMaster">Host Server: </label><input type="checkbox" name="isMaster" id="_isMaster" /><br />
             <h1>Client Settings</h1>
             <label for="nickname">Nickname: </label><input type="text" name="nickname" id="_nickname" /><br />
             <label for="isClient">Run Client: </label><input type=checkbox name="isClient" id="_isClient" /><br />
@@ -70,6 +67,12 @@
             <div class="widget">
                 <button id="connect" onclick="hooks.onStartClient()">Connect to Server</button>
             </div>
+        </div>
+        <div id="tabs-server">
+            <h1>Server Settings</h1>
+            <label for="server">Server: </label><input type="text" name="server" id="_master_server_ip" /><br />
+            <label for="port">Port: </label><input type="text" name="port" id="_master_server_port" /><br />
+            <label for="isMaster">Create Server: </label><input type="checkbox" name="isMaster" id="_isMaster" /><br />
         </div>
         <div id="tabs-2">
             <label for="kokiri">Kokiri Tunic Color:</label><input type="color" id="kokiri" value="#ff0000"
