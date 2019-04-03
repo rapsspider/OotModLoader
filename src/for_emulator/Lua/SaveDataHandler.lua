@@ -1025,10 +1025,13 @@ function handleUpgradeSlotUpdate(packet)
     writeByteAsBinary(addr, r)
     local ammo_key = packet.packet_id .. "_" .. tostring(packet.data.data)
     if (ammo_map[ammo_key] ~= nil) then
-        writeByte(
+        local current_ammo = readByte(save_context + ammo_offset + ammo_item_map[packet.packet_id]);
+        if (current_ammo < ammo_map[ammo_key]) then
+            writeByte(
             save_context + ammo_offset + ammo_item_map[packet.packet_id],
             ammo_map[ammo_key]
-        )
+        ) 
+        end
     end
 end
 
