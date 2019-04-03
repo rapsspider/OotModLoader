@@ -99,6 +99,9 @@ class OotLoaderCore {
         api.registerServerChannel("scene", function (server, data) {
             let scene = encoder.decompressData(data.payload).data;
             let r = data.room;
+            if (!server.getRoomsArray().hasOwnProperty(r)){
+                return false;
+            }
             let room = server.getRoomsArray()[r];
             if (!room.hasOwnProperty("scenes")) {
                 room["scenes"] = {};
