@@ -299,6 +299,9 @@ class OotOnline {
                 if (inst._forbidSync) {
                     return null;
                 } else {
+                    if (!inst._playerToPuppetMap.hasOwnProperty("data.uuid")){
+                        return null;
+                    }
                     data.payload.data["sfx"]["addr"] =
                         inst.PuppetMap[inst._playerToPuppetMap[data.uuid]].puppet._pointer;
                     data.payload.data["sfx"]["offset"] = 0x266;
@@ -318,6 +321,9 @@ class OotOnline {
                 if (inst._forbidSync) {
                     return null;
                 } else {
+                    if (!inst._playerToPuppetMap.hasOwnProperty("data.uuid")){
+                        return null;
+                    }
                     if (data.payload.data["link_age"].data !== inst._age) {
                         return null;
                     }
