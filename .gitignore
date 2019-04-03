@@ -15,3 +15,4 @@ electron/
 electron_testing/
 turned_off_plugins/
 .vscode/
+bizhawk_dist/

@@ -299,7 +299,7 @@ class OotOnline {
                 if (inst._forbidSync) {
                     return null;
                 } else {
-                    if (!inst._playerToPuppetMap.hasOwnProperty("data.uuid")){
+                    if (!inst._playerToPuppetMap.hasOwnProperty("data.uuid")) {
                         return null;
                     }
                     data.payload.data["sfx"]["addr"] =
@@ -321,7 +321,7 @@ class OotOnline {
                 if (inst._forbidSync) {
                     return null;
                 } else {
-                    if (!inst._playerToPuppetMap.hasOwnProperty("data.uuid")){
+                    if (!inst._playerToPuppetMap.hasOwnProperty(data.uuid)) {
                         return null;
                     }
                     if (data.payload.data["link_age"].data !== inst._age) {
@@ -485,6 +485,27 @@ class OotOnline {
                 if (!inst._sceneList.hasOwnProperty(event.player.uuid)) {
                     inst._sceneList[event.player.uuid] = { current: -1, previous: -1 };
                     logger.log("First time seeing player " + event.player.nickname + ".");
+                    let playerSlot = -1;
+                    for (let i = 0; i < inst.PuppetMap.length; i++) {
+                        if (inst.PuppetMap[i].uuid === "") {
+                            playerSlot = i;
+                            break;
+                        }
+                    }
+                    if (!event.player.isMe){
+                        if (playerSlot > -1) {
+                            logger.log(event);
+                            inst.PuppetMap[playerSlot].uuid = event.player.uuid;
+                            logger.log("Assigning " + event.player.nickname + " to puppet " + inst.PuppetMap[playerSlot].puppet._pointer + ".", "yellow");
+                            inst._playerToPuppetMap[event.player.uuid] = playerSlot;
+                            emulator.sendViaSocket({
+                                packet_id: "clearCache",
+                                writeHandler: "clearCache"
+                            });
+                        } else {
+                            logger.log("PLAYER LIMIT REACHED", "red");
+                        }
+                    }
                 }
                 if (event.player.isMe) {
                     if (inst._scene === event.scene) {
@@ -612,24 +633,6 @@ class OotOnline {
             });
 
             api.registerEventHandler("onPlayerJoined", function (event) {
-                let playerSlot = -1;
-                for (let i = 0; i < inst.PuppetMap.length; i++) {
-                    if (inst.PuppetMap[i].uuid === "") {
-                        playerSlot = i;
-                        break;
-                    }
-                }
-                if (playerSlot > -1) {
-                    inst.PuppetMap[playerSlot].uuid = event.player.uuid;
-                    logger.log("Assigning " + event.player.nickname + " to puppet " + inst.PuppetMap[playerSlot].puppet._pointer + ".", "yellow");
-                    inst._playerToPuppetMap[event.player.uuid] = playerSlot;
-                    emulator.sendViaSocket({
-                        packet_id: "clearCache",
-                        writeHandler: "clearCache"
-                    });
-                } else {
-                    logger.log("PLAYER LIMIT REACHED", "red");
-                }
             });
 
             api.registerEventHandler("onPlayerDisconnected", function (event) {

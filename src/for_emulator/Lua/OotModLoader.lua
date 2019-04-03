@@ -994,7 +994,7 @@ local packet_queue = {}
 function packetGet(net)
     if (connected == false) then
         connected = connectToNode()
-        if (connected) then 
+        if (connected == 1) then 
             console.writeline("Connected.")
         end
         return

@@ -19,9 +19,9 @@
 global.OotRunDir = __dirname;
 
 const original_console = console.log;
-let console_hook = function(msg){};
+let console_hook = function (msg) { };
 
-console.log = function(msg){
+console.log = function (msg) {
     original_console(msg);
     console_hook(msg);
 }
@@ -40,11 +40,8 @@ const fs = require("fs");
 const colors = require('./OotColors');
 const localizer = require('./OotLocalizer');
 const BUILD_TYPE = "@BUILD_TYPE@";
-const download = require('download-file');
 const unzip = require('unzip');
 var ncp = require('ncp').ncp;
-var https = require('https');
-var url = require('url');
 var path = require("path");
 const spawn = require('cross-spawn');
 
@@ -54,13 +51,21 @@ let clientsideHooks = {};
 let rom = "";
 let console_log = [];
 
-console_hook = function(msg){
+console_hook = function (msg) {
     if (typeof (str) === "string") {
         console_log.push(msg)
     } else {
         console_log.push(JSON.stringify(msg))
     }
 };
+
+let rom_dir = "./rom";
+
+if (!fs.existsSync(rom_dir)) {
+    logger.log("Failed to find rom directory at " + path.resolve(rom_dir));
+    rom_dir = __dirname + "/rom";
+    logger.log("Trying " + path.resolve(rom_dir) + " instead.");
+}
 
 fs.readdirSync("./rom").forEach(file => {
     if (file.indexOf(".z64") > -1) {
@@ -80,6 +85,7 @@ if (rom !== "") {
 
 api.registerEvent("BPSPatchDownloaded");
 api.registerEvent("onBizHawkInstall");
+api.registerEvent("GUI_BadVersion");
 
 emu.setDataParseFn(parseData);
 client.setProcessFn(processData);
@@ -89,6 +95,7 @@ api.setClientHookFn(registerClientSidePacketHook);
 client.setOnPlayerConnected(onPlayerConnected);
 
 master.preSetup();
+logger.log(process.cwd());
 logger.log("Loading plugins...");
 plugins.load(function () {
 
@@ -101,30 +108,19 @@ plugins.load(function () {
             client.setup();
         }
     } else {
-        if (!fs.existsSync("./BizHawk")) {
-            fs.mkdirSync("./BizHawk");
-        }
         var LUA_LOC = ".";
         ncp.limit = 16;
-        if (fs.existsSync("OotOnlinePayloadConverter.exe")) {
-            logger.log("Dev env detected.");
-            ncp(LUA_LOC + "/src/for_emulator/Lua", "./BizHawk/Lua", function (err) {
-                if (err) {
-                    return console.error(err);
-                }
-                logger.log("Installed Lua files!");
+        if (!fs.existsSync("./BizHawk")) {
+            api.postEvent({id: "onBizHawkInstall", done: false});
+            fs.mkdirSync("./BizHawk");
+            fs.createReadStream('./bizhawk_prereqs_v2.1.zip').pipe(unzip.Extract({ path: './BizHawk' })).on('close', function () {
             });
-            ncp(LUA_LOC + "/luasocket/mime", "./BizHawk/mime", function (err) {
-                if (err) {
-                    return console.error(err);
-                }
+            logger.log("Unzipping BizHawk...");
+            fs.createReadStream('./BizHawk-2.3.1.zip').pipe(unzip.Extract({ path: './BizHawk' })).on('close', function () {
             });
-            ncp(LUA_LOC + "/luasocket/socket", "./BizHawk/socket", function (err) {
-                if (err) {
-                    return console.error(err);
-                }
-            });
-        } else {
+            if (!fs.existsSync("./BizHawk/config.ini")) {
+                fs.copyFileSync(LUA_LOC + "/config.ini", "./BizHawk/config.ini");
+            }
             ncp(LUA_LOC + "/Lua", "./BizHawk/Lua", function (err) {
                 if (err) {
                     return console.error(err);
@@ -141,70 +137,10 @@ plugins.load(function () {
                     return console.error(err);
                 }
             });
+            api.postEvent({id: "onBizHawkInstall", done: true});
         }
-        if (!fs.existsSync("./BizHawk/config.ini")) {
-            fs.copyFileSync(LUA_LOC + "/config.ini", "./BizHawk/config.ini");
-        }
-        if (!fs.existsSync("./bizhawk_prereqs_v2.1.zip")) {
-            logger.log("Downloading BizHawk Prereqs...");
-            var asdf = "https://github.com/TASVideos/BizHawk-Prereqs/releases/download/2.1/bizhawk_prereqs_v2.1.zip"
-            https.get(asdf, function (res) {
-                // Detect a redirect
-                if (res.statusCode > 300 && res.statusCode < 400 && res.headers.location) {
-                    // The location for some (most) redirects will only contain the path,  not the hostname;
-                    // detect this and add the host to the path.
-                    if (url.parse(res.headers.location).hostname) {
-                        // Hostname included; make request to res.headers.location
-                        asdf = res.headers.location;
-                        var options = {
-                            directory: ".",
-                            filename: "bizhawk_prereqs_v2.1.zip"
-                        }
-                        download(asdf, options, function (err) {
-                            if (err) {
-                                logger.log(err, "red")
-                            } else {
-                                logger.log("Unzipping BizHawk Prereqs...");
-                                fs.createReadStream('./bizhawk_prereqs_v2.1.zip').pipe(unzip.Extract({ path: './BizHawk' })).on('close', function () {
-                                });
-                            }
-                        })
-                    }
-                }
-            });
-        };
-
-        if (!fs.existsSync("./BizHawk-2.3.1.zip")) {
-            logger.log("Downloading BizHawk...");
-            api.postEvent({id: "onBizHawkInstall", done: false});
-            var asdf2 = "https://github.com/TASVideos/BizHawk/releases/download/2.3.1/BizHawk-2.3.1.zip"
-            https.get(asdf2, function (res) {
-                // Detect a redirect
-                if (res.statusCode > 300 && res.statusCode < 400 && res.headers.location) {
-                    // The location for some (most) redirects will only contain the path,  not the hostname;
-                    // detect this and add the host to the path.
-                    if (url.parse(res.headers.location).hostname) {
-                        // Hostname included; make request to res.headers.location
-                        asdf2 = res.headers.location;
-                        var options = {
-                            directory: ".",
-                            filename: "BizHawk-2.3.1.zip"
-                        }
-                        download(asdf2, options, function (err) {
-                            if (err) {
-                                logger.log(err, "red")
-                            } else {
-                                logger.log("Unzipping BizHawk...");
-                                fs.createReadStream('./BizHawk-2.3.1.zip').pipe(unzip.Extract({ path: './BizHawk' })).on('close', function () {
-                                    api.postEvent({id: "onBizHawkInstall", done: true});
-                                });
-                            }
-                        })
-                    }
-                }
-            });
-        };
         api.registerEvent("GUI_StartButtonPressed");
+        api.registerEvent("GUI_StartFailed");
         logger.log("Awaiting start command from GUI.");
         api.registerEventHandler("GUI_StartButtonPressed", function (event) {
             if (CONFIG.isMaster) {
@@ -215,7 +151,12 @@ plugins.load(function () {
                 client.setup();
             }
             logger.log("Starting BizHawk...");
-            var child = spawn('./BizHawk/EmuHawk.exe', ['--lua=' + path.resolve("./BizHawk/Lua/OotModLoader.lua"), path.resolve(rom)], { stdio: 'inherit' });
+            try {
+                var child = spawn('./BizHawk/EmuHawk.exe', ['--lua=' + path.resolve("./BizHawk/Lua/OotModLoader.lua"), path.resolve(rom)], { stdio: 'inherit' });
+            } catch (err) {
+                api.postEvent({ id: "GUI_StartFailed" });
+
+            }
         });
         api.registerEvent("GUI_ConfigChanged");
         api.registerEvent("onConfigUpdate");
@@ -325,4 +266,4 @@ api.registerEventHandler("BPSPatchDownloaded", function (event) {
     }
 });
 
-module.exports = { api: api, config: CONFIG, console: console_log};
+module.exports = { api: api, config: CONFIG, console: console_log };

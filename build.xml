@@ -87,7 +87,6 @@
     <copy file="OotModLoader-config.json" tofile="${tfolder}/OotModLoader-config.json"/>
   </target>
 
-
   <target name="compile_scripts">
     <echo message="Compiling scripts..."/>
     <copy todir="${bin}">
@@ -208,6 +207,9 @@
     <antcall target="copy_files">
       <param name="tfolder" value="${bin}/OotModLoader-GUI-win32-x64"/>
     </antcall>
+    <copy todir="${bin}/OotModLoader-GUI-win32-x64">
+      <fileset dir="./bizhawk_dist"/>
+    </copy>
   </target>
 
   <target name="zip">

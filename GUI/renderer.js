@@ -5,7 +5,7 @@ var ipcRenderer = require('electron').ipcRenderer;
 
 const RENDER_OBJ = {};
 
-RENDER_OBJ["console"] = function(msg){
+RENDER_OBJ["console"] = function (msg) {
     console.log(msg);
 }
 
@@ -17,63 +17,73 @@ ipcRenderer.on('onConsoleMessage', function (wtfisthis, event) {
     RENDER_OBJ.console(event.msg);
 });
 
+ipcRenderer.on('GUI_StartFailed', function (wtfisthis, event) {
+    document.getElementById("connect").disabled = false;
+    document.getElementById("connect").textContent = "Failed to start! :(";
+});
+
 ipcRenderer.on('onBizHawkInstall', function (wtfisthis, event) {
-    if (!event.done){
-        document.getElementById("connect").disabled = true; 
+    if (!event.done) {
+        document.getElementById("connect").disabled = true;
         document.getElementById("connect").textContent = "Installing BizHawk...";
-    }else{
+    } else {
         document.getElementById("connect").disabled = false;
         document.getElementById("connect").textContent = "Connect to Server";
     }
 });
 
+ipcRenderer.on('GUI_BadVersion', function (wtfisthis, event) {
+    document.getElementById("connect").disabled = true;
+    document.getElementById("connect").textContent = "Version mismatch! :(";
+});
+
 let config_to_element_map = {};
 
-function processConfigObject(config){
+function processConfigObject(config) {
     console.log(config);
-    Object.keys(config).forEach(function(key){
+    Object.keys(config).forEach(function (key) {
         console.log(key);
         let ele = document.getElementById(key);
-        if (ele){
-            if (typeof config[key] === "boolean"){
+        if (ele) {
+            if (typeof config[key] === "boolean") {
                 ele.checked = config[key];
-                config_to_element_map[key] = {ele: ele, isBoolean: true};
-            }else{
+                config_to_element_map[key] = { ele: ele, isBoolean: true };
+            } else {
                 ele.value = config[key];
-                config_to_element_map[key] = {ele: ele, isBoolean: false};
+                config_to_element_map[key] = { ele: ele, isBoolean: false };
             }
         }
-        if (key === "_tunic_colors"){
+        if (key === "_tunic_colors") {
             processConfigObject(config[key]);
         }
     });
 }
 
-function sendToMainProcess(id, event){
+function sendToMainProcess(id, event) {
     ipcRenderer.send(id, event);
 }
 
-function configChanged(){
+function configChanged() {
     let cfg = {};
-    Object.keys(config_to_element_map).forEach(function(key){
-        if (config_to_element_map[key].isBoolean){
+    Object.keys(config_to_element_map).forEach(function (key) {
+        if (config_to_element_map[key].isBoolean) {
             cfg[key] = config_to_element_map[key].ele.checked;
-        }else{
+        } else {
             cfg[key] = config_to_element_map[key].ele.value;
         }
     });
     console.log(cfg);
-    sendToMainProcess("postEvent", {id: "GUI_ConfigChanged", config: cfg});
+    sendToMainProcess("postEvent", { id: "GUI_ConfigChanged", config: cfg });
 }
 
-function startClient(){
+function startClient() {
     configChanged();
     document.getElementById("connect").textContent = "Starting client, please wait...";
-    setTimeout(function(){
+    setTimeout(function () {
         document.getElementById("connect").textContent = "Client Started.";
     }, 10000);
-    document.getElementById("connect").disabled = true; 
-    sendToMainProcess("postEvent", {id: "GUI_StartButtonPressed", start: true})
+    document.getElementById("connect").disabled = true;
+    sendToMainProcess("postEvent", { id: "GUI_StartButtonPressed", start: true })
 }
 
 RENDER_OBJ["onConfigChanged"] = configChanged;

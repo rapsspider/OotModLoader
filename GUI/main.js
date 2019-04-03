@@ -1,12 +1,12 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow, ipcMain} = require('electron')
+const { app, BrowserWindow, ipcMain } = require('electron')
 let ooto;
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow
 
-function createWindow () {
+function createWindow() {
   // Create the browser window.
   mainWindow = new BrowserWindow({
     width: 800,
@@ -31,27 +31,41 @@ function createWindow () {
     mainWindow = null
   })
 
-  setTimeout(setupModLoader, 1000);
+  setTimeout(function(){
+    setupModLoader();
+  }, 1000);
 
 }
 
-function setupModLoader(){
+function setupModLoader() {
   ooto = require('./OotModLoader')
-  let event_reg = function(id){
-      ooto.api.registerEventHandler(id, function(event){
-        console.log(event)
+  let event_reg = function (id) {
+    ooto.api.registerEventHandler(id, function (event) {
+      console.log(event)
+      if (mainWindow !== null) {
         mainWindow.webContents.send(event.id, event);
-      });
+      }
+    });
   }
   event_reg("onBizHawkInstall");
+  event_reg("GUI_StartFailed");
+  event_reg("GUI_BadVersion");
   ipcMain.on('postEvent', (event, arg) => {
     console.log(arg);
     ooto.api.postEvent(arg);
   })
-  mainWindow.webContents.send("GUI_ConfigLoaded", ooto);
-  setInterval(function(){
-    if (ooto.console.length > 0){
-      mainWindow.webContents.send("onConsoleMessage", {id: "onConsoleMessage", msg: ooto.console.shift()})
+  if (ooto !== null) {
+    setTimeout(function () {
+      if (mainWindow !== null) {
+        mainWindow.webContents.send("GUI_ConfigLoaded", ooto);
+      }
+    }, 1000);
+  }
+  setInterval(function () {
+    if (ooto.console.length > 0) {
+      if (mainWindow !== null) {
+        mainWindow.webContents.send("onConsoleMessage", { id: "onConsoleMessage", msg: ooto.console.shift() })
+      }
     }
   }, 100);
 }
