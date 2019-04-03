@@ -299,7 +299,7 @@ class OotOnline {
                 if (inst._forbidSync) {
                     return null;
                 } else {
-                    if (!inst._playerToPuppetMap.hasOwnProperty("data.uuid")) {
+                    if (!inst._playerToPuppetMap.hasOwnProperty(data.uuid)) {
                         return null;
                     }
                     data.payload.data["sfx"]["addr"] =
