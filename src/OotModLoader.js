@@ -62,8 +62,14 @@ console_hook = function(msg){
     }
 };
 
-fs.readdirSync("./rom").forEach(file => {
+fs.readdirSync(global.OotRunDir + "/rom").forEach(file => {
     if (file.indexOf(".z64") > -1) {
+        rom = "./rom/" + file;
+    }
+    if (file.indexOf(".n64") > -1) {
+        rom = "./rom/" + file;
+    }
+    if (file.indexOf(".v64") > -1) {
         rom = "./rom/" + file;
     }
 });
