@@ -179,28 +179,38 @@ class MasterServer {
                             .to(socket.id)
                             .emit("room", { msg: "Joined room " + data.room + "." });
                         server.OotClientList[data.room] = {};
+                        inst.getRoomsArray()[data.room]["password"] = data.password;
                         api.postEvent({ id: "onPlayerJoined_ServerSide", player: { uuid: socket.id, room: data.room, nickname: data.nickname }, server: inst });
                         if (data.hasOwnProperty("patchFile")) {
                             if (data.patchFile !== "") {
                                 server.to(socket.id).emit("requestPatch", encoder.compressData({ patchFile: data.patchFile, room: data.room }));
                             }
                         }
+                        server.OotClientList[data.room][socket.id] = {
+                            ip: socket.request.connection.remoteAddress.split(":")[3],
+                            port: "unknown"
+                        };
+                        server.to(socket.id).emit("udp", { port: inst._udp.port });
                     } else {
-                        logger.log("Room " + data.room + " joined by " + socket.id + ".");
-                        socket.join(data.room);
-                        server.to(socket.id).emit("room", { msg: "Joined room " + data.room + "." });
-                        socket.to(data.room).emit("joined", { uuid: socket.id, nickname: data.nickname });
-                        if (inst.getRoomsArray()[data.room].hasOwnProperty("patchFile")) {
-                            logger.log("Sending patch to user.");
-                            server.to(socket.id).emit('receivePatch', { data: inst.getRoomsArray()[data.room].patchFile })
+                        if (inst.getRoomsArray()[data.room]["password"] === data.password){
+                            logger.log("Room " + data.room + " joined by " + socket.id + ".");
+                            socket.join(data.room);
+                            server.to(socket.id).emit("room", { msg: "Joined room " + data.room + "." });
+                            socket.to(data.room).emit("joined", { uuid: socket.id, nickname: data.nickname });
+                            if (inst.getRoomsArray()[data.room].hasOwnProperty("patchFile")) {
+                                logger.log("Sending patch to user.");
+                                server.to(socket.id).emit('receivePatch', { data: inst.getRoomsArray()[data.room].patchFile })
+                            }
+                            socket["ootRoom"] = data.room;
+                            server.OotClientList[data.room][socket.id] = {
+                                ip: socket.request.connection.remoteAddress.split(":")[3],
+                                port: "unknown"
+                            };
+                            server.to(socket.id).emit("udp", { port: inst._udp.port });
+                        }else{
+                            server.to(socket.id).emit("BAD_PASSWORD", data);
                         }
-                        socket["ootRoom"] = data.room;
                     }
-                    server.OotClientList[data.room][socket.id] = {
-                        ip: socket.request.connection.remoteAddress.split(":")[3],
-                        port: "unknown"
-                    };
-                    server.to(socket.id).emit("udp", { port: inst._udp.port });
                 });
                 socket.on("sendPatch", function (data) {
                     logger.log("Received patch file for room " + data.room + ". Size: " + data.patch.byteLength + ".");

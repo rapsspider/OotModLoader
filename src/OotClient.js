@@ -137,7 +137,7 @@ class Client {
                 data = encoder.decompressData(data);
                 CONFIG.my_uuid = data.id;
                 logger.log("Client: My UUID: " + CONFIG.my_uuid);
-                websocket.emit('room', encoder.compressData({ room: CONFIG.GAME_ROOM, nickname: CONFIG.nickname, patchFile: CONFIG._patchFile }));
+                websocket.emit('room', encoder.compressData({ room: CONFIG.GAME_ROOM, nickname: CONFIG.nickname, patchFile: CONFIG._patchFile, password: CONFIG.getPasswordHash() }));
             });
             websocket.on('room', function (data) {
                 logger.log(data.msg);
@@ -163,6 +163,9 @@ class Client {
             websocket.on('room_pong', function (data) {
                 data = encoder.decompressData(data);
                 inst._onPlayerConnected(data.nickname, data.uuid);
+            });
+            websocket.on('BAD_PASSWORD', function(data){
+                logger.log("Lobby join rejected. Bad password", "red");
             });
             websocket.on('msg', function (data) {
                 if (data !== undefined && data !== null) {
