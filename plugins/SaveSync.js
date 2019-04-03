@@ -128,6 +128,9 @@ class SaveSync {
     init() {
         (function (inst) {
             inst._savePacketHandlers["inventory_slot_"] = function (server, packet, decompress) {
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                    return;
+                }
                 if (!server.getRoomsArray()[packet.room].hasOwnProperty("_inventory")){
                     server.getRoomsArray()[packet.room]["_inventory"] = {};
                     server.getRoomsArray()[packet.room]["_inventory"]["bottle_slots"] = ["inventory_slot_18", "inventory_slot_19", "inventory_slot_20", "inventory_slot_21"];
@@ -191,6 +194,9 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["upgrade_"] = function (server, packet, decompress) {
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                    return;
+                }
                 if (!server.getRoomsArray()[packet.room].hasOwnProperty("_upgrades")){
                     server.getRoomsArray()[packet.room]["_upgrades"] = {};
                 }
@@ -217,6 +223,9 @@ class SaveSync {
                 }
             };
             inst._savePacketHandlers["equipment_slot_"] = function (server, packet, decompress) {
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                    return;
+                }
                 if (!server.getRoomsArray()[packet.room].hasOwnProperty("_equipment")){
                     server.getRoomsArray()[packet.room]["_equipment"] = {};
                 }
@@ -243,6 +252,9 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["quest_slot_"] = function (server, packet, decompress) {
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                    return;
+                }
                 if (!server.getRoomsArray()[packet.room].hasOwnProperty("_quest")){
                     server.getRoomsArray()[packet.room]["_quest"] = {};
                 }
@@ -271,6 +283,9 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["biggoron"] = function (server, packet, decompress) {
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                    return;
+                }
                 if (!server.getRoomsArray()[packet.room].hasOwnProperty("_quest")){
                     server.getRoomsArray()[packet.room]["_quest"] = {};
                 }
@@ -297,6 +312,9 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["heart_containers"] = function (server, packet, decompress) {
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                    return;
+                }
                 if (!server.getRoomsArray()[packet.room].hasOwnProperty("_heart_containers")){
                     server.getRoomsArray()[packet.room]["_heart_containers"] = {};
                 }
@@ -331,6 +349,9 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["double_defense"] = function (server, packet, decompress) {
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                    return;
+                }
                 if (!server.getRoomsArray()[packet.room].hasOwnProperty("_heart_containers")){
                     server.getRoomsArray()[packet.room]["_heart_containers"] = {};
                 }
@@ -357,6 +378,9 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["magic_bool"] = function (server, packet, decompress) {
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                    return;
+                }
                 if (!server.getRoomsArray()[packet.room].hasOwnProperty("_magic")){
                     server.getRoomsArray()[packet.room]["_magic"] = {};
                 }
@@ -383,6 +407,9 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["magic_size"] = function (server, packet, decompress) {
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                    return;
+                }
                 if (!server.getRoomsArray()[packet.room].hasOwnProperty("_magic")){
                     server.getRoomsArray()[packet.room]["_magic"] = {};
                 }
@@ -409,6 +436,9 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["scene_"] = function (server, packet, decompress) {
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                    return;
+                }
                 if (!server.getRoomsArray()[packet.room].hasOwnProperty("_scenes")){
                     server.getRoomsArray()[packet.room]["_scenes"] = {};
                 }
@@ -433,6 +463,9 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["event_flag_"] = function (server, packet, decompress) {
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                    return;
+                }
                 if (!server.getRoomsArray()[packet.room].hasOwnProperty("_events")){
                     server.getRoomsArray()[packet.room]["_events"] = {};
                 }
@@ -457,6 +490,9 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["item_flag_"] = function (server, packet, decompress) {
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                    return;
+                }
                 if (!server.getRoomsArray()[packet.room].hasOwnProperty("_item_flags")){
                     server.getRoomsArray()[packet.room]["_item_flags"] = {};
                 }
@@ -481,6 +517,9 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["inf_table_"] = function (server, packet, decompress) {
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                    return;
+                }
                 if (!server.getRoomsArray()[packet.room].hasOwnProperty("_inf_flags")){
                     server.getRoomsArray()[packet.room]["_inf_flags"] = {};
                 }
@@ -505,6 +544,9 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["dungeon_items_"] = function (server, packet, decompress) {
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                    return;
+                }
                 if (!server.getRoomsArray()[packet.room].hasOwnProperty("_dungeon_items")){
                     server.getRoomsArray()[packet.room]["_dungeon_items"] = {};
                 }
@@ -524,6 +566,9 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["skulltula_flag_"] = function (server, packet, decompress) {
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                    return;
+                }
                 if (!server.getRoomsArray()[packet.room].hasOwnProperty("_skulltulas")){
                     server.getRoomsArray()[packet.room]["_skulltulas"] = {};
                 }
@@ -543,6 +588,9 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["skulltula_count"] = function (server, packet, decompress) {
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                    return;
+                }
                 if (!server.getRoomsArray()[packet.room].hasOwnProperty("_skulltulas")){
                     server.getRoomsArray()[packet.room]["_skulltulas"] = {};
                 }
