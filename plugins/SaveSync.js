@@ -85,19 +85,6 @@ class SaveSync {
         this._inventorySlotToLangKey = localization.create("item_numbers");
         this._icons = localization.icons("icon_coordinates");
         //
-
-        this._inventory = {};
-        this._upgrades = {};
-        this._equipment = {};
-        this._quest = {};
-        this._heart_containers = {};
-        this._magic = {};
-        this._scenes = {};
-        this._events = {};
-        this._item_flags = {};
-        this._inf_flags = {};
-        this._dungeon_items = {};
-        this._skulltulas = {};
         this._savePacketHandlers = {};
     }
 
@@ -318,7 +305,7 @@ class SaveSync {
                 if (!server.getRoomsArray()[packet.room].hasOwnProperty("_heart_containers")){
                     server.getRoomsArray()[packet.room]["_heart_containers"] = {};
                 }
-                if (!inst._heart_containers.hasOwnProperty(decompress.packet_id)) {
+                if (!server.getRoomsArray()[packet.room].hasOwnProperty(decompress.packet_id)) {
                     server.getRoomsArray()[packet.room]["_heart_containers"][decompress.packet_id] = new IntegerStorage(decompress.packet_id);
                     server.getRoomsArray()[packet.room]["_heart_containers"][decompress.packet_id]._check = function (inst, packet) {
                         let value = inst._int;

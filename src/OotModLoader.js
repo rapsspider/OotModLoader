@@ -33,7 +33,7 @@ let client = require('./OotClient');
 let emu = require('./OotBizHawk');
 let api = require('./OotAPI');
 let plugins = require('./OotPluginLoader');
-const encoder = require(global.OotRunDir + '/OotEncoder');
+const encoder = require('./OotEncoder');
 let gs = require('./GamesharkToInjectConverter');
 let logger = require('./OotLogger')('Core');
 const fs = require("fs");
@@ -62,7 +62,7 @@ console_hook = function(msg){
     }
 };
 
-fs.readdirSync(global.OotRunDir + "/rom").forEach(file => {
+fs.readdirSync("./rom").forEach(file => {
     if (file.indexOf(".z64") > -1) {
         rom = "./rom/" + file;
     }
