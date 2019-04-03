@@ -25,7 +25,7 @@ class Configuration {
 
     constructor() {
         this._my_uuid = "";
-        this.file = "./OotModLoader-config.json";
+        this.file = global.OotRunDir + "/OotModLoader-config.json";
         this.cfg = {};
         if (fs.existsSync(this.file)) {
             this.cfg = JSON.parse(fs.readFileSync(this.file));

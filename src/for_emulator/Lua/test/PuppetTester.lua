@@ -118,27 +118,6 @@ local frameHooks = {}
 
 function addFramehook(fn, max) table.insert(frameHooks, {fn = fn, max = max, count = 0}) end
 
-for i = 1, 3, 1 do
-    addFramehook(
-        function()
-			local p = getPuppet(i)
-			console.log(DEC_HEX(p));
-            local anim = readByteRange(context, 0x86)
-            writeByteRange(p + 0x1E0, anim)
-            writeFourBytesUnsigned(p + 0x140, rhand_table[forms.gettext(rhand)])
-            writeFourBytesUnsigned(p + 0x144, lhand_table[forms.gettext(lhand)])
-            writeFourBytesUnsigned(p + 0x148, sheath_table[forms.gettext(sheath)])
-			local pos = readByteRange(link_instance + 0x24, 0xC)
-			local r, g, b = ranndomHexColor()
-			writeByte(p + 0x154, r)
-			writeByte(p + 0x155, g)
-			writeByte(p + 0x156, b)
-            writeByteRange(p + 0x24, pos)
-        end,
-        100
-    )
-end
-
 while run do
     if (forms.ischecked(anim_box)) then
         local anim = readByteRange(context, 0x86)

@@ -994,6 +994,9 @@ local packet_queue = {}
 function packetGet(net)
     if (connected == false) then
         connected = connectToNode()
+        if (connected) then 
+            console.writeline("Connected.")
+        end
         return
     end
     local s, status, partial = net:receive()
