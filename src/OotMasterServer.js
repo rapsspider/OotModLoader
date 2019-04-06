@@ -99,11 +99,13 @@ class MasterServer {
         let data = [];
         let rooms = this.getRoomsArray();
         Object.keys(rooms).forEach(function(key){
-            let r = {};
-            r["name"] = key;
-            r["isPrivate"] = rooms[key].password !== "d41d8cd98f00b204e9800998ecf8427e";
-            r["playerCount"] = rooms[key].length;
-            data.push(r);
+            if (rooms[key].hasOwnProperty("clientList")){
+                let r = {};
+                r["name"] = key;
+                r["isPrivate"] = rooms[key].password !== "d41d8cd98f00b204e9800998ecf8427e";
+                r["playerCount"] = rooms[key].length;
+                data.push(r);
+            }
         });
         return data;
     }
@@ -146,6 +148,14 @@ class MasterServer {
         });
         this._ws_server = io;
         (function (server, inst) {
+            setInterval(function(){
+                let data = inst.getAllRoomInfo();
+                let count = 0;
+                for (let i = 0; i < data.length; i++){
+                    count+=data[i].playerCount;
+                }
+                logger.log(data.length + " lobbies. " + count + " total players.");
+            }, 30 * 1000);
             inst._upnp_client.portMapping(
                 {
                     public: inst._udp.port,
@@ -168,9 +178,7 @@ class MasterServer {
                     }
                 }
             );
-            server["OotClientList"] = {};
             server.on("connection", function (socket) {
-                //logger.log(server.OotClientList);
                 socket.on('version', function(data){
                     if (data.version === version){
                         logger.log("Client " + socket.id + " version verified.");
@@ -192,7 +200,7 @@ class MasterServer {
                         server
                             .to(socket.id)
                             .emit("room", { msg: "Joined room " + data.room + "." });
-                        server.OotClientList[data.room] = {};
+                        inst.getRoomsArray()[data.room]["clientList"] = {};
                         inst.getRoomsArray()[data.room]["password"] = data.password;
                         api.postEvent({ id: "onPlayerJoined_ServerSide", player: { uuid: socket.id, room: data.room, nickname: data.nickname }, server: inst });
                         if (data.hasOwnProperty("patchFile")) {
@@ -200,7 +208,7 @@ class MasterServer {
                                 server.to(socket.id).emit("requestPatch", encoder.compressData({ patchFile: data.patchFile, room: data.room }));
                             }
                         }
-                        server.OotClientList[data.room][socket.id] = {
+                        inst.getRoomsArray()[data.room]["clientList"][socket.id] = {
                             ip: socket.request.connection.remoteAddress.split(":")[3],
                             port: "unknown"
                         };
@@ -216,7 +224,7 @@ class MasterServer {
                                 server.to(socket.id).emit('receivePatch', { data: inst.getRoomsArray()[data.room].patchFile })
                             }
                             socket["ootRoom"] = data.room;
-                            server.OotClientList[data.room][socket.id] = {
+                            inst.getRoomsArray()[data.room]["clientList"][socket.id] = {
                                 ip: socket.request.connection.remoteAddress.split(":")[3],
                                 port: "unknown"
                             };
@@ -233,7 +241,7 @@ class MasterServer {
                 });
                 socket.on("disconnect", function () {
                     server.to(socket.ootRoom).emit("left", { uuid: socket.id });
-                    delete server.OotClientList[socket.id];
+                    delete inst.getRoomsArray()[socket.ootRoom]["clientList"][socket.id];
                 });
                 socket.on("room_ping", function (data) {
                     let d = encoder.decompressData(data);
@@ -255,9 +263,9 @@ class MasterServer {
             });
             inst._udp.setDataFn(function (msg) {
                 if (msg.packet_id === "udpPunch") {
-                    server.OotClientList[msg.room][msg.uuid].port = msg.punchthrough;
+                    inst.getRoomsArray()[msg.room]["clientList"][msg.uuid].port = msg.punchthrough;
                     inst._udp.sendTo(
-                        server.OotClientList[msg.room][msg.uuid].ip,
+                        inst.getRoomsArray()[msg.room]["clientList"][msg.uuid].ip,
                         msg.punchthrough,
                         {
                             packet_id: "udpPunch",
@@ -272,10 +280,10 @@ class MasterServer {
                 } else {
                     if (_channelHandlers.hasOwnProperty(msg.channel)) {
                         if (_channelHandlers[msg.channel](inst, msg)) {
-                            Object.keys(server.OotClientList[msg.room]).forEach(function (key) {
+                            Object.keys(inst.getRoomsArray()[msg.room]["clientList"]).forEach(function (key) {
                                 if (key !== msg.uuid) {
                                     inst._udp.sendTo(
-                                        server.OotClientList[msg.room][key].ip,
+                                        inst.getRoomsArray()[msg.room]["clientList"][key].ip,
                                         msg.punchthrough,
                                         msg
                                     );
@@ -283,10 +291,10 @@ class MasterServer {
                             });
                         }
                     } else {
-                        Object.keys(server.OotClientList[msg.room]).forEach(function (key) {
+                        Object.keys(inst.getRoomsArray()[msg.room]["clientList"]).forEach(function (key) {
                             if (key !== msg.uuid) {
                                 inst._udp.sendTo(
-                                    server.OotClientList[msg.room][key].ip,
+                                    inst.getRoomsArray()[msg.room]["clientList"][key].ip,
                                     msg.punchthrough,
                                     msg
                                 );

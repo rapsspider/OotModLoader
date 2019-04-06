@@ -34,17 +34,17 @@ class VersionMismatchError extends Error {
 class Encoder {
 
     compressData(data) {
-        //let pack = jpack.pack(data);
-        //let compress = zlib.deflateSync(pack);
-        //let base = Buffer.from(compress).toString('base64');
-        return data;
+        let pack = jpack.pack(data);
+        let compress = zlib.deflateSync(pack);
+        let base = Buffer.from(compress).toString('base64');
+        return base;
     }
 
     decompressData(data) {
-        //let buffer = Buffer.from(data, 'base64');
-        //let decompress = zlib.inflateSync(buffer).toString();
-        //let unpack = jpack.unpack(decompress);
-        return data;
+        let buffer = Buffer.from(data, 'base64');
+        let decompress = zlib.inflateSync(buffer).toString();
+        let unpack = jpack.unpack(decompress);
+        return unpack;
     }
 
 }
