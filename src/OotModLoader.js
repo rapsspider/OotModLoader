@@ -61,6 +61,10 @@ console_hook = function (msg) {
 
 let rom_dir = "./rom";
 
+if (!fs.existsSync("./temp")) {
+    fs.mkdirSync("./temp");
+}
+
 if (!fs.existsSync(rom_dir)) {
     logger.log("Failed to find rom directory at " + path.resolve(rom_dir));
     rom_dir = __dirname + "/rom";
@@ -136,10 +140,16 @@ plugins.load(function () {
             }
             logger.log("Starting BizHawk...");
             try {
-                var child = spawn('./BizHawk/EmuHawk.exe', ['--lua=' + path.resolve("./BizHawk/Lua/OotModLoader.lua"), path.resolve(rom)], { stdio: 'inherit' });
+                let lobby_path = "./temp/" + CONFIG.GAME_ROOM + path.extname(rom);
+                let clean_rom_data = fs.readFileSync(path.resolve(rom));
+                let buf = Buffer.from("544845204C4547454E44204F46204F4E4C494E4500", "hex");
+                buf.copy(clean_rom_data, 0x20, 0x0, buf.length);
+                fs.writeFileSync(path.resolve(lobby_path), clean_rom_data);
+                logger.log("Loading " + path.resolve(lobby_path) + ".");
+                var child = spawn('./BizHawk/EmuHawk.exe', ['--lua=' + path.resolve("./BizHawk/Lua/OotModLoader.lua"), path.resolve(lobby_path)], { stdio: 'inherit' });
             } catch (err) {
                 api.postEvent({ id: "GUI_StartFailed" });
-
+                logger.log(err.message);
             }
         });
         api.registerEvent("GUI_ConfigChanged");
@@ -255,9 +265,6 @@ function onPlayerConnected(nickname, uuid) {
 }
 
 api.registerEventHandler("BPSPatchDownloaded", function (event) {
-    if (!fs.existsSync("./temp")) {
-        fs.mkdirSync("./temp");
-    }
     fs.writeFileSync("./temp/temp.bps", event.data);
     let bps_class = require('./OotBPS');
     let bps = new bps_class();
