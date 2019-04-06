@@ -26,7 +26,7 @@ To use the file _build.bat_, you need to change the directory in the line which 
 ```shell
 call apache-ant-1.10.5\bin\ant
 ```
-to the directory of your download of Apache Ant followed by `"\bin\ant"`
+to the directory of your download of Apache Ant followed by `\bin\ant`
 For example, if the Apache Ant directory is `C:\Stuff\Apache-Ant` the line would read 
 ```shell
 call C:\Stuff\Apache-Ant\bin\ant
