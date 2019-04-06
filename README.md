@@ -9,6 +9,9 @@ To build the program from the source, you will need to have [Apache Ant](https:/
 ### Java
 To build the program from the source, you will need to have [Java](https://www.java.com/en/) installed.
 
+### BizHawk Emulator
+To include BizHawk with your build, add [these](https://drive.google.com/open?id=1YQkyRr7ruvbWbM-CrgTjUtMSqAG4d2Hx) files to the bizhawk_dist Sub-Directory _(See below)_. Alternativley, you can source these files from the [BizHawk](https://github.com/TASVideos/BizHawk) repository.
+
 ### Sub-Directories
 In the root directory of the repository, you need to create child directories with the names _mods_, _rom_, _bizhawk_dist_.
 This can be quickly done by running the command 
