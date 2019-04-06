@@ -68,7 +68,10 @@ class OotUDPServer {
     setup() {
         (function (inst) {
             inst.server.on('message', (msg, rinfo) => {
-                inst._onDataFn(JSON.parse(Buffer.from(msg).toString().split("#")[1]));
+                try{
+                    inst._onDataFn(JSON.parse(Buffer.from(msg).toString().split("#")[1]));
+                }catch(err){
+                }
             });
 
             inst.server.on('listening', () => {

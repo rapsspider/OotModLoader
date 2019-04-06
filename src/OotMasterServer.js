@@ -95,6 +95,19 @@ class MasterServer {
         return r;
     }
 
+    getAllRoomInfo(){
+        let data = [];
+        let rooms = this.getRoomsArray();
+        Object.keys(rooms).forEach(function(key){
+            let r = {};
+            r["name"] = key;
+            r["isPrivate"] = rooms[key].password !== "d41d8cd98f00b204e9800998ecf8427e";
+            r["playerCount"] = rooms[key].length;
+            data.push(r);
+        });
+        return data;
+    }
+
     doesRoomExist(room) {
         return this.getRoomsArray().hasOwnProperty(room);
     }
@@ -175,6 +188,7 @@ class MasterServer {
                     if (!inst.getRoomsArray().hasOwnProperty(data.room)) {
                         logger.log("Room " + data.room + " claimed by " + socket.id + ".");
                         socket.join(data.room);
+                        logger.log(inst.getRoomsArray());
                         server
                             .to(socket.id)
                             .emit("room", { msg: "Joined room " + data.room + "." });

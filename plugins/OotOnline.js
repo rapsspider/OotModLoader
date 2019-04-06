@@ -240,6 +240,10 @@ class OotOnline {
 
     // Load json files in here.
     preinit() {
+        CONFIG.setPluginDefaultValue("OotOnline", "max_players", 4);
+        if (CONFIG.getPluginValue("OotOnline", "max_players") > 16){
+            CONFIG.setPluginValue("OotOnline", "max_players", 16)
+        }
         this.setupTunics();
         api.registerPacket(__dirname + "/packets/link_packet.json");
         api.registerPacket(__dirname + "/packets/link_loading.json");
@@ -265,6 +269,7 @@ class OotOnline {
         (function (inst) {
             api.registerEvent("onPuppetSpawn");
             api.registerEvent("onLinkLoading");
+            api.registerEvent("OotOnline_forceSetTunicColor");
             api.registerEventHandler("preSceneChange", function (event) {
                 let packet = event.data;
                 if (
@@ -274,6 +279,10 @@ class OotOnline {
                     isSafeToSpawnPuppets = packet.data["link_loading"].data !== 0x01;
                     api.postEvent({ id: "onLinkLoading", safe: isSafeToSpawnPuppets });
                 }
+            });
+
+            api.registerEventHandler("OotOnline_forceSetTunicColor", function(event){
+                inst._tunic_colors[event.index] = event.color;
             });
 
             api.registerEventHandler("syncSafety", function (event) {
@@ -470,7 +479,7 @@ class OotOnline {
     postinit() {
         (function (inst) {
 
-            for (let i = 0; i < 3; i++) {
+            for (let i = 0; i < CONFIG.getPluginValue("OotOnline", "max_players") - 1; i++) {
                 inst.PuppetMap.push({ uuid: "", puppet: new Puppet() });
             }
 
@@ -534,6 +543,19 @@ class OotOnline {
                         }
                     }
                 }
+            });
+
+            api.registerEventHandler("onSoftReset_Post", function(event){
+                Object.keys(inst.PuppetMap).forEach(function (player) {
+                    if (inst.PuppetMap[player].puppet.isSpawnedInCurrentScene) {
+                        inst.PuppetMap[player].puppet.clearPointer();
+                        inst.PuppetMap[player].puppet.isSpawnedInCurrentScene = false;
+                    }
+                });
+                Object.keys(inst._tunic_colors).forEach(function (index) {
+                    emulator.sendViaSocket({ packet_id: "changeColor", data: inst._tunic_colors[index], writeHandler: "range", addr: "0x000F7AD8", offset: index * 3 });
+                });
+                inst._puppetSpawnHandle = true;
             });
 
             api.registerEventHandler("onLinkDespawn", function (event) {

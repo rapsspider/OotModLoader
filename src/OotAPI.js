@@ -31,6 +31,7 @@ class OotAPI {
         this._plugindir = "";
         this._serverSideStorage = function () { };
         this._ModuleStorage = {};
+        this._clientSideChannelHandlers = {};
     }
 
     set plugindir(dir) {
@@ -86,6 +87,10 @@ class OotAPI {
                 }
             }
         }
+    }
+
+    registerClientSideChannelHandler(channel_id, handler){
+        this._clientSideChannelHandlers[channel_id] = handler;
     }
 
     registerClientSidePacketHook(packet_id, hook) {

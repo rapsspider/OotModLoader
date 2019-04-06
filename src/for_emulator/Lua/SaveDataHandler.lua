@@ -948,39 +948,48 @@ SAVE_DATA_HANDLER["link_exists"] = function() return false end
 
 function handleInventorySlotUpdate(packet)
     local last = readByte(save_handler_context_map.inventory.read[packet.packet_id])
-    writeByte(
-        save_handler_context_map.inventory.read[packet.packet_id],
-        packet.data.data
-    )
-    if (last == 0xFF or packet.data.data == 0xFF) then return end
-    -- Check buttons.
-    local addr = 0x600108
-    local addr2 = addr + 0x4
-    local b = readByte(0x11A638 + 0)
-    local l = readByte(0x11A638 + 1)
-    local d = readByte(0x11A638 + 2)
-    local r = readByte(0x11A638 + 3)
-    if (b == last) then
-        writeByte(0x11A638 + 0, packet.data.data)
-        writeFourBytesUnsigned(addr2, 0x00000000)
-        SAVE_DATA_HANDLER["console"].log("Updating " .. "B" .. " button")
+    if (last == 255) then
+        last = -1;
     end
-    if (l == last) then
-        writeByte(0x11A638 + 1, packet.data.data)
-        writeFourBytesUnsigned(addr2, 0x00000001)
-        SAVE_DATA_HANDLER["console"].log("Updating " .. "C-Left" .. " button")
+    if (packet.data.data == 255) then
+        packet.data.data = -1;
     end
-    if (d == last) then
-        writeByte(0x11A638 + 2, packet.data.data)
-        writeFourBytesUnsigned(addr2, 0x00000002)
-        SAVE_DATA_HANDLER["console"].log("Updating " .. "C-Down" .. " button")
+    SAVE_DATA_HANDLER["console"].log(tostring(last) .. " vs " .. tostring(packet.data.data))
+    if (packet.data.data > last) then 
+        writeByte(
+            save_handler_context_map.inventory.read[packet.packet_id],
+            packet.data.data
+        )
+        if (last == 0xFF or packet.data.data == 0xFF) then return end
+        -- Check buttons.
+        local addr = 0x600108
+        local addr2 = addr + 0x4
+        local b = readByte(0x11A638 + 0)
+        local l = readByte(0x11A638 + 1)
+        local d = readByte(0x11A638 + 2)
+        local r = readByte(0x11A638 + 3)
+        if (b == last) then
+            writeByte(0x11A638 + 0, packet.data.data)
+            writeFourBytesUnsigned(addr2, 0x00000000)
+            SAVE_DATA_HANDLER["console"].log("Updating " .. "B" .. " button")
+        end
+        if (l == last) then
+            writeByte(0x11A638 + 1, packet.data.data)
+            writeFourBytesUnsigned(addr2, 0x00000001)
+            SAVE_DATA_HANDLER["console"].log("Updating " .. "C-Left" .. " button")
+        end
+        if (d == last) then
+            writeByte(0x11A638 + 2, packet.data.data)
+            writeFourBytesUnsigned(addr2, 0x00000002)
+            SAVE_DATA_HANDLER["console"].log("Updating " .. "C-Down" .. " button")
+        end
+        if (r == last) then
+            writeByte(0x11A638 + 3, packet.data.data)
+            writeFourBytesUnsigned(addr2, 0x00000003)
+            SAVE_DATA_HANDLER["console"].log("Updating " .. "C-Right" .. " button")
+        end
+        writeFourBytesUnsigned(addr, 0x00000002)
     end
-    if (r == last) then
-        writeByte(0x11A638 + 3, packet.data.data)
-        writeFourBytesUnsigned(addr2, 0x00000003)
-        SAVE_DATA_HANDLER["console"].log("Updating " .. "C-Right" .. " button")
-    end
-    writeFourBytesUnsigned(addr, 0x00000002)
 end
 
 local ammo_map = {
@@ -1103,8 +1112,8 @@ end
 local isDirty = false
 local dirtyTimer = -1
 
-function handleSceneSlotUpgrade(packet)
-    local addr = save_context + scene_offset + packet.byte
+function handleBitflagBundle(packet, offset)
+    local addr = save_context + offset + packet.byte
     local current = readByteAsBinary(addr)
     local markDirty = false
     for k, v in pairs(current) do
@@ -1121,29 +1130,28 @@ function handleSceneSlotUpgrade(packet)
     end
 end
 
+function handleSceneSlotUpgrade(packet)
+    handleBitflagBundle(packet, scene_offset);
+end
+
 function handleEventSlotUpgrade(packet)
-    local addr = save_context + event_flags_offset + packet.byte
-    writeByteAsBinary(addr, packet.data.data)
+    handleBitflagBundle(packet, event_flags_offset);
 end
 
 function handleItemFlagSlotUpgrade(packet)
-    local addr = save_context + item_flags_offset + packet.byte
-    writeByteAsBinary(addr, packet.data.data)
+    handleBitflagBundle(packet, item_flags_offset);
 end
 
 function handleInfFlagSlotUpgrade(packet)
-    local addr = save_context + inf_table_offset + packet.byte
-    writeByteAsBinary(addr, packet.data.data)
+    handleBitflagBundle(packet, inf_table_offset);
 end
 
 function handleDungeonItemSlotUpgrade(packet)
-    local addr = save_context + dungeon_items_offset + packet.byte
-    writeByteAsBinary(addr, packet.data.data)
+    handleBitflagBundle(packet, dungeon_items_offset);
 end
 
 function handleSkulltulaFlagSlotUpgrade(packet)
-    local addr = save_context + skulltula_flags_offset + packet.byte
-    writeByteAsBinary(addr, packet.data.data)
+    handleBitflagBundle(packet, skulltula_flags_offset);
 end
 
 function handleSkulltulaCountSlotUpgrade(packet)

@@ -48,6 +48,7 @@ class Configuration {
                 zora: ""
             };
             this.cfg.CLIENT["patchFile"] = "";
+            this.cfg.PLUGINS = {};
             fs.writeFileSync(this.file, JSON.stringify(this.cfg, null, 2));
         }
         this._master_server_ip = this.cfg.SERVER.master_server_ip;
@@ -60,10 +61,43 @@ class Configuration {
         this._master_server_udp = 1;
         this._tunic_colors = this.cfg.CLIENT.tunic_colors;
         this._patchFile = this.cfg.CLIENT.patchFile;
+        if (!this.cfg.hasOwnProperty("PLUGINS")){
+            this.cfg["PLUGINS"] = {};
+        }
+        this._plugins = this.cfg.PLUGINS;
         if (this._GAME_ROOM === "") {
             this._GAME_ROOM = hri.random();
             this.save();
         }
+    }
+
+    setPluginDefaultValue(category, key, value){
+        if (!this._plugins.hasOwnProperty(category)){
+            this._plugins[category] = {};
+        }
+        if (!this._plugins[category].hasOwnProperty(key)){
+            this._plugins[category][key] = value;
+        }
+    }
+
+    setPluginValue(category, key, value){
+        if (!this._plugins.hasOwnProperty(category)){
+            this._plugins[category] = {};
+        }
+        if (!this._plugins[category].hasOwnProperty(key)){
+            this._plugins[category][key] = value;
+        }
+        this._plugins[category][key] = value;
+    }
+
+    getPluginValue(category, key){
+        if (!this._plugins.hasOwnProperty(category)){
+            this._plugins[category] = {};
+        }
+        if (!this._plugins[category].hasOwnProperty(key)){
+            this._plugins[category][key] = "";
+        }
+        return this._plugins[category][key];
     }
 
     set master_server_udp(value) {
@@ -159,6 +193,7 @@ class Configuration {
         this.cfg.CLIENT["nickname"] = this._nickname;
         this.cfg.CLIENT["game_room"] = this._GAME_ROOM;
         this.cfg.CLIENT["game_password"] = this._game_password;
+        this.cfg.PLUGINS = this._plugins;
         fs.writeFileSync(this.file, JSON.stringify(this.cfg, null, 2));
     }
 }

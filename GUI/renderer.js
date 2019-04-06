@@ -4,6 +4,27 @@
 var ipcRenderer = require('electron').ipcRenderer;
 
 const RENDER_OBJ = {};
+let allow_lobby_refresh = false;
+let CONNECTED = false;
+
+onTabOpen["Lobby Browser"] = {
+    tag: "Lobby Browser", callback: function () {
+        allow_lobby_refresh = true;
+    }
+};
+
+onTabClosed["Lobby Browser"] = {
+    tag: "Lobby Browser", callback: function () {
+        allow_lobby_refresh = false;
+    }
+};
+
+setInterval(function () {
+    if (allow_lobby_refresh && CONNECTED) {
+        console.log("Refreshing lobby list...");
+        sendToMainProcess("postEvent", { id: "GUI_updateLobbyBrowser"});
+    }
+}, 30 * 1000);
 
 RENDER_OBJ["console"] = function (msg) {
     console.log(msg);
@@ -22,6 +43,10 @@ ipcRenderer.on('GUI_StartFailed', function (wtfisthis, event) {
     document.getElementById("connect").textContent = "Failed to start! :(";
 });
 
+ipcRenderer.on('GUI_updateLobbyBrowser_Reply', function (wtfisthis, event) {
+    lobby_browser.setData(event.table);
+});
+
 ipcRenderer.on('onBizHawkInstall', function (wtfisthis, event) {
     if (!event.done) {
         document.getElementById("connect").disabled = true;
@@ -35,6 +60,25 @@ ipcRenderer.on('onBizHawkInstall', function (wtfisthis, event) {
 ipcRenderer.on('GUI_BadVersion', function (wtfisthis, event) {
     document.getElementById("connect").disabled = true;
     document.getElementById("connect").textContent = "Version mismatch! :(";
+});
+
+ipcRenderer.on('onServerConnection', function (wtfisthis, event) {
+    document.getElementById("connection_status").innerHTML = "Connected.";
+    document.getElementById("current_lobby").innerHTML = event.room;
+    CONNECTED = true;
+});
+
+ipcRenderer.on('onPlayerJoined', function (wtfisthis, event) {
+    var ul = document.getElementById("player_list");
+    var li = document.createElement("li");
+    li.appendChild(document.createTextNode(event.player.nickname));
+    ul.appendChild(li);
+    li.setAttribute("id", event.player.uuid);
+});
+
+ipcRenderer.on('onPlayerDisconnected', function (wtfisthis, event) {
+    let elem = document.getElementById(event.player.uuid);
+    elem.parentNode.removeChild(elem);
 });
 
 let config_to_element_map = {};

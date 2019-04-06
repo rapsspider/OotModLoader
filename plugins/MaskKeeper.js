@@ -73,7 +73,7 @@ class MaskKeeper {
                     inst._isSceneChanging = false;
                 }
             });
-            api.registerEventHandler("onLinkRespawn", function (event) {
+            api.registerEventHandler("onFrameCount", function (event) {
                 setTimeout(function () {
                     inst._isSceneChanging = false;
                     if (inst._isChild) {

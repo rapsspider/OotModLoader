@@ -9,10 +9,46 @@
     <script src="./jquery-ui-1.12.1.custom/jquery-ui.min.js"></script>
     <script src="https://unpkg.com/jquery.terminal@1.x.x/js/jquery.terminal.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/jquery.terminal@1.x.x/css/jquery.terminal.min.css" />
+    <link href="./css/tabulator.min.css" rel="stylesheet">
+    <script type="text/javascript" src="./js/tabulator.min.js"></script>
     <script>if (window.module) module = window.module;</script>
     <script>
+        var onTabOpen = {};
+        var onTabClosed = {};
         $(function () {
-            $("#tabs").tabs();
+            let tabs = $("#tabs").tabs();
+            tabs.on("tabsbeforeactivate", function (event, ui) {
+                currentTabOpen = ui.newTab[0].innerText;
+                console.log(currentTabOpen)
+                for (var t in onTabOpen) {
+                    if (ui.newTab[0].innerText === onTabOpen[t].tag) {
+                        onTabOpen[t].callback();
+                    }
+                }
+                for (var t in onTabClosed) {
+                    if (ui.newTab[0].innerText !== onTabClosed[t].tag) {
+                        onTabClosed[t].callback();
+                        break
+                    }
+                }
+            });
+            var lobby_browser = new Tabulator("#lobby_browser", {
+                index: "index",
+                layout:"fitColumns",
+                tooltips: true,
+                pagination: "local",
+                paginationSize: 10,
+                movableCols: false,
+                initialSort: [
+                    { column: "index", dir: "desc" }
+                ],
+                columns: [
+                    { title: "index", width: 100, field: "index", sorter: "number", dir: "desc" },
+                    { title: "Lobby", width: 100, field: "name", sorter: "string" },
+                    { title: "Private", width: 100, field: "isPrivate", sorter: "boolean" },
+                    { title: "Players", width: 100, field: "playerCount", sorter: "number" },
+                ]
+            });
         });
         $(function () {
             $(".widget input[type=submit], .widget a, .widget button").button();
@@ -26,6 +62,7 @@
             background-repeat: no-repeat;
             background-position: center;
             background-attachment: fixed;
+            background-size: cover;
         }
 
         label {
@@ -52,6 +89,7 @@
             <li><a href="#tabs-3">Status</a></li>
             <li><a href="#tabs-4">Lobby Browser</a></li>
             <li><a href="#tabs-5">Console</a></li>
+            <li><a href="#tabs-6">Advanced</a></li>
         </ul>
         <div id="tabs-1">
             <h1>Client Settings</h1>
@@ -81,17 +119,22 @@
                 onchange="hooks.onConfigChanged()" /><br />
         </div>
         <div id="tabs-3">
-            Nothing on this tab currently works, sorry!<br />
-            Connection Status: <li>Not connected.</li>
-            <br />
+            Connection Status: <li id="connection_status">Not connected.</li><br />
+            Current Lobby: <li id="current_lobby"></li>
             Player List:
-            <li>None.</li>
+            <ul id="player_list">
+
+            </ul>
         </div>
         <div id="tabs-4">
-            Coming soon™.
+            <div id="lobby_browser"></div>
         </div>
         <div id="tabs-5">
             <div id="terminal"></div>
+        </div>
+        <div id="tabs-6">
+            <label for="_isMaster">Host Server</label><input type="checkbox" id="_isMaster" />
+            <label for="_isClient">Run Client</label><input type="checkbox" id="_isClient" />
         </div>
     </div>
 
@@ -103,7 +146,7 @@
                 prompt: '> '
             });
         let hooks = require('./renderer.js');
-        hooks.console = function(msg){
+        hooks.console = function (msg) {
             term.echo(msg);
         }
     </script>

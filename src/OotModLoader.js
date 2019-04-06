@@ -98,7 +98,7 @@ master.preSetup();
 logger.log(process.cwd());
 logger.log("Loading plugins...");
 plugins.load(function () {
-
+    CONFIG.save();
     if (BUILD_TYPE !== "GUI") {
         if (CONFIG.isMaster) {
             master.setup();
@@ -111,7 +111,7 @@ plugins.load(function () {
         var LUA_LOC = ".";
         ncp.limit = 16;
         if (!fs.existsSync("./BizHawk")) {
-            api.postEvent({id: "onBizHawkInstall", done: false});
+            api.postEvent({ id: "onBizHawkInstall", done: false });
             fs.mkdirSync("./BizHawk");
             fs.createReadStream('./bizhawk_prereqs_v2.1.zip').pipe(unzip.Extract({ path: './BizHawk' })).on('close', function () {
             });
@@ -121,23 +121,7 @@ plugins.load(function () {
             if (!fs.existsSync("./BizHawk/config.ini")) {
                 fs.copyFileSync(LUA_LOC + "/config.ini", "./BizHawk/config.ini");
             }
-            ncp(LUA_LOC + "/Lua", "./BizHawk/Lua", function (err) {
-                if (err) {
-                    return console.error(err);
-                }
-                logger.log("Installed Lua files!");
-            });
-            ncp(LUA_LOC + "/mime", "./BizHawk/mime", function (err) {
-                if (err) {
-                    return console.error(err);
-                }
-            });
-            ncp(LUA_LOC + "/socket", "./BizHawk/socket", function (err) {
-                if (err) {
-                    return console.error(err);
-                }
-            });
-            api.postEvent({id: "onBizHawkInstall", done: true});
+            api.postEvent({ id: "onBizHawkInstall", done: true });
         }
         api.registerEvent("GUI_StartButtonPressed");
         api.registerEvent("GUI_StartFailed");
@@ -179,6 +163,22 @@ plugins.load(function () {
             setTimeout(function () {
                 api.postEvent({ id: "onConfigUpdate", config: CONFIG });
             }, 1000);
+        });
+        ncp(LUA_LOC + "/Lua", "./BizHawk/Lua", function (err) {
+            if (err) {
+                return console.error(err);
+            }
+            logger.log("Installed Lua files!");
+        });
+        ncp(LUA_LOC + "/mime", "./BizHawk/mime", function (err) {
+            if (err) {
+                return console.error(err);
+            }
+        });
+        ncp(LUA_LOC + "/socket", "./BizHawk/socket", function (err) {
+            if (err) {
+                return console.error(err);
+            }
         });
     }
 });
@@ -229,6 +229,9 @@ function writeToFile(file, data) {
 // Coming in from server.
 function processData(data) {
     try {
+        if (api._clientSideChannelHandlers.hasOwnProperty(data.channel)){
+            data = api._clientSideChannelHandlers[data.channel](data);
+        }
         if (packetTransformers.hasOwnProperty(data["payload"]["packet_id"])) {
             data = packetTransformers[data["payload"]["packet_id"]](data);
         }
@@ -260,7 +263,7 @@ api.registerEventHandler("BPSPatchDownloaded", function (event) {
     let bps = new bps_class();
     try {
         var newRom = bps.tryPatch(rom, "./temp/temp.bps");
-        emu.sendViaSocket({ packet_id: "loadrom", writeHandler: "loadRom", rom: path.resolve(newRom) });
+        emu.sendViaSocket({ packet_id: "loadrom", writeHandler: "loadRom", rom: path.resolve(newRom), override: true });
     } catch (err) {
         logger.log(JSON.stringify(err));
     }

@@ -23,6 +23,7 @@ const encoder = require(global.OotRunDir + "/OotEncoder");
 let api = require(global.OotRunDir + "/OotAPI");
 const emulator = require(global.OotRunDir + "/OotBizHawk");
 const client = require(global.OotRunDir + "/OotClient");
+const server = require(global.OotRunDir + "/OotMasterServer");
 let tokens;
 
 class OotLoaderCore {
@@ -58,6 +59,33 @@ class OotLoaderCore {
         api.registerEvent("onStateChanged");
         api.registerEvent("onActorSpawned");
         api.registerEvent("onFrameCount");
+
+        api.registerEvent("GUI_updateLobbyBrowser");
+        api.registerEvent("GUI_updateLobbyBrowser_ServerSide");
+        api.registerEvent("GUI_updateLobbyBrowser_Reply");
+
+        api.registerEventHandler("GUI_updateLobbyBrowser", function(event){
+            logger.log("Updating lobby list...");
+            client.sendDataToMasterOnChannel("GUI_MESSAGES", {packet_id: "GUI_updateLobbyBrowser"});
+        });
+
+        api.registerServerChannel("GUI_MESSAGES", function(server, packet){
+            packet.payload = encoder.decompressData(packet.payload);
+            if (packet.payload.packet_id === "GUI_updateLobbyBrowser"){
+                logger.log("Processing GUI lobby request...")
+                packet.payload.packet_id = "GUI_updateLobbyBrowser_Reply";
+                packet.payload["data"] = server.getAllRoomInfo();
+                packet.payload = encoder.compressData(packet.payload);
+                server._ws_server.sockets.to(packet.room).emit('msg', packet);
+            }
+            return false;
+        })
+
+        api.registerPacketTransformer("GUI_updateLobbyBrowser_Reply", function(packet){
+            logger.log("Transferring lobby info to client...");
+            api.postEvent({id: "GUI_updateLobbyBrowser_Reply", table: packet.payload.data});
+            return null;
+        });
 
         api.registerPacket({
             packet_id: "scene",
@@ -99,7 +127,7 @@ class OotLoaderCore {
         api.registerServerChannel("scene", function (server, data) {
             let scene = encoder.decompressData(data.payload).data;
             let r = data.room;
-            if (!server.getRoomsArray().hasOwnProperty(r)){
+            if (!server.getRoomsArray().hasOwnProperty(r)) {
                 return false;
             }
             let room = server.getRoomsArray()[r];
@@ -134,7 +162,7 @@ class OotLoaderCore {
             return true;
         });
 
-        api.registerClientSidePacketHook("link_age", function(data){
+        api.registerClientSidePacketHook("link_age", function (data) {
             api.postEvent({
                 id: "onAgeChanged",
                 age: data.data,
@@ -166,11 +194,15 @@ class OotLoaderCore {
 
         api.registerClientSidePacketHook("softReset", function (data) {
             api.postEvent({ id: "onSoftReset", data: true });
-            setTimeout(function(){
-                api.postEvent({ id: "onSoftReset_Post", data: true });
-            }, 5000);
+            logger.log(data)
             return false;
         });
+
+        api.registerClientSidePacketHook("softReset_Post", function(data){
+            api.postEvent({ id: "onSoftReset_Post", data: true });
+            logger.log(data)
+            return false;
+        })
 
         api.registerClientSidePacketHook("room", function (data) {
             api.postEvent({
@@ -188,19 +220,19 @@ class OotLoaderCore {
             return false;
         });
 
-        api.registerClientSidePacketHook("link_state", function(packet){
-            if (this._stateTimer !== null){
+        api.registerClientSidePacketHook("link_state", function (packet) {
+            if (this._stateTimer !== null) {
                 clearTimeout(this._stateTimer);
                 this._stateTimer = null;
             }
-            this._stateTimer = setTimeout(function(){
-                api.postEvent({id: "onStateChanged", state: packet.data});
+            this._stateTimer = setTimeout(function () {
+                api.postEvent({ id: "onStateChanged", state: packet.data });
             }, 100)
             return false;
         });
 
-        api.registerClientSidePacketHook("actorSpawned", function(packet){
-            api.postEvent({id: "onActorSpawned", type: packet.data.data.type, pointer: packet.data.data.pointer, uuid: packet.data.data.uuid, actorID: packet.data.data.actorID});
+        api.registerClientSidePacketHook("actorSpawned", function (packet) {
+            api.postEvent({ id: "onActorSpawned", type: packet.data.data.type, pointer: packet.data.data.pointer, uuid: packet.data.data.uuid, actorID: packet.data.data.actorID });
             return false;
         });
 

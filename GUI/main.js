@@ -50,8 +50,11 @@ function setupModLoader() {
   event_reg("onBizHawkInstall");
   event_reg("GUI_StartFailed");
   event_reg("GUI_BadVersion");
+  event_reg("onServerConnection");
+  event_reg("onPlayerJoined");
+  event_reg("onPlayerDisconnected");
+  event_reg("GUI_updateLobbyBrowser_Reply");
   ipcMain.on('postEvent', (event, arg) => {
-    console.log(arg);
     ooto.api.postEvent(arg);
   })
   if (ooto !== null) {
@@ -68,6 +71,7 @@ function setupModLoader() {
       }
     }
   }, 100);
+  mainWindow.webContents.openDevTools()
 }
 
 // This method will be called when Electron has finished

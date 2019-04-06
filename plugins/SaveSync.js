@@ -21,10 +21,10 @@ const api = require(global.OotRunDir + "/OotAPI");
 const logger = require(global.OotRunDir + "/OotLogger")("SaveSync");
 const localization = require(global.OotRunDir + "/OotLocalizer");
 const encoder = require(global.OotRunDir + "/OotEncoder");
+const CONFIG = require(global.OotRunDir + "/OotConfig");
 
 class IntegerStorage {
     constructor(name) {
-        this._name = name;
         this._int = 255;
         this._lastValue = 255;
         this._check = function (inst, packet) {
@@ -49,7 +49,6 @@ class IntegerStorage {
                 last = this._lastValue < this._int;
                 this._lastValue = this._int;
                 this._int = packet.data.data;
-                logger.log("Setting " + packet.packet_id + " to " + this._int.toString() + ".");
             }
         }
         return { int: this._int, bool: bool, last: last };
@@ -58,7 +57,6 @@ class IntegerStorage {
 
 class IntegerArrayStorage {
     constructor(name) {
-        this._name = name;
         this._array = [0, 0, 0, 0, 0, 0, 0, 0];
     }
 
@@ -68,7 +66,6 @@ class IntegerArrayStorage {
                 Object.keys(inst._array).forEach(function (key) {
                     if (inst._array[key] === 0 && packet.data.data[key] === 1) {
                         inst._array[key] = packet.data.data[key];
-                        logger.log(inst._name + " | " + key);
                     }
                 });
             })(this);
@@ -86,16 +83,20 @@ class SaveSync {
         this._icons = localization.icons("icon_coordinates");
         //
         this._savePacketHandlers = {};
+        this._packetNameCache = [];
+        this._packetNameCache_reverse = {};
     }
 
     preinit() {
         (function (inst) {
             api.registerPacketRoute("requestSaveData", "savesync");
             api.registerPacketRoute("savesync_data", "savesync");
+            let cache = [];
             let temp = function (text) {
                 let items = localization.text(text);
                 Object.keys(items.getData()).forEach(function (key) {
                     api.registerPacketRoute(items.getData()[key], "savesync");
+                    inst._packetNameCache.push(items.getData()[key]);
                 });
             };
             temp("item_packets.txt");
@@ -109,24 +110,29 @@ class SaveSync {
             temp("item_flag_packets.txt");
             temp("scene_packets.txt");
             temp("dungeon_packets.txt");
+            for (let i = 0; i < inst._packetNameCache.length; i++){
+                inst._packetNameCache_reverse[inst._packetNameCache[i]] = i;
+            }
         })(this);
     }
 
     init() {
         (function (inst) {
+
             inst._savePacketHandlers["inventory_slot_"] = function (server, packet, decompress) {
-                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)) {
                     return;
                 }
-                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_inventory")){
+                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_inventory")) {
                     server.getRoomsArray()[packet.room]["_inventory"] = {};
                     server.getRoomsArray()[packet.room]["_inventory"]["bottle_slots"] = ["inventory_slot_18", "inventory_slot_19", "inventory_slot_20", "inventory_slot_21"];
                     server.getRoomsArray()[packet.room]["_inventory"]["trade_slots"] = ["inventory_slot_23"];
                 }
-                if (!server.getRoomsArray()[packet.room]["_inventory"].hasOwnProperty(decompress.packet_id)) {
-                    server.getRoomsArray()[packet.room]["_inventory"][decompress.packet_id] = new IntegerStorage(decompress.packet_id);
+                let id = inst._packetNameCache_reverse[decompress.packet_id];
+                if (!server.getRoomsArray()[packet.room]["_inventory"].hasOwnProperty(id)) {
+                    server.getRoomsArray()[packet.room]["_inventory"][id] = new IntegerStorage(decompress.packet_id);
                     if (server.getRoomsArray()[packet.room]["_inventory"].bottle_slots.includes(decompress.packet_id)) {
-                        server.getRoomsArray()[packet.room]["_inventory"][decompress.packet_id]._check = function (inst, packet) {
+                        server.getRoomsArray()[packet.room]["_inventory"][id]._check = function (inst, packet) {
                             // 20
                             let value = inst._int;
                             if (value === 255) {
@@ -139,7 +145,7 @@ class SaveSync {
                             return v2 !== value;
                         };
                     } else if (server.getRoomsArray()[packet.room]["_inventory"].trade_slots.includes(decompress.packet_id)) {
-                        server.getRoomsArray()[packet.room]["_inventory"][decompress.packet_id]._check = function (inst, packet) {
+                        server.getRoomsArray()[packet.room]["_inventory"][id]._check = function (inst, packet) {
                             let value = inst._int;
                             if (value === 255) {
                                 value = -1;
@@ -160,7 +166,7 @@ class SaveSync {
                 }
                 decompress["writeHandler"] = "saveData";
                 decompress["typeHandler"] = "inventory";
-                let u = server.getRoomsArray()[packet.room]["_inventory"][decompress.packet_id].update(decompress);
+                let u = server.getRoomsArray()[packet.room]["_inventory"][id].update(decompress);
                 decompress.data.data = u.int;
                 packet.payload = encoder.compressData(decompress);
                 try {
@@ -170,8 +176,6 @@ class SaveSync {
                             let key = inst._inventorySlotToLangKey.getLocalizedString(decompress.data.data);
                             let icon = inst._icons.getIcon(key);
                             let str = inst._lang.getLocalizedString(key);
-                            logger.log({ packet_id: "inventory_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" });
-                            logger.log(decompress);
                             server._ws_server.sockets.to(packet.room).emit('msg', { packet_id: "inventory_msg", payload: encoder.compressData({ packet_id: "inventory_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
                         }
                     }
@@ -181,18 +185,19 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["upgrade_"] = function (server, packet, decompress) {
-                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)) {
                     return;
                 }
-                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_upgrades")){
+                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_upgrades")) {
                     server.getRoomsArray()[packet.room]["_upgrades"] = {};
                 }
-                if (!server.getRoomsArray()[packet.room]["_upgrades"].hasOwnProperty(decompress.packet_id)) {
-                    server.getRoomsArray()[packet.room]["_upgrades"][decompress.packet_id] = new IntegerStorage(decompress.packet_id);
+                let id = inst._packetNameCache_reverse[decompress.packet_id];
+                if (!server.getRoomsArray()[packet.room]["_upgrades"].hasOwnProperty(id)) {
+                    server.getRoomsArray()[packet.room]["_upgrades"][id] = new IntegerStorage(decompress.packet_id);
                 }
                 decompress["writeHandler"] = "saveData";
                 decompress["typeHandler"] = "upgrade";
-                let u = server.getRoomsArray()[packet.room]["_upgrades"][decompress.packet_id].update(decompress);
+                let u = server.getRoomsArray()[packet.room]["_upgrades"][id].update(decompress);
                 decompress.data.data = u.int;
                 packet.payload = encoder.compressData(decompress);
                 try {
@@ -210,18 +215,19 @@ class SaveSync {
                 }
             };
             inst._savePacketHandlers["equipment_slot_"] = function (server, packet, decompress) {
-                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)) {
                     return;
                 }
-                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_equipment")){
+                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_equipment")) {
                     server.getRoomsArray()[packet.room]["_equipment"] = {};
                 }
-                if (!server.getRoomsArray()[packet.room]["_equipment"].hasOwnProperty(decompress.packet_id)) {
-                    server.getRoomsArray()[packet.room]["_equipment"][decompress.packet_id] = new IntegerStorage(decompress.packet_id);
+                let id = inst._packetNameCache_reverse[decompress.packet_id];
+                if (!server.getRoomsArray()[packet.room]["_equipment"].hasOwnProperty(id)) {
+                    server.getRoomsArray()[packet.room]["_equipment"][id] = new IntegerStorage(decompress.packet_id);
                 }
                 decompress["writeHandler"] = "saveData";
                 decompress["typeHandler"] = "equipment";
-                let u = server.getRoomsArray()[packet.room]["_equipment"][decompress.packet_id].update(decompress);
+                let u = server.getRoomsArray()[packet.room]["_equipment"][id].update(decompress);
                 decompress.data.data = u.int;
                 packet.payload = encoder.compressData(decompress);
                 try {
@@ -239,18 +245,19 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["quest_slot_"] = function (server, packet, decompress) {
-                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)) {
                     return;
                 }
-                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_quest")){
+                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_quest")) {
                     server.getRoomsArray()[packet.room]["_quest"] = {};
                 }
-                if (!server.getRoomsArray()[packet.room]["_quest"].hasOwnProperty(decompress.packet_id)) {
-                    server.getRoomsArray()[packet.room]["_quest"][decompress.packet_id] = new IntegerStorage(decompress.packet_id);
+                let id = inst._packetNameCache_reverse[decompress.packet_id];
+                if (!server.getRoomsArray()[packet.room]["_quest"].hasOwnProperty(id)) {
+                    server.getRoomsArray()[packet.room]["_quest"][id] = new IntegerStorage(decompress.packet_id);
                 }
                 decompress["writeHandler"] = "saveData";
                 decompress["typeHandler"] = "quest";
-                let u = server.getRoomsArray()[packet.room]["_quest"][decompress.packet_id].update(decompress);
+                let u = server.getRoomsArray()[packet.room]["_quest"][id].update(decompress);
                 decompress.data.data = u.int;
                 packet.payload = encoder.compressData(decompress);
                 try {
@@ -259,8 +266,6 @@ class SaveSync {
                         if (u.bool) {
                             let icon = inst._icons.getIcon(decompress.packet_id);
                             let str = inst._lang.getLocalizedString(decompress.packet_id);
-                            logger.log({ packet_id: "quest_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str });
-                            logger.log(decompress);
                             server._ws_server.sockets.to(packet.room).emit('msg', { packet_id: "quest_msg", payload: encoder.compressData({ packet_id: "quest_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
                         }
                     }
@@ -270,18 +275,19 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["biggoron"] = function (server, packet, decompress) {
-                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)) {
                     return;
                 }
-                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_quest")){
+                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_quest")) {
                     server.getRoomsArray()[packet.room]["_quest"] = {};
                 }
-                if (!server.getRoomsArray()[packet.room]["_quest"].hasOwnProperty(decompress.packet_id)) {
-                    server.getRoomsArray()[packet.room]["_quest"][decompress.packet_id] = new IntegerStorage(decompress.packet_id);
+                let id = inst._packetNameCache_reverse[decompress.packet_id];
+                if (!server.getRoomsArray()[packet.room]["_quest"].hasOwnProperty(id)) {
+                    server.getRoomsArray()[packet.room]["_quest"][id] = new IntegerStorage(decompress.packet_id);
                 }
                 decompress["writeHandler"] = "saveData";
                 decompress["typeHandler"] = "biggoron";
-                let u = server.getRoomsArray()[packet.room]["_quest"][decompress.packet_id].update(decompress);
+                let u = server.getRoomsArray()[packet.room]["_quest"][id].update(decompress);
                 decompress.data.data = u.int;
                 packet.payload = encoder.compressData(decompress);
                 try {
@@ -299,24 +305,25 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["heart_containers"] = function (server, packet, decompress) {
-                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)) {
                     return;
                 }
-                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_heart_containers")){
+                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_heart_containers")) {
                     server.getRoomsArray()[packet.room]["_heart_containers"] = {};
                 }
-                if (!server.getRoomsArray()[packet.room].hasOwnProperty(decompress.packet_id)) {
-                    server.getRoomsArray()[packet.room]["_heart_containers"][decompress.packet_id] = new IntegerStorage(decompress.packet_id);
-                    server.getRoomsArray()[packet.room]["_heart_containers"][decompress.packet_id]._check = function (inst, packet) {
+                let id = inst._packetNameCache_reverse[decompress.packet_id];
+                if (!server.getRoomsArray()[packet.room].hasOwnProperty(id)) {
+                    server.getRoomsArray()[packet.room]["_heart_containers"][id] = new IntegerStorage(decompress.packet_id);
+                    server.getRoomsArray()[packet.room]["_heart_containers"][id]._check = function (inst, packet) {
                         let value = inst._int;
                         if (value === 0xFFFF) {
                             value = -1;
                         }
                         return packet.data.data > value;
                     }
-                    server.getRoomsArray()[packet.room]["_heart_containers"][decompress.packet_id]._int = 0xFFFF;
+                    server.getRoomsArray()[packet.room]["_heart_containers"][id]._int = 0xFFFF;
                 }
-                let u = server.getRoomsArray()[packet.room]["_heart_containers"][decompress.packet_id].update(decompress);
+                let u = server.getRoomsArray()[packet.room]["_heart_containers"][id].update(decompress);
                 decompress.data.data = u.int;
                 decompress["writeHandler"] = "saveData";
                 decompress["typeHandler"] = "heart_containers";
@@ -336,16 +343,17 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["double_defense"] = function (server, packet, decompress) {
-                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)) {
                     return;
                 }
-                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_heart_containers")){
+                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_heart_containers")) {
                     server.getRoomsArray()[packet.room]["_heart_containers"] = {};
                 }
-                if (!server.getRoomsArray()[packet.room]["_heart_containers"].hasOwnProperty(decompress.packet_id)) {
-                    server.getRoomsArray()[packet.room]["_heart_containers"][decompress.packet_id] = new IntegerStorage(decompress.packet_id);
+                let id = inst._packetNameCache_reverse[decompress.packet_id];
+                if (!server.getRoomsArray()[packet.room]["_heart_containers"].hasOwnProperty(id)) {
+                    server.getRoomsArray()[packet.room]["_heart_containers"][id] = new IntegerStorage(decompress.packet_id);
                 }
-                let u = server.getRoomsArray()[packet.room]["_heart_containers"][decompress.packet_id].update(decompress);
+                let u = server.getRoomsArray()[packet.room]["_heart_containers"][id].update(decompress);
                 decompress.data.data = u.int;
                 decompress["writeHandler"] = "saveData";
                 decompress["typeHandler"] = "double_defense";
@@ -365,16 +373,17 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["magic_bool"] = function (server, packet, decompress) {
-                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)) {
                     return;
                 }
-                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_magic")){
+                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_magic")) {
                     server.getRoomsArray()[packet.room]["_magic"] = {};
                 }
-                if (!server.getRoomsArray()[packet.room]["_magic"].hasOwnProperty(decompress.packet_id)) {
-                    server.getRoomsArray()[packet.room]["_magic"][decompress.packet_id] = new IntegerStorage(decompress.packet_id);
+                let id = inst._packetNameCache_reverse[decompress.packet_id];
+                if (!server.getRoomsArray()[packet.room]["_magic"].hasOwnProperty(id)) {
+                    server.getRoomsArray()[packet.room]["_magic"][id] = new IntegerStorage(decompress.packet_id);
                 }
-                let u = server.getRoomsArray()[packet.room]["_magic"][decompress.packet_id].update(decompress);
+                let u = server.getRoomsArray()[packet.room]["_magic"][id].update(decompress);
                 decompress.data.data = u.int;
                 decompress["writeHandler"] = "saveData";
                 decompress["typeHandler"] = "magic_bool";
@@ -394,16 +403,17 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["magic_size"] = function (server, packet, decompress) {
-                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)) {
                     return;
                 }
-                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_magic")){
+                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_magic")) {
                     server.getRoomsArray()[packet.room]["_magic"] = {};
                 }
-                if (!server.getRoomsArray()[packet.room]["_magic"].hasOwnProperty(decompress.packet_id)) {
-                    server.getRoomsArray()[packet.room]["_magic"][decompress.packet_id] = new IntegerStorage(decompress.packet_id);
+                let id = inst._packetNameCache_reverse[decompress.packet_id];
+                if (!server.getRoomsArray()[packet.room]["_magic"].hasOwnProperty(id)) {
+                    server.getRoomsArray()[packet.room]["_magic"][id] = new IntegerStorage(decompress.packet_id);
                 }
-                let u = server.getRoomsArray()[packet.room]["_magic"][decompress.packet_id].update(decompress);
+                let u = server.getRoomsArray()[packet.room]["_magic"][id].update(decompress);
                 decompress.data.data = u.int;
                 decompress["writeHandler"] = "saveData";
                 decompress["typeHandler"] = "magic_size";
@@ -423,16 +433,17 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["scene_"] = function (server, packet, decompress) {
-                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)) {
                     return;
                 }
-                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_scenes")){
+                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_scenes")) {
                     server.getRoomsArray()[packet.room]["_scenes"] = {};
                 }
-                if (!server.getRoomsArray()[packet.room]["_scenes"].hasOwnProperty(decompress.packet_id)) {
-                    server.getRoomsArray()[packet.room]["_scenes"][decompress.packet_id] = new IntegerArrayStorage(decompress.packet_id);
+                let id = inst._packetNameCache_reverse[decompress.packet_id];
+                if (!server.getRoomsArray()[packet.room]["_scenes"].hasOwnProperty(id)) {
+                    server.getRoomsArray()[packet.room]["_scenes"][id] = new IntegerArrayStorage(decompress.packet_id);
                 }
-                decompress.data.data = server.getRoomsArray()[packet.room]["_scenes"][decompress.packet_id].update(decompress);
+                decompress.data.data = server.getRoomsArray()[packet.room]["_scenes"][id].update(decompress);
                 decompress["writeHandler"] = "saveData";
                 decompress["typeHandler"] = "scene";
                 decompress["byte"] = Number(decompress.packet_id.replace("scene_", ""));
@@ -450,16 +461,17 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["event_flag_"] = function (server, packet, decompress) {
-                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)) {
                     return;
                 }
-                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_events")){
+                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_events")) {
                     server.getRoomsArray()[packet.room]["_events"] = {};
                 }
-                if (!server.getRoomsArray()[packet.room]["_events"].hasOwnProperty(decompress.packet_id)) {
-                    server.getRoomsArray()[packet.room]["_events"][decompress.packet_id] = new IntegerArrayStorage(decompress.packet_id);
+                let id = inst._packetNameCache_reverse[decompress.packet_id];
+                if (!server.getRoomsArray()[packet.room]["_events"].hasOwnProperty(id)) {
+                    server.getRoomsArray()[packet.room]["_events"][id] = new IntegerArrayStorage(decompress.packet_id);
                 }
-                decompress.data.data = server.getRoomsArray()[packet.room]["_events"][decompress.packet_id].update(decompress);
+                decompress.data.data = server.getRoomsArray()[packet.room]["_events"][id].update(decompress);
                 decompress["writeHandler"] = "saveData";
                 decompress["typeHandler"] = "events";
                 decompress["byte"] = Number(decompress.packet_id.replace("event_flag_", ""));
@@ -477,16 +489,17 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["item_flag_"] = function (server, packet, decompress) {
-                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)) {
                     return;
                 }
-                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_item_flags")){
+                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_item_flags")) {
                     server.getRoomsArray()[packet.room]["_item_flags"] = {};
                 }
-                if (!server.getRoomsArray()[packet.room]["_item_flags"].hasOwnProperty(decompress.packet_id)) {
-                    server.getRoomsArray()[packet.room]["_item_flags"][decompress.packet_id] = new IntegerArrayStorage(decompress.packet_id);
+                let id = inst._packetNameCache_reverse[decompress.packet_id];
+                if (!server.getRoomsArray()[packet.room]["_item_flags"].hasOwnProperty(id)) {
+                    server.getRoomsArray()[packet.room]["_item_flags"][id] = new IntegerArrayStorage(decompress.packet_id);
                 }
-                decompress.data.data = server.getRoomsArray()[packet.room]["_item_flags"][decompress.packet_id].update(decompress);
+                decompress.data.data = server.getRoomsArray()[packet.room]["_item_flags"][id].update(decompress);
                 decompress["writeHandler"] = "saveData";
                 decompress["typeHandler"] = "item_flags";
                 decompress["byte"] = Number(decompress.packet_id.replace("item_flag_", ""));
@@ -504,16 +517,17 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["inf_table_"] = function (server, packet, decompress) {
-                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)) {
                     return;
                 }
-                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_inf_flags")){
+                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_inf_flags")) {
                     server.getRoomsArray()[packet.room]["_inf_flags"] = {};
                 }
-                if (!server.getRoomsArray()[packet.room]["_inf_flags"].hasOwnProperty(decompress.packet_id)) {
-                    server.getRoomsArray()[packet.room]["_inf_flags"][decompress.packet_id] = new IntegerArrayStorage(decompress.packet_id);
+                let id = inst._packetNameCache_reverse[decompress.packet_id];
+                if (!server.getRoomsArray()[packet.room]["_inf_flags"].hasOwnProperty(id)) {
+                    server.getRoomsArray()[packet.room]["_inf_flags"][id] = new IntegerArrayStorage(decompress.packet_id);
                 }
-                decompress.data.data = server.getRoomsArray()[packet.room]["_inf_flags"][decompress.packet_id].update(decompress);
+                decompress.data.data = server.getRoomsArray()[packet.room]["_inf_flags"][id].update(decompress);
                 decompress["writeHandler"] = "saveData";
                 decompress["typeHandler"] = "inf_flags";
                 decompress["byte"] = Number(decompress.packet_id.replace("inf_table_", ""));
@@ -531,16 +545,17 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["dungeon_items_"] = function (server, packet, decompress) {
-                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)) {
                     return;
                 }
-                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_dungeon_items")){
+                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_dungeon_items")) {
                     server.getRoomsArray()[packet.room]["_dungeon_items"] = {};
                 }
-                if (!server.getRoomsArray()[packet.room]["_dungeon_items"].hasOwnProperty(decompress.packet_id)) {
-                    server.getRoomsArray()[packet.room]["_dungeon_items"][decompress.packet_id] = new IntegerArrayStorage(decompress.packet_id);
+                let id = inst._packetNameCache_reverse[decompress.packet_id];
+                if (!server.getRoomsArray()[packet.room]["_dungeon_items"].hasOwnProperty(id)) {
+                    server.getRoomsArray()[packet.room]["_dungeon_items"][id] = new IntegerArrayStorage(decompress.packet_id);
                 }
-                decompress.data.data =  server.getRoomsArray()[packet.room]["_dungeon_items"][decompress.packet_id].update(decompress);
+                decompress.data.data = server.getRoomsArray()[packet.room]["_dungeon_items"][id].update(decompress);
                 decompress["writeHandler"] = "saveData";
                 decompress["typeHandler"] = "dungeon_items";
                 decompress["byte"] = Number(decompress.packet_id.replace("dungeon_items_", ""));
@@ -553,16 +568,17 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["skulltula_flag_"] = function (server, packet, decompress) {
-                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)) {
                     return;
                 }
-                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_skulltulas")){
+                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_skulltulas")) {
                     server.getRoomsArray()[packet.room]["_skulltulas"] = {};
                 }
-                if (!server.getRoomsArray()[packet.room]["_skulltulas"].hasOwnProperty(decompress.packet_id)) {
-                    server.getRoomsArray()[packet.room]["_skulltulas"][decompress.packet_id] = new IntegerArrayStorage(decompress.packet_id);
+                let id = inst._packetNameCache_reverse[decompress.packet_id];
+                if (!server.getRoomsArray()[packet.room]["_skulltulas"].hasOwnProperty(id)) {
+                    server.getRoomsArray()[packet.room]["_skulltulas"][id] = new IntegerArrayStorage(decompress.packet_id);
                 }
-                decompress.data.data = server.getRoomsArray()[packet.room]["_skulltulas"][decompress.packet_id].update(decompress);
+                decompress.data.data = server.getRoomsArray()[packet.room]["_skulltulas"][id].update(decompress);
                 decompress["writeHandler"] = "saveData";
                 decompress["typeHandler"] = "skulltula_flag";
                 decompress["byte"] = Number(decompress.packet_id.replace("skulltula_flag_", ""));
@@ -575,18 +591,19 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["skulltula_count"] = function (server, packet, decompress) {
-                if (!server.getRoomsArray().hasOwnProperty(packet.room)){
+                if (!server.getRoomsArray().hasOwnProperty(packet.room)) {
                     return;
                 }
-                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_skulltulas")){
+                if (!server.getRoomsArray()[packet.room].hasOwnProperty("_skulltulas")) {
                     server.getRoomsArray()[packet.room]["_skulltulas"] = {};
                 }
-                if (!server.getRoomsArray()[packet.room]["_skulltulas"].hasOwnProperty(decompress.packet_id)) {
-                    server.getRoomsArray()[packet.room]["_skulltulas"][decompress.packet_id] = new IntegerStorage(decompress.packet_id);
+                let id = inst._packetNameCache_reverse[decompress.packet_id];
+                if (!server.getRoomsArray()[packet.room]["_skulltulas"].hasOwnProperty(id)) {
+                    server.getRoomsArray()[packet.room]["_skulltulas"][id] = new IntegerStorage(decompress.packet_id);
                 }
                 decompress["writeHandler"] = "saveData";
                 decompress["typeHandler"] = "skulltula_count";
-                let u = server.getRoomsArray()[packet.room]["_skulltulas"][decompress.packet_id].update(decompress);
+                let u = server.getRoomsArray()[packet.room]["_skulltulas"][id].update(decompress);
                 decompress.data.data = u.int;
                 packet.payload = encoder.compressData(decompress);
                 try {
@@ -596,8 +613,6 @@ class SaveSync {
                             let key = "item_gold_skulltula_token";
                             let icon = inst._icons.getIcon(key);
                             let str = inst._lang.getLocalizedString(key);
-                            logger.log({ packet_id: "inventory_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" });
-                            logger.log(decompress);
                             server._ws_server.sockets.to(packet.room).emit('msg', { packet_id: "inventory_msg", payload: encoder.compressData({ packet_id: "inventory_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4843" }) });
                         }
                     }

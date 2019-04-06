@@ -81,14 +81,14 @@ class SceneSync_API {
                 }
             });
             inst._api.registerEventHandler("onActorSpawned", function(event){
-                logger.log(event);
+                //logger.log(event);
                 if (inst._actorModules.hasOwnProperty(event.actorID)){
                     Object.keys(inst._actorModules[event.actorID]).forEach(function(key){
                         let actor_module = JSON.parse(JSON.stringify(inst._actorModules[event.actorID][key]));
                         actor_module["type"] = event.type;
                         actor_module["uuid"] = event.uuid;
                         actor_module["pointer"] = event.pointer;
-                        logger.log(actor_module);
+                        //logger.log(actor_module);
                         inst._emulator.sendViaSocket(actor_module);
                     });
                 }

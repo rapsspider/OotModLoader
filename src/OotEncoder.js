@@ -16,12 +16,12 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+// DON'T MIND THIS CLASS I'M RIPPING IT APART. COME BACK LATER.
+
 const zlib = require('zlib');
 const VERSION = require('./OotVersion');
 const jpack = require('jsonpack');
-const aes256 = require('aes256');
 const logger = require('./OotLogger')("Encoder");
-let enc_key = aes256.encrypt(VERSION, VERSION);
 
 class VersionMismatchError extends Error {
     constructor(message) {
@@ -33,29 +33,18 @@ class VersionMismatchError extends Error {
 
 class Encoder {
 
-    setEncKey(key){
-        enc_key = aes256(VERSION, key)
-    }
-
     compressData(data) {
-        let pack = jpack.pack(data);
-        let compress = zlib.deflateSync(pack);
-        let base = Buffer.from(compress).toString('base64');
-        return base;
+        //let pack = jpack.pack(data);
+        //let compress = zlib.deflateSync(pack);
+        //let base = Buffer.from(compress).toString('base64');
+        return data;
     }
 
     decompressData(data) {
-        try {
-            let buffer = Buffer.from(data, 'base64');
-            let decompress = zlib.inflateSync(buffer).toString();
-            let unpack = jpack.unpack(decompress);
-            return unpack;
-        } catch (err) {
-            if (err) {
-                logger.log(err.message)
-                throw new VersionMismatchError();
-            }
-        }
+        //let buffer = Buffer.from(data, 'base64');
+        //let decompress = zlib.inflateSync(buffer).toString();
+        //let unpack = jpack.unpack(decompress);
+        return data;
     }
 
 }

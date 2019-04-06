@@ -129,7 +129,7 @@ while run do
         writeByte(locked_puppet + 0x155, g)
         writeByte(locked_puppet + 0x156, b)
     end)
-    writeFourBytesUnsigned(
+    --[[writeFourBytesUnsigned(
         locked_puppet + 0x140,
         rhand_table[forms.gettext(rhand)]
     )
@@ -140,7 +140,7 @@ while run do
     writeFourBytesUnsigned(
         locked_puppet + 0x148,
         sheath_table[forms.gettext(sheath)]
-    )
+    )--]]
     if (next(frameHooks) ~= nil) then
         if (frameHooks[1].count >= frameHooks[1].max) then
             local n = table.remove(frameHooks, 1)

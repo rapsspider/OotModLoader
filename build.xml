@@ -9,7 +9,7 @@
   <property name="major" value="1"/>
   <property name="minor" value="0"/>
   <property name="emu" value="./src/for_emulator"/>
-  <property name="release_type" value="BETA"/>
+  <property name="release_type" value="DEV"/>
 
   <condition property="cmd.exec" value="cmd" else="/bin/sh">
     <os family="windows"/>
@@ -84,7 +84,6 @@
       <fileset dir="rom" includes="**"/>
     </copy>
     <copy file="config.ini" tofile="${tfolder}/config.ini"/>
-    <copy file="OotModLoader-config.json" tofile="${tfolder}/OotModLoader-config.json"/>
   </target>
 
   <target name="compile_scripts">

@@ -903,18 +903,24 @@ end
 local void_out_flag = false
 local has_been_in_game = false
 
-local chk_debug = 0x275A39E0
-local chk_N0 = 0x275A2440
+local chk_N0 = 0x00000000
+local SOFT_RESETTING = false;
 
 function checkForSoftReset()
-    local chk = readFourBytesUnsigned(0x00000004)
+    local chk = readFourBytesUnsigned(0x1CA1F6)
     if (chk == chk_N0) then has_been_in_game = true end
     if (chk ~= chk_N0 and has_been_in_game) then
         has_been_in_game = false
         downloadSaveData()
         sendPacket("softReset", math.random(), {})
         actor:reset()
+        SOFT_RESETTING = true;
         return true
+    else
+        if (SOFT_RESETTING == true) then 
+            sendPacket("softReset_Post", math.random(), {})
+            SOFT_RESETTING = false;
+        end 
     end
     return false
 end
