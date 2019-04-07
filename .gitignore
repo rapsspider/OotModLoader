@@ -16,3 +16,5 @@ electron_testing/
 turned_off_plugins/
 .vscode/
 bizhawk_dist/
+src/movement_test.json
+build.properties

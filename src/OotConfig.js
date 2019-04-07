@@ -48,6 +48,10 @@ class Configuration {
                 zora: ""
             };
             this.cfg.CLIENT["patchFile"] = "";
+            this.cfg.CLIENT["localPort"] = {
+                tcp: 1337,
+                udp: 60001
+            };
             this.cfg.PLUGINS = {};
             fs.writeFileSync(this.file, JSON.stringify(this.cfg, null, 2));
         }
@@ -64,6 +68,13 @@ class Configuration {
         if (!this.cfg.hasOwnProperty("PLUGINS")){
             this.cfg["PLUGINS"] = {};
         }
+        if (!this.cfg.CLIENT.hasOwnProperty("localPort")){
+            this.cfg.CLIENT["localPort"] = {
+                tcp: 1337,
+                udp: 60001
+            };
+        }
+        this._localPort = this.cfg.CLIENT.localPort;
         this._plugins = this.cfg.PLUGINS;
         if (this._GAME_ROOM === "") {
             this._GAME_ROOM = hri.random();

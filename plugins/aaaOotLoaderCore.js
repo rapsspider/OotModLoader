@@ -60,33 +60,6 @@ class OotLoaderCore {
         api.registerEvent("onActorSpawned");
         api.registerEvent("onFrameCount");
 
-        api.registerEvent("GUI_updateLobbyBrowser");
-        api.registerEvent("GUI_updateLobbyBrowser_ServerSide");
-        api.registerEvent("GUI_updateLobbyBrowser_Reply");
-
-        api.registerEventHandler("GUI_updateLobbyBrowser", function(event){
-            logger.log("Updating lobby list...");
-            client.sendDataToMasterOnChannel("GUI_MESSAGES", {packet_id: "GUI_updateLobbyBrowser"});
-        });
-
-        api.registerServerChannel("GUI_MESSAGES", function(server, packet){
-            packet.payload = encoder.decompressData(packet.payload);
-            if (packet.payload.packet_id === "GUI_updateLobbyBrowser"){
-                logger.log("Processing GUI lobby request...")
-                packet.payload.packet_id = "GUI_updateLobbyBrowser_Reply";
-                packet.payload["data"] = server.getAllRoomInfo();
-                packet.payload = encoder.compressData(packet.payload);
-                server._ws_server.sockets.to(packet.room).emit('msg', packet);
-            }
-            return false;
-        })
-
-        api.registerPacketTransformer("GUI_updateLobbyBrowser_Reply", function(packet){
-            logger.log("Transferring lobby info to client...");
-            api.postEvent({id: "GUI_updateLobbyBrowser_Reply", table: packet.payload.data});
-            return null;
-        });
-
         api.registerPacket({
             packet_id: "scene",
             addr: "@scene@",

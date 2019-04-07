@@ -31,7 +31,7 @@ function createWindow() {
     mainWindow = null
   })
 
-  setTimeout(function(){
+  setTimeout(function () {
     setupModLoader();
   }, 1000);
 
@@ -54,6 +54,7 @@ function setupModLoader() {
   event_reg("onPlayerJoined");
   event_reg("onPlayerDisconnected");
   event_reg("GUI_updateLobbyBrowser_Reply");
+  event_reg("GUI_ResetButton");
   ipcMain.on('postEvent', (event, arg) => {
     ooto.api.postEvent(arg);
   })
@@ -71,7 +72,7 @@ function setupModLoader() {
       }
     }
   }, 100);
-  mainWindow.webContents.openDevTools()
+  //mainWindow.webContents.openDevTools()
 }
 
 // This method will be called when Electron has finished

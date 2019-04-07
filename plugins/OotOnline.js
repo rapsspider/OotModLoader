@@ -213,6 +213,7 @@ class OotOnline {
         this._lastSeenState = -1;
         this._puppetsAwaitingSpawn = [];
         this._puppetsAwaitingSpawn_task = {};
+        this._nicknames = {};
     }
 
     get PuppetMap() {
@@ -241,7 +242,7 @@ class OotOnline {
     // Load json files in here.
     preinit() {
         CONFIG.setPluginDefaultValue("OotOnline", "max_players", 4);
-        if (CONFIG.getPluginValue("OotOnline", "max_players") > 16){
+        if (CONFIG.getPluginValue("OotOnline", "max_players") > 16) {
             CONFIG.setPluginValue("OotOnline", "max_players", 16)
         }
         this.setupTunics();
@@ -281,7 +282,7 @@ class OotOnline {
                 }
             });
 
-            api.registerEventHandler("OotOnline_forceSetTunicColor", function(event){
+            api.registerEventHandler("OotOnline_forceSetTunicColor", function (event) {
                 inst._tunic_colors[event.index] = event.color;
             });
 
@@ -483,6 +484,18 @@ class OotOnline {
                 inst.PuppetMap.push({ uuid: "", puppet: new Puppet() });
             }
 
+            api.registerEventHandler("GUI_ResetButton", function (event) {
+                inst._playerToPuppetMap = {};
+                inst._PuppetMap = [];
+                for (let i = 0; i < CONFIG.getPluginValue("OotOnline", "max_players") - 1; i++) {
+                    inst.PuppetMap.push({ uuid: "", puppet: new Puppet() });
+                }
+                Object.keys(inst.PuppetMap).forEach(function (key) {
+                    inst.PuppetMap[key].puppet.setup();
+                });
+                inst._nicknames = {};
+            });
+
             Object.keys(inst.PuppetMap).forEach(function (key) {
                 inst.PuppetMap[key].puppet.setup();
             });
@@ -501,7 +514,7 @@ class OotOnline {
                             break;
                         }
                     }
-                    if (!event.player.isMe){
+                    if (!event.player.isMe) {
                         if (playerSlot > -1) {
                             logger.log(event);
                             inst.PuppetMap[playerSlot].uuid = event.player.uuid;
@@ -545,7 +558,7 @@ class OotOnline {
                 }
             });
 
-            api.registerEventHandler("onSoftReset_Post", function(event){
+            api.registerEventHandler("onSoftReset_Post", function (event) {
                 Object.keys(inst.PuppetMap).forEach(function (player) {
                     if (inst.PuppetMap[player].puppet.isSpawnedInCurrentScene) {
                         inst.PuppetMap[player].puppet.clearPointer();
@@ -655,17 +668,24 @@ class OotOnline {
             });
 
             api.registerEventHandler("onPlayerJoined", function (event) {
+                emulator.sendViaSocket({ packet_id: "inventory_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: 1 * 16, sy: 19 * 16, sw: 16, sh: 16, msg: event.player.nickname + " has joined the game.", sound: "0x4828" })
+                inst._nicknames[event.player.uuid] = event.player.nickname;
+                logger.log(inst._nicknames);
             });
 
             api.registerEventHandler("onPlayerDisconnected", function (event) {
                 try {
-                    inst.PuppetMap[inst._playerToPuppetMap[event.player.uuid]].uuid = "";
                     inst.PuppetMap[inst._playerToPuppetMap[event.player.uuid]].puppet.shovelPuppet();
+                    inst.PuppetMap[inst._playerToPuppetMap[event.player.uuid]].uuid = "";
                     delete inst._playerToPuppetMap[event.player.uuid];
                     logger.log(
                         "Removing player " + event.player.uuid + " from puppet manager."
                     );
-                } catch (err) { }
+                    emulator.sendViaSocket({ packet_id: "inventory_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: 9 * 16, sy: 19 * 16, sw: 16, sh: 16, msg: inst._nicknames[event.player.uuid] + " has left the game.", sound: "0x4828" })
+                    delete inst._nicknames[event.player.uuid];
+                } catch (err) {
+                    logger.log(err.message);
+                 }
             });
 
             api.registerEventHandler("onServerConnection", function (event) {

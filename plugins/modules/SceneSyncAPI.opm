@@ -88,7 +88,6 @@ class SceneSync_API {
                         actor_module["type"] = event.type;
                         actor_module["uuid"] = event.uuid;
                         actor_module["pointer"] = event.pointer;
-                        //logger.log(actor_module);
                         inst._emulator.sendViaSocket(actor_module);
                     });
                 }

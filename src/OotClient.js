@@ -50,6 +50,7 @@ class Client {
         this.UDP_DISABLED = false;
         this._bandwidth = 0;
         this._bandwidth_tick = {};
+        this._disconnectEventHandlerId;
 
         (function (inst) {
             inst._packetTick = setInterval(function () {
@@ -122,6 +123,15 @@ class Client {
 
     setup() {
         (function (inst) {
+            if (CONFIG.isMaster){
+                CONFIG.master_server_ip = "127.0.0.1";
+            }
+            inst._disconnectEventHandlerId = api.registerEventHandler("GUI_ResetButton", function(event){
+                websocket.disconnect();
+                inst._udp.close();
+                inst._packetBuffer = {};
+                api.unregisterEventHandler("GUI_ResetButton", inst._disconnectEventHandlerId);
+            });
             websocket = IO_Client.connect("http://" + CONFIG.master_server_ip + ":" + CONFIG.master_server_port);
             websocket.on('connect', function () {
                 websocket.emit('version', {version: version});
@@ -143,7 +153,7 @@ class Client {
             websocket.on('room', function (data) {
                 logger.log(data.msg);
                 api.postEvent({ id: "onServerConnection", ip: CONFIG.master_server_ip, port: CONFIG.master_server_port, room: CONFIG.GAME_ROOM });
-                websocket.emit('room_ping', encoder.compressData({ room: CONFIG.GAME_ROOM, uuid: CONFIG.my_uuid, nickname: CONFIG.nickname }));
+                websocket.emit('room_ping', encoder.compressData({ room: CONFIG.GAME_ROOM, uuid: CONFIG.my_uuid, nickname: CONFIG.nickname, patchFile: CONFIG.patchFile }));
             });
             websocket.on('requestPatch', function (data) {
                 data = encoder.decompressData(data);

@@ -5,24 +5,36 @@ var ipcRenderer = require('electron').ipcRenderer;
 
 const RENDER_OBJ = {};
 let allow_lobby_refresh = false;
+let lobby_browser_loaded = false;
 let CONNECTED = false;
+var $ = global.jQuery = require('./js/jquery-3.3.1.min.js');
+var SERVER_URL = "http://localhost:8083/LobbyBrowser"
 
 onTabOpen["Lobby Browser"] = {
     tag: "Lobby Browser", callback: function () {
         allow_lobby_refresh = true;
+        if (!lobby_browser_loaded){
+            console.log("Refreshing lobby list...");
+            lobby_browser_loaded = true;
+            $.getJSON(SERVER_URL, function( data ) {
+                RENDER_OBJ.lobby_browser(data);
+            });
+        }
     }
 };
 
 onTabClosed["Lobby Browser"] = {
     tag: "Lobby Browser", callback: function () {
         allow_lobby_refresh = false;
+        lobby_browser_loaded = false;
     }
 };
 
 setInterval(function () {
     if (allow_lobby_refresh && CONNECTED) {
-        console.log("Refreshing lobby list...");
-        sendToMainProcess("postEvent", { id: "GUI_updateLobbyBrowser"});
+        $.getJSON(SERVER_URL, function( data ) {
+            RENDER_OBJ.lobby_browser(data);
+        });
     }
 }, 30 * 1000);
 
@@ -30,8 +42,17 @@ RENDER_OBJ["console"] = function (msg) {
     console.log(msg);
 }
 
+RENDER_OBJ["romhacks"] = function(data){
+}
+
+RENDER_OBJ["roms"] = function(data){
+}
+
 ipcRenderer.on('GUI_ConfigLoaded', function (wtfisthis, event) {
     processConfigObject(event.config);
+    RENDER_OBJ.romhacks(event.mods);
+    
+    RENDER_OBJ.roms(event.roms);
 });
 
 ipcRenderer.on('onConsoleMessage', function (wtfisthis, event) {
@@ -39,12 +60,20 @@ ipcRenderer.on('onConsoleMessage', function (wtfisthis, event) {
 });
 
 ipcRenderer.on('GUI_StartFailed', function (wtfisthis, event) {
-    document.getElementById("connect").disabled = false;
+    document.getElementById("connect").disabled = true;
     document.getElementById("connect").textContent = "Failed to start! :(";
 });
 
+ipcRenderer.on('GUI_ResetButton', function (wtfisthis, event) {
+    document.getElementById("connect").disabled = false;
+    document.getElementById("connect").textContent = "Connect to Server";
+});
+
+RENDER_OBJ["lobby_browser"] = function(data){
+}
+
 ipcRenderer.on('GUI_updateLobbyBrowser_Reply', function (wtfisthis, event) {
-    lobby_browser.setData(event.table);
+    RENDER_OBJ.lobby_browser(event.table);
 });
 
 ipcRenderer.on('onBizHawkInstall', function (wtfisthis, event) {

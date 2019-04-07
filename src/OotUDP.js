@@ -86,10 +86,14 @@ class OotUDPServer {
 
 class OotUDPClient {
     constructor(port, name) {
-        this._server = dgram.createSocket('udp4');
+        this._server;
         this._port = port;
         this._logger = require('./OotLogger')(name);
         this._onDataFn = function (msg) { };
+    }
+
+    close(){
+        this._server.close();
     }
 
     get logger() {
@@ -126,6 +130,7 @@ class OotUDPClient {
 
     setup() {
         (function (inst) {
+            inst._server = dgram.createSocket('udp4');
             inst.server.on('message', (msg, rinfo) => {
                 let p = JSON.parse(Buffer.from(msg).toString().split("#")[1]);
                 if (p.hasOwnProperty("payload")) {

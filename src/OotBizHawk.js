@@ -21,8 +21,7 @@ JsonSocket = require('json-socket');
 const CONFIG = require('./OotConfig');
 const udp = require('./OotUDP');
 const logger = require('./OotLogger')("BizHawkTCP");
-const LOCAL_PORT = 1337;
-const LOCAL_PORT_UDP = 60001;
+const fs = require("fs");
 
 class EmuConnection {
     constructor() {
@@ -32,7 +31,7 @@ class EmuConnection {
         this._processDataFn = function () { };
         this._connectedtoEmuCallcack = function () { };
         this._dynamicPackets = [];
-        this._udp = udp.server(LOCAL_PORT, "BizHawkUDP");
+        this._udp = udp.server(CONFIG._localPort.tcp, "BizHawkUDP");
         this._droppedPackets = 0;
         this._jSocket = null;
         if (CONFIG.isClient) {
@@ -56,7 +55,7 @@ class EmuConnection {
                         inst.sendViaSocket(p);
                     }
                 });
-                inst._zServer.listen(LOCAL_PORT, '127.0.0.1', function () {
+                inst._zServer.listen(CONFIG._localPort.tcp, '127.0.0.1', function () {
                     logger.log("Awaiting connection. Please load the .lua script in Bizhawk.");
                     inst._udp.setDataFn(inst._processDataFn);
                     inst._udp.setup();
@@ -78,7 +77,7 @@ class EmuConnection {
     }
 
     sendViaUDP(data) {
-        this._udp.sendTo_InternalUseOnly("127.0.0.1", LOCAL_PORT_UDP, data);
+        this._udp.sendTo_InternalUseOnly("127.0.0.1", CONFIG._localPort.udp, data);
     }
 
     sendViaSocket(data) {

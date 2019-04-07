@@ -36,6 +36,13 @@ local function write_file(path, content)
     file:close()
 end
 
+function readall(filename)
+  local fh = assert(io.open(filename, "rb"))
+  local contents = assert(fh:read("*a")) -- "a" in Lua 5.3; "*a" in Lua 5.1 and 5.2
+  fh:close()
+  return contents
+end
+
 local packet_cache = {}
 
 function _sendPacket(id, data, template, net)
@@ -63,6 +70,7 @@ function downloadSaveData(flag) end
 
 function connectToNode()
     if (readFourBytesUnsigned(0x1C8514) == 0x00100000 or readFourBytesUnsigned(0x1C8514) == 0x0) then return false end
+    local port = json.decode(readall("OotModLoader-data.json")).tcp;
     tcp = socket.tcp()
     udp = socket.udp()
     console.writeline("Connecting...")
@@ -144,7 +152,7 @@ function sendMessageWithIconAndSound(msg, icon, sx, sy, soundid)
             sy = sy,
             sw = 16,
             sh = 16,
-            mute = true
+            mute = false
         }
     )
 end
@@ -1000,7 +1008,7 @@ local packet_queue = {}
 function packetGet(net)
     if (connected == false) then
         connected = connectToNode()
-        if (connected == 1) then 
+        if (connected) then 
             console.writeline("Connected.")
         end
         return

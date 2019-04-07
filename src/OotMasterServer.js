@@ -29,6 +29,7 @@ const logger = require("./OotLogger")("Server");
 const time = require("./OotTimeEmulation");
 const api = require("./OotAPI");
 const version = require('./OotVersion');
+var path = require("path");
 
 const _channelHandlers = {};
 
@@ -98,13 +99,20 @@ class MasterServer {
     getAllRoomInfo(){
         let data = [];
         let rooms = this.getRoomsArray();
+        let i = 0;
         Object.keys(rooms).forEach(function(key){
             if (rooms[key].hasOwnProperty("clientList")){
                 let r = {};
+                r["index"] = i;
                 r["name"] = key;
                 r["isPrivate"] = rooms[key].password !== "d41d8cd98f00b204e9800998ecf8427e";
                 r["playerCount"] = rooms[key].length;
+                r["patchFile"] = "";
+                if (rooms[key].hasOwnProperty("patchFile")){
+                    r.patchFile = rooms[key].patchFile.name;
+                }
                 data.push(r);
+                i++;
             }
         });
         return data;
@@ -196,7 +204,6 @@ class MasterServer {
                     if (!inst.getRoomsArray().hasOwnProperty(data.room)) {
                         logger.log("Room " + data.room + " claimed by " + socket.id + ".");
                         socket.join(data.room);
-                        logger.log(inst.getRoomsArray());
                         server
                             .to(socket.id)
                             .emit("room", { msg: "Joined room " + data.room + "." });
@@ -208,11 +215,14 @@ class MasterServer {
                                 server.to(socket.id).emit("requestPatch", encoder.compressData({ patchFile: data.patchFile, room: data.room }));
                             }
                         }
+                        socket["ootRoom"] = data.room;
                         inst.getRoomsArray()[data.room]["clientList"][socket.id] = {
                             ip: socket.request.connection.remoteAddress.split(":")[3],
                             port: "unknown"
                         };
+                        logger.log(inst.getRoomsArray()[data.room]["clientList"]);
                         server.to(socket.id).emit("udp", { port: inst._udp.port });
+                        logger.log(data);
                     } else {
                         if (inst.getRoomsArray()[data.room]["password"] === data.password){
                             logger.log("Room " + data.room + " joined by " + socket.id + ".");
@@ -236,12 +246,15 @@ class MasterServer {
                 });
                 socket.on("sendPatch", function (data) {
                     logger.log("Received patch file for room " + data.room + ". Size: " + data.patch.byteLength + ".");
-                    inst.getRoomsArray()[data.room]["patchFile"] = data.patch;
-                    server.to(socket.id).emit('receivePatch', { data: inst.getRoomsArray()[data.room].patchFile })
+                    inst.getRoomsArray()[data.room]["patchFile"] = {data: data.patch, name: data.name.replace(path.extname(data.name), "")};
+                    server.to(socket.id).emit('receivePatch', { data: inst.getRoomsArray()[data.room].patchFile.data })
                 });
                 socket.on("disconnect", function () {
                     server.to(socket.ootRoom).emit("left", { uuid: socket.id });
-                    delete inst.getRoomsArray()[socket.ootRoom]["clientList"][socket.id];
+                    try{
+                        delete inst.getRoomsArray()[socket.ootRoom]["clientList"][socket.id];
+                    }catch(err){
+                    }
                 });
                 socket.on("room_ping", function (data) {
                     let d = encoder.decompressData(data);

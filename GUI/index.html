@@ -9,7 +9,7 @@
     <script src="./jquery-ui-1.12.1.custom/jquery-ui.min.js"></script>
     <script src="https://unpkg.com/jquery.terminal@1.x.x/js/jquery.terminal.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/jquery.terminal@1.x.x/css/jquery.terminal.min.css" />
-    <link href="./css/tabulator.min.css" rel="stylesheet">
+    <link href="./css/tabulator_midnight.min.css" rel="stylesheet">
     <script type="text/javascript" src="./js/tabulator.min.js"></script>
     <script>if (window.module) module = window.module;</script>
     <script>
@@ -31,23 +31,6 @@
                         break
                     }
                 }
-            });
-            var lobby_browser = new Tabulator("#lobby_browser", {
-                index: "index",
-                layout:"fitColumns",
-                tooltips: true,
-                pagination: "local",
-                paginationSize: 10,
-                movableCols: false,
-                initialSort: [
-                    { column: "index", dir: "desc" }
-                ],
-                columns: [
-                    { title: "index", width: 100, field: "index", sorter: "number", dir: "desc" },
-                    { title: "Lobby", width: 100, field: "name", sorter: "string" },
-                    { title: "Private", width: 100, field: "isPrivate", sorter: "boolean" },
-                    { title: "Players", width: 100, field: "playerCount", sorter: "number" },
-                ]
             });
         });
         $(function () {
@@ -97,7 +80,9 @@
             <label for="game_room">Lobby: </label><input type="text" name="game_room" id="_GAME_ROOM" /><br />
             <label for="game_password">Password: </label><input type="password" name="game_password"
                 id="_game_password" /><br />
-            <label for="mod">Romhack: </label><select id="mod">
+            <label for="rom">Rom: </label><select id="rom">
+            </select><br/>
+            <label for="mod">Mod: </label><select id="mod">
                 <option value="Vanilla">None</option>
             </select>
             <br />
@@ -145,9 +130,57 @@
                 name: 'OotModLoader',
                 prompt: '> '
             });
+        //🔒
+        var lobby_browser = new Tabulator("#lobby_browser", {
+            index: "index",
+            layout: "fitColumns",
+            tooltips: true,
+            pagination: "local",
+            paginationSize: 10,
+            movableCols: false,
+            initialSort: [
+                { column: "index", dir: "desc" }
+            ],
+            columns: [
+                { title: "index", field: "index", sorter: "number", dir: "desc", visible: false },
+                { title: "Lobby", field: "name", sorter: "string" },
+                {
+                    title: "Private", field: "isPrivate", sorter: "boolean", formatter: function (cell, formatterParams, onRendered) {
+                        //cell - the cell component
+                        //formatterParams - parameters set for the column
+                        //onRendered - function to call when the formatter has been rendered
+                        if (cell.getValue()) {
+                            return "\🔐";
+                        }
+                        return "\🌐";
+                    }
+                },
+                { title: "Players", field: "playerCount", sorter: "number" },
+                { title: "Mod", field: "patchFile", sorter: "string" }
+            ]
+        });
         let hooks = require('./renderer.js');
         hooks.console = function (msg) {
             term.echo(msg);
+        }
+        hooks.lobby_browser = function (data) {
+            lobby_browser.setData(data);
+        }
+        hooks.romhacks = function (data) {
+            for (let i = 0; i < data.length; i++) {
+                var x = document.getElementById("mod");
+                var option = document.createElement("option");
+                option.text = data[i];
+                x.add(option);
+            }
+        }
+        hooks.roms = function(data){
+            for (let i = 0; i < data.length; i++) {
+                var x = document.getElementById("rom");
+                var option = document.createElement("option");
+                option.text = data[i];
+                x.add(option);
+            }
         }
     </script>
 </body>

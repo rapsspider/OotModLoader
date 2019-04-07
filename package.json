@@ -9,6 +9,7 @@
   "bin": "./src/app.js",
   "dependencies": {
     "aes256": "^1.0.4",
+    "body-parser": "^1.18.3",
     "chalk": "^2.4.1",
     "cross-spawn": "^6.0.5",
     "download-file": "^0.1.5",

@@ -24,11 +24,12 @@ const crypto = require('crypto');
 const fs = require("fs");
 const jpack = require('jsonpack');
 
-let master_server_ip = "127.0.0.1";
-let master_server_port = "8081";
-let GAME_ROOM = "test";
+let master_server_ip = "192.99.70.23";
+let master_server_port = "8082";
+let GAME_ROOM = "dev_help";
 let nickname = "Lynn";
 let my_uuid = "";
+let version = "1.0.3-BETA";
 let logger = require('./OotLogger')("Lynn");
 
 let encoder = require('./OotEncoder');
@@ -69,6 +70,7 @@ let o = false;
 let int = null;
 
 function runDemo(){
+    sendDataToMasterOnChannel('scene', {packet_id: "scene", writeHandler: "81", data: 52});
     setTimeout(function(){
         console.log("Starting demo...");
         let m = JSON.parse(fs.readFileSync("movement_test.json"));
@@ -78,9 +80,7 @@ function runDemo(){
                     let packet = m.shift();
                     sendDataToMasterRaw(packet);
                 }else{
-                    clearInterval(int);
-                    int = null;
-                    logger.log("Demo end.");
+                    m = JSON.parse(fs.readFileSync("movement_test.json"));
                 }
             }, 50);
         }, 100);
@@ -89,7 +89,7 @@ function runDemo(){
 
 let save = [];
 
-let recording = false;
+let recording = true;
 
 let minutes = 5;
 
@@ -103,40 +103,46 @@ function startRecording(scene){
 function stopRecording(){
     sendDataToMasterOnChannel('scene', {packet_id: "scene", writeHandler: "81", data: -1});
     console.log("Stopping recording...");
+    fs.writeFileSync("movement_test.json", JSON.stringify(save));
     recording = false;
 }
 
 function record(data){
     if (recording){
         save.push(data);
-        fs.writeFileSync("movement_test.json", JSON.stringify(save));
     }
 }
 
 socket.on('connect', function(){
+    socket.emit('version', {version: version});
     o = false;
     socket.on('id', function(data){
+        data = encoder.decompressData(data);
         my_uuid = data.id;
         logger.log("Client: My UUID: " + my_uuid);
-        socket.emit('room', {room: GAME_ROOM});
+        socket.emit('room', encoder.compressData({ room: GAME_ROOM, nickname: nickname, patchFile: "", password: crypto.createHash('md5').update("").digest("hex")}));
     });
     socket.on('room', function(data){
         logger.log(data.msg);
-        socket.emit('room_ping', {room: GAME_ROOM, uuid: my_uuid, nickname: nickname});
+        socket.emit('room_ping', encoder.compressData({room: GAME_ROOM, uuid: my_uuid, nickname: nickname}));
     });
     socket.on('joined', function(data){
+        data = encoder.decompressData(data);
         logger.log(data.uuid + " joined.");
     });
     socket.on('room_ping', function(data){
+        data = encoder.decompressData(data);
         logger.log("Got ping from " + data.nickname + ".");
-        socket.emit('room_pong', {room: GAME_ROOM, uuid: my_uuid, nickname: nickname});
+        socket.emit('room_pong', encoder.compressData({room: GAME_ROOM, uuid: my_uuid, nickname: nickname}));
     });
     socket.on('room_pong', function(data){
+        data = encoder.decompressData(data);
         logger.log("Got pong from " + data.nickname + ".");
     });
     socket.on('msg', function(data){
         if (!o){
-            //startRecording(encoder.decompressData(data.payload).data);
+            logger.log(data);
+            //startRecording(52);
             runDemo();
             o = true;
         }

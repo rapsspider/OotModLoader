@@ -1180,6 +1180,7 @@ SAVE_DATA_HANDLER["hook"] = function()
     update_inf_table()
     update_dungeon_items()
     addToBuffer(function() setStatusMessage("") end)
+    client.saveram();
 end
 
 SAVE_DATA_HANDLER["debug_hook"] = function()

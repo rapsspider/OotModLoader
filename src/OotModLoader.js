@@ -44,12 +44,15 @@ const unzip = require('unzip');
 var ncp = require('ncp').ncp;
 var path = require("path");
 const spawn = require('cross-spawn');
+const lb = require("./OotLobbyBrowser");
 
 let packetTransformers = {};
 let packetRoutes = {};
 let clientsideHooks = {};
 let rom = "";
 let console_log = [];
+let isMasterSetup = false;
+let isClientSetup = false;
 
 console_hook = function (msg) {
     if (typeof (str) === "string") {
@@ -71,21 +74,36 @@ if (!fs.existsSync(rom_dir)) {
     logger.log("Trying " + path.resolve(rom_dir) + " instead.");
 }
 
+let roms_list = [];
+
 fs.readdirSync("./rom").forEach(file => {
     if (file.indexOf(".z64") > -1) {
-        rom = "./rom/" + file;
+        roms_list.push("./rom/" + file);
     }
     if (file.indexOf(".n64") > -1) {
-        rom = "./rom/" + file;
+        roms_list.push("./rom/" + file);
     }
     if (file.indexOf(".v64") > -1) {
-        rom = "./rom/" + file;
+        roms_list.push("./rom/" + file);
     }
 });
+
+rom = roms_list[roms_list.length - 1];
 
 if (rom !== "") {
     logger.log(rom);
 }
+
+let mods = [];
+
+fs.readdirSync("./mods").forEach(file => {
+    if (file.indexOf(".bps") > -1){
+        mods.push(file);
+    }
+});
+
+logger.log("Mods list:");
+logger.log(mods);
 
 api.registerEvent("BPSPatchDownloaded");
 api.registerEvent("onBizHawkInstall");
@@ -106,6 +124,7 @@ plugins.load(function () {
     if (BUILD_TYPE !== "GUI") {
         if (CONFIG.isMaster) {
             master.setup();
+            lb.setup();
         }
         if (CONFIG.isClient) {
             client.setProcessFn(processData);
@@ -121,22 +140,31 @@ plugins.load(function () {
             });
             logger.log("Unzipping BizHawk...");
             fs.createReadStream('./BizHawk-2.3.1.zip').pipe(unzip.Extract({ path: './BizHawk' })).on('close', function () {
+                api.postEvent({ id: "onBizHawkInstall", done: true });
             });
             if (!fs.existsSync("./BizHawk/config.ini")) {
                 fs.copyFileSync(LUA_LOC + "/config.ini", "./BizHawk/config.ini");
             }
-            api.postEvent({ id: "onBizHawkInstall", done: true });
         }
         api.registerEvent("GUI_StartButtonPressed");
         api.registerEvent("GUI_StartFailed");
+        api.registerEvent("GUI_ResetButton");
+
         logger.log("Awaiting start command from GUI.");
         api.registerEventHandler("GUI_StartButtonPressed", function (event) {
             if (CONFIG.isMaster) {
-                master.setup();
+                if (!isMasterSetup){
+                    master.setup();
+                    lb.setup();
+                    isMasterSetup = true;
+                }
             }
             if (CONFIG.isClient) {
-                client.setProcessFn(processData);
-                client.setup();
+                if (!isClientSetup){
+                    client.setProcessFn(processData);
+                    client.setup();
+                    isClientSetup = true;
+                }
             }
             logger.log("Starting BizHawk...");
             try {
@@ -147,6 +175,11 @@ plugins.load(function () {
                 fs.writeFileSync(path.resolve(lobby_path), clean_rom_data);
                 logger.log("Loading " + path.resolve(lobby_path) + ".");
                 var child = spawn('./BizHawk/EmuHawk.exe', ['--lua=' + path.resolve("./BizHawk/Lua/OotModLoader.lua"), path.resolve(lobby_path)], { stdio: 'inherit' });
+                child.on('close', function(code, signal){
+                    logger.log("BizHawk has closed!");
+                    api.postEvent({id: "GUI_ResetButton", code: code});
+                    isClientSetup = false;
+                });
             } catch (err) {
                 api.postEvent({ id: "GUI_StartFailed" });
                 logger.log(err.message);
@@ -179,6 +212,7 @@ plugins.load(function () {
                 return console.error(err);
             }
             logger.log("Installed Lua files!");
+            fs.writeFileSync("./BizHawk/Lua/OotModLoader-data.json", JSON.stringify(CONFIG._localPort));
         });
         ncp(LUA_LOC + "/mime", "./BizHawk/mime", function (err) {
             if (err) {
@@ -276,4 +310,4 @@ api.registerEventHandler("BPSPatchDownloaded", function (event) {
     }
 });
 
-module.exports = { api: api, config: CONFIG, console: console_log };
+module.exports = { api: api, config: CONFIG, console: console_log , mods: mods, roms: roms_list};
