@@ -4,6 +4,7 @@
     }
 
     template(parent, api, emulator, data) {
+        console.log(data)
         if (data.hasOwnProperty("filter")) {
             parent.api.computeActor(data.actor + "|" + data.offset, data.actorid, parent.api.actorCategories[data.actorCategory], data.offset, data.readHandler, data.size, data.filter);
         } else {
