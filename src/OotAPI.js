@@ -18,6 +18,7 @@
 
 const emulator = require(global.OotRunDir + "/OotBizHawk");
 const logger = require('./OotLogger')("API");
+const fs = require("fs");
 
 class OotAPI {
     constructor() {
@@ -112,7 +113,8 @@ class OotAPI {
     registerPacket(packet) {
         let p = packet;
         if (typeof packet === "string") {
-            p = require(packet);
+            let d = fs.readFileSync(packet).toString().replace("﻿", "");
+            p = JSON.parse(d);
         }
         emulator.registerDynamicPacket({ packet_id: "registerPacket", data: p });
     }
