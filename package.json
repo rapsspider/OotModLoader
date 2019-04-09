@@ -8,7 +8,7 @@
   },
   "bin": "./src/app.js",
   "dependencies": {
-    "aes256": "^1.0.4",
+    "asar": "^1.0.0",
     "body-parser": "^1.18.3",
     "chalk": "^2.4.1",
     "cross-spawn": "^6.0.5",
@@ -20,7 +20,7 @@
     "jsonpack": "^1.1.5",
     "nat-upnp": "^1.1.1",
     "ncp": "^2.0.0",
-    "plugin-system": "^0.2.1",
+    "require-from-string": "^2.0.2",
     "restify": "^7.2.1",
     "serve-static-restify": "^2.1.0",
     "socket.io": "^2.1.1",
