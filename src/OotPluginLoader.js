@@ -16,20 +16,138 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-const loadPlugins = require('plugin-system');
 const logger = require('./OotLogger')("PluginManager");
 const fs = require("fs");
 const gameshark = require(global.OotRunDir + "/GamesharkToInjectConverter");
 const emulator = require(global.OotRunDir + "/OotBizHawk");
 var util = require('util');
+const path = require('path');
 const api = require(global.OotRunDir + "/OotAPI");
+const asar = require('asar/lib/disk');
+var requireFromString = require('require-from-string');
+let fs_protos = { readFileSync: {}, readdirSync: {} };
+
+class PluginSystem {
+    constructor() {
+        this._plugins = [];
+        this._asar_plugins = [];
+
+        (function (inst) {
+            fs_protos.readFileSync = fs.readFileSync;
+            fs_protos.readdirSync = fs.readdirSync;
+            fs.readFileSync = function (_path, options) {
+                let f;
+                let id;
+                let relPath = _path.replace("./", "");
+                for (let i = 0; i < inst._asar_plugins.length; i++) {
+                    try {
+                        f = inst._asar_plugins[i].getFile(relPath);
+                    } catch (err) {
+                        f = null;
+                    }
+                    if (f) {
+                        id = i;
+                        break;
+                    }
+                }
+                if (f) {
+                    return asar.readFileSync(inst._asar_plugins[id], _path, f);
+                } else {
+                    return fs_protos.readFileSync(_path, options);
+                }
+            }
+
+            fs.readdirSync = function (_path, options) {
+                let f = [];
+                let id;
+                let relPath = _path.replace("./", "");
+                let search = relPath.replace("/", "\\");
+                for (let i = 0; i < inst._asar_plugins.length; i++) {
+                    let list = inst._asar_plugins[i].listFiles();
+                    for (let j = 0; j < list.length; j++) {
+                        if (list[j].indexOf(search) > -1 && list[j].indexOf(".") > -1) {
+                            let k = list[j].replace("/\\/", "/");
+                            k = k.substring(1, k.length);
+                            f.push(path.basename(k));
+                        }
+                    }
+                }
+                if (f.length > 0){
+                    return f;
+                }else{
+                    return fs_protos.readdirSync(_path, options);
+                }
+            }
+
+            function pluginRequire(_path) {
+                let f;
+                let id;
+                let relPath = path.relative(api._plugindir, _path);
+                relPath = relPath.replace("..\\", "");
+                relPath = relPath.replace("/\\/", "/");
+                for (let i = 0; i < inst._asar_plugins.length; i++) {
+                    try {
+                        f = inst._asar_plugins[i].getFile(relPath);
+                    } catch (err) {
+                        f = null;
+                    }
+                    if (f) {
+                        id = i;
+                        break;
+                    }
+                }
+                if (f) {
+                    return requireFromString(asar.readFileSync(inst._asar_plugins[id], _path, f).toString());
+                } else {
+                    return require(path.resolve(api._plugindir, _path));
+                }
+            };
+
+            global["pluginRequire"] = pluginRequire;
+        })(this)
+    }
+
+    loadPlugins(params) {
+        (function (inst) {
+            for (let i = 0; i < params.paths.length; i++) {
+                fs.readdirSync(params.paths[i]).forEach(function (file) {
+                    if (file.indexOf(".js") > -1) {
+                        inst._plugins.push(require(path.join(params.paths[i], file)));
+                    } else if (file.indexOf(".asar") > -1) {
+                        logger.log(file);
+                        inst._asar_plugins.push(asar.readFilesystemSync(path.join(params.paths[i], file)));
+                        logger.log(inst._asar_plugins[inst._asar_plugins.length - 1].listFiles());
+                        let manifest = inst._asar_plugins[inst._asar_plugins.length - 1].getFile("manifest.json");
+                        if (manifest) {
+                            let parse_manifest = JSON.parse(asar.readFileSync(inst._asar_plugins[inst._asar_plugins.length - 1], path.join("manifest.json"), manifest).toString());
+                            logger.log(parse_manifest);
+                            inst._plugins.push(pluginRequire(parse_manifest.mainFile));
+                        }
+                    }
+                });
+            }
+        })(this);
+        return this;
+    }
+
+    then(fn) {
+        try {
+            fn(this._plugins)
+        } catch (err) {
+            logger.log(err, "red");
+            logger.log(err.stack, "red");
+        }
+    }
+}
+
+pluginSystem = new PluginSystem();
 
 class PluginLoader {
     constructor() {
     }
 
     load(callback) {
-        loadPlugins(
+        pluginSystem.loadPlugins(
             {
                 paths: [
                     process.cwd() + '/plugins/',
@@ -55,10 +173,6 @@ class PluginLoader {
                 logger.log("Plugin loading complete.", "green");
                 callback();
             })
-            .catch(function onError(err) {
-                logger.log(err, "red");
-                logger.log(err.stack, "red");
-            });
         let payloads = fs.readdirSync(process.cwd() + '/plugins/payloads_10');
         let p = [];
         logger.log("Starting payload loading phase.", "green");
