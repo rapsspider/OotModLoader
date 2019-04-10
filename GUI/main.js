@@ -33,7 +33,7 @@ function createWindow() {
   })
 
   ipcMain.on("onWindowReady", (event, arg) => {
-    setTimeout(function(){
+    setTimeout(function () {
       setupModLoader();
     }, 2000);
   });
@@ -41,12 +41,13 @@ function createWindow() {
 }
 
 function setupModLoader() {
+  // Tell computers that are trying to start us in appdata to fuck off.
+  process.chdir(path.dirname(process.argv[0]));
   ooto = require('./OotModLoader')
   let event_reg = function (id) {
     ooto.api.registerEventHandler(id, function (event) {
       console.log(event)
       if (mainWindow !== null) {
-        console.log(event);
         mainWindow.webContents.send(event.id, event);
       }
     });
@@ -66,6 +67,7 @@ function setupModLoader() {
     setTimeout(function () {
       if (mainWindow !== null) {
         mainWindow.webContents.send("GUI_ConfigLoaded", ooto);
+        mainWindow.webContents.send("argv", process.argv)
       }
     }, 1000);
   }

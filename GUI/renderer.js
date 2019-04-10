@@ -56,6 +56,10 @@ ipcRenderer.on('GUI_ConfigLoaded', function (wtfisthis, event) {
     RENDER_OBJ.roms(event.roms);
 });
 
+ipcRenderer.on('argv', function (wtfisthis, event) {
+    console.log(event);
+});
+
 ipcRenderer.on('onConsoleMessage', function (wtfisthis, event) {
     RENDER_OBJ.console(event.msg);
 });
