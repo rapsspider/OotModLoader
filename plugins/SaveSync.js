@@ -498,9 +498,6 @@ class SaveSync {
                     let packet_id = inst._packetNameCache[key];
                     emulator.sendViaSocket({ packet_id: packet_id, writeHandler: "saveData", typeHandler: inst._packetNameToHandlerMap[packet_id], data: packet.payload.data[key] });
                 });
-
-                //packet.payload["writeHandler"] = "saveData";
-                //packet.payload["typeHandler"] = inst._packetNameToHandlerMap[];
                 return null;
             });
 
