@@ -25,6 +25,7 @@ class Version {
         logger.logQuietly("v" + this._VERSION + " loading...", "green");
         logger.logQuietly("Coded by: denoflions, MelonSpeedruns, Ideka, and glank", "green");
         logger.logQuietly("Testers: Psi-Hate.", "green");
+        logger.logQuietly("Notification icons drawn by: Nikki.", "green");
     }
 
     get VERSION() {
