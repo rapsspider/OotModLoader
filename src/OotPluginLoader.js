@@ -31,6 +31,9 @@ class PluginSystem {
     constructor() {
         this._plugins = [];
         this._asar_plugins = [];
+        api.registerEvent("onPluginPreinit");
+        api.registerEvent("onPluginInit");
+        api.registerEvent("onPluginPostinit");
 
         (function (inst) {
             fs_protos.readFileSync = fs.readFileSync;
@@ -121,7 +124,12 @@ class PluginSystem {
                         if (manifest) {
                             let parse_manifest = JSON.parse(asar.readFileSync(inst._asar_plugins[inst._asar_plugins.length - 1], path.join("manifest.json"), manifest).toString());
                             logger.log(parse_manifest);
-                            inst._plugins.push(pluginRequire(parse_manifest.mainFile));
+                            let plugin = pluginRequire(parse_manifest.mainFile);
+                            plugin["_manifest"] = {
+                                name: plugins[i]._name,
+                                desc: "Put stuff here!"
+                            };
+                            inst._plugins.push(plugin);
                         }
                     }
                 });
@@ -157,18 +165,22 @@ class PluginLoader {
             .then(function onSuccess(plugins) {
                 logger.log("Starting preinit phase.", "green");
                 for (let i = 0; i < plugins.length; i++) {
+                    api.registerPlugin(plugins[i]);
                     logger.log("Plugin Preinit: " + plugins[i]._name);
                     plugins[i].preinit();
+                    api.postEvent({id: "onPluginPreinit", plugin: plugins[i]});
                 }
                 logger.log("Starting init phase.", "green");
                 for (let i = 0; i < plugins.length; i++) {
                     logger.log("Plugin Init: " + plugins[i]._name);
                     plugins[i].init();
+                    api.postEvent({id: "onPluginInit", plugin: plugins[i]});
                 }
                 logger.log("Starting postinit phase.", "green");
                 for (let i = 0; i < plugins.length; i++) {
                     logger.log("Plugin Postinit: " + plugins[i]._name);
                     plugins[i].postinit();
+                    api.postEvent({id: "onPluginPostinit", plugin: plugins[i]});
                 }
                 logger.log("Plugin loading complete.", "green");
                 callback();
