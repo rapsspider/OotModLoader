@@ -23,4 +23,3 @@ skulltula_flag_21
 skulltula_flag_22
 skulltula_flag_23
 skulltula_flag_24
-skulltula_count

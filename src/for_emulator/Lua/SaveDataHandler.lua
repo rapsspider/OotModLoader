@@ -197,12 +197,13 @@ local upgrade_2_payloads = {
         level_3 = {1, 0},
         level_4 = {1, 1}
     },
-    upgrade_wallet = {level_0 = {0, 0}, level_1 = {0, 1}, level_2 = {1, 0}},
+    upgrade_wallet = {level_0 = {0, 0}, level_1 = {0, 1}, level_2 = {1, 0}, level_3 = {1, 1}},
     upgrade_scale = {level_0 = {0, 0}, level_1 = {0, 1}, level_2 = {1, 0}}
 }
+
 local upgrade_2_quantities = {
     upgrade_deku_seeds = {level_0 = 0, level_1 = 30, level_2 = 40, level_3 = 50},
-    upgrade_wallet = {level_0 = 99, level_1 = 200, level_2 = 500, level_3 = 9999},
+    upgrade_wallet = {level_0 = 99, level_1 = 200, level_2 = 500, level_3 = 999},
     upgrade_scale = {level_0 = 0, level_1 = 0, level_2 = 0}
 }
 
@@ -951,16 +952,22 @@ function handleInventorySlotUpdate(packet)
     if (last == 255) then
         last = -1;
     end
-    if (packet.data.data == 255) then
-        packet.data.data = -1;
+    if (packet.data == 255) then
+        packet.data = -1;
     end
-    SAVE_DATA_HANDLER["console"].log(tostring(last) .. " vs " .. tostring(packet.data.data))
-    if (packet.data.data > last) then 
+    if (packet.data > last) then 
         writeByte(
             save_handler_context_map.inventory.read[packet.packet_id],
-            packet.data.data
+            packet.data
         )
-        if (last == 0xFF or packet.data.data == 0xFF) then return end
+        if (packet.packet_id == "inventory_slot_8") then 
+            -- Got bombchus. Give the player some.
+            local qty = readByte(save_context + ammo_offset + 0x8);
+            if (qty == 0) then 
+                writeByte(save_context + ammo_offset + 0x8, 10);
+            end 
+        end
+        if (last == 0xFF or packet.data == 0xFF) then return end
         -- Check buttons.
         local addr = 0x600108
         local addr2 = addr + 0x4
@@ -969,22 +976,22 @@ function handleInventorySlotUpdate(packet)
         local d = readByte(0x11A638 + 2)
         local r = readByte(0x11A638 + 3)
         if (b == last) then
-            writeByte(0x11A638 + 0, packet.data.data)
+            writeByte(0x11A638 + 0, packet.data)
             writeFourBytesUnsigned(addr2, 0x00000000)
             SAVE_DATA_HANDLER["console"].log("Updating " .. "B" .. " button")
         end
         if (l == last) then
-            writeByte(0x11A638 + 1, packet.data.data)
+            writeByte(0x11A638 + 1, packet.data)
             writeFourBytesUnsigned(addr2, 0x00000001)
             SAVE_DATA_HANDLER["console"].log("Updating " .. "C-Left" .. " button")
         end
         if (d == last) then
-            writeByte(0x11A638 + 2, packet.data.data)
+            writeByte(0x11A638 + 2, packet.data)
             writeFourBytesUnsigned(addr2, 0x00000002)
             SAVE_DATA_HANDLER["console"].log("Updating " .. "C-Down" .. " button")
         end
         if (r == last) then
-            writeByte(0x11A638 + 3, packet.data.data)
+            writeByte(0x11A638 + 3, packet.data)
             writeFourBytesUnsigned(addr2, 0x00000003)
             SAVE_DATA_HANDLER["console"].log("Updating " .. "C-Right" .. " button")
         end
@@ -1024,7 +1031,7 @@ function handleUpgradeSlotUpdate(packet)
     local key = upgrade_lookup_table[packet.packet_id]
     local addr = upgrade_address_lookup_table[key]
     local target = upgrade_objects[key].targets[packet.packet_id]
-    local payload = upgrade_objects[key].payloads[packet.packet_id][IntToLevel(packet.data.data)]
+    local payload = upgrade_objects[key].payloads[packet.packet_id][IntToLevel(packet.data)]
     local r = readByteAsBinary(addr)
     local c = 0
     for k, v in pairs(target) do
@@ -1032,7 +1039,7 @@ function handleUpgradeSlotUpdate(packet)
         r[v] = payload[c]
     end
     writeByteAsBinary(addr, r)
-    local ammo_key = packet.packet_id .. "_" .. tostring(packet.data.data)
+    local ammo_key = packet.packet_id .. "_" .. tostring(packet.data)
     if (ammo_map[ammo_key] ~= nil) then
         local current_ammo = readByte(save_context + ammo_offset + ammo_item_map[packet.packet_id]);
         if (current_ammo < ammo_map[ammo_key]) then
@@ -1048,7 +1055,7 @@ function handleEquipmentSlotUpgrade(packet)
     local addr = equipment_lookup_table[packet.packet_id]
     local bit = equipment_bit_lookup_table[packet.packet_id]
     local r = readByteAsBinary(addr)
-    r[bit] = packet.data.data
+    r[bit] = packet.data
     writeByteAsBinary(addr, r)
 end
 
@@ -1056,13 +1063,13 @@ function handleQuestSlotUpgrade(packet)
     local addr = quest_lookup_table[packet.packet_id]
     local bit = quest_bit_lookup_table[packet.packet_id]
     local r = readByteAsBinary(addr)
-    r[bit] = packet.data.data
+    r[bit] = packet.data
     writeByteAsBinary(addr, r)
 end
 
 function handleBiggoronSlotUpgrade(packet)
     local addr = save_context + biggoron_offset
-    writeByte(addr, packet.data.data)
+    writeByte(addr, packet.data)
 end
 
 local full_heal_offset = 0x1424
@@ -1076,23 +1083,26 @@ end
 function handleHeartContainerSlotUpgrade(packet)
     local addr = save_context + heart_container_offset
     local r = readTwoByteUnsigned(addr)
-    if (packet.data.data > r) then
-        writeTwoByteUnsigned(addr, packet.data.data)
+    if (packet.data > r) then
+        writeTwoByteUnsigned(addr, packet.data)
         triggerFullHeal(true)
     end
 end
 
 function handleDoubleDefenseSlotUpgrade(packet)
     local addr = save_context + defense_offset
-    writeByte(addr, packet.data.data)
+    if (packet.data > 0) then 
+        writeByte(save_context + 0x3D, 0x1);
+    end
+    writeByte(addr, packet.data)
 end
 
 function handleMagicSlotUpgrade(packet)
     local addr = save_context + magic_offsets.bool
     local addr2 = save_context + magic_offsets.limit + 0x1
     local addr3 = save_context + magic_offsets.qty
-    if (packet.data.data > 0) then
-        writeByte(addr, packet.data.data)
+    if (packet.data > 0) then
+        writeByte(addr, packet.data)
         writeByte(addr2, 0x30)
         writeByte(addr3, 0x30)
     end
@@ -1102,8 +1112,8 @@ function handleMagicSlotUpgrade2(packet)
     local addr = save_context + magic_offsets.size
     local addr2 = save_context + magic_offsets.limit + 0x1
     local addr3 = save_context + magic_offsets.qty
-    if (packet.data.data > 0) then
-        writeByte(addr, packet.data.data)
+    if (packet.data > 0) then
+        writeByte(addr, packet.data)
         writeByte(addr2, 0x60)
         writeByte(addr3, 0x60)
     end
@@ -1112,17 +1122,18 @@ end
 local isDirty = false
 local dirtyTimer = -1
 
-function handleBitflagBundle(packet, offset)
+function handleBitflagBundle(packet, offset, key)
+    packet["byte"] = tonumber(bizstring.replace(packet.packet_id, key, ""));
     local addr = save_context + offset + packet.byte
     local current = readByteAsBinary(addr)
     local markDirty = false
     for k, v in pairs(current) do
-        if (v == 1 and packet.data.data[k] == 0) then
-            packet.data.data[k] = 1
+        if (v == 1 and packet.data[k] == 0) then
+            packet.data[k] = 1
             markDirty = true
         end
     end
-    writeByteAsBinary(addr, packet.data.data)
+    writeByteAsBinary(addr, packet.data)
     if (markDirty) then
         isDirty = true
         dirtyTimer = 100
@@ -1131,35 +1142,36 @@ function handleBitflagBundle(packet, offset)
 end
 
 function handleSceneSlotUpgrade(packet)
-    handleBitflagBundle(packet, scene_offset);
+    handleBitflagBundle(packet, scene_offset, "scene_");
 end
 
 function handleEventSlotUpgrade(packet)
-    handleBitflagBundle(packet, event_flags_offset);
+    handleBitflagBundle(packet, event_flags_offset, "event_flag_");
 end
 
 function handleItemFlagSlotUpgrade(packet)
-    handleBitflagBundle(packet, item_flags_offset);
+    handleBitflagBundle(packet, item_flags_offset, "item_flag_");
 end
 
 function handleInfFlagSlotUpgrade(packet)
-    handleBitflagBundle(packet, inf_table_offset);
+    handleBitflagBundle(packet, inf_table_offset, "inf_table_");
 end
 
 function handleDungeonItemSlotUpgrade(packet)
-    handleBitflagBundle(packet, dungeon_items_offset);
+    handleBitflagBundle(packet, dungeon_items_offset, "dungeon_items_");
 end
 
 function handleSkulltulaFlagSlotUpgrade(packet)
-    handleBitflagBundle(packet, skulltula_flags_offset);
+    handleBitflagBundle(packet, skulltula_flags_offset, "skulltula_flag_");
 end
 
 function handleSkulltulaCountSlotUpgrade(packet)
     local addr = save_context + skulltula_count_offset
-    writeTwoByteUnsigned(addr, packet.data.data)
+    writeTwoByteUnsigned(addr, packet.data)
 end
 
 SAVE_DATA_HANDLER["hook"] = function()
+    SAVE_DATA_HANDLER["send"]("save_update_status", {bool=true});
     update_inventory(true)
     update_upgrades(0, true)
     update_upgrades(1, true)
@@ -1179,8 +1191,11 @@ SAVE_DATA_HANDLER["hook"] = function()
     update_item_flags()
     update_inf_table()
     update_dungeon_items()
-    addToBuffer(function() setStatusMessage("") end)
-    client.saveram();
+    addToBuffer(function() 
+        setStatusMessage("") 
+        SAVE_DATA_HANDLER["send"]("save_update_status", {bool=false});
+        client.saveram();
+    end)
 end
 
 SAVE_DATA_HANDLER["debug_hook"] = function()
