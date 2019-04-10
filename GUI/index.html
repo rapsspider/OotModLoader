@@ -4,12 +4,12 @@
     <title>OotModLoader Launcher</title>
     <script>if (typeof module === 'object') { window.module = module; module = undefined; }</script>
     <script src="./js/jquery-3.3.1.min.js"></script>
-    <link rel="stylesheet" href="./jquery-ui-1.12.1.custom/jquery-ui.min.css">
+    <link rel="stylesheet" href="./jquery-ui-1.12.1.custom/jquery-ui.css">
     <link rel="stylesheet" href="./jquery-ui-1.12.1.custom/jquery-ui.theme.min.css">
     <script src="./jquery-ui-1.12.1.custom/jquery-ui.min.js"></script>
     <script src="https://unpkg.com/jquery.terminal@1.x.x/js/jquery.terminal.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/jquery.terminal@1.x.x/css/jquery.terminal.min.css" />
-    <link href="./css/tabulator_midnight.min.css" rel="stylesheet">
+    <link href="./css/tabulator_midnight.css" rel="stylesheet">
     <script type="text/javascript" src="./js/tabulator.min.js"></script>
     <script>if (window.module) module = window.module;</script>
     <script>
@@ -32,17 +32,34 @@
                     }
                 }
             });
+            $(document).tooltip();
         });
         $(function () {
             $(".widget input[type=submit], .widget a, .widget button").button();
             $("button, a").click(function (event) { });
         });
+        $(function () {
+            var x = 0;
+            setInterval(function () {
+                x -= 0.5;
+                if (Number($('body').css('background-position-x').replace("px", "")) < -5000) {
+                    $('body').css('background-position', '0px 0');
+                    x = 0;
+                } else {
+                    $('body').css('background-position', x + 'px 0');
+                }
+            }, 10);
+        });
+        function resetMasterServerInfo(data) {
+            document.getElementById("_master_server_ip").value = "192.99.70.23";
+            document.getElementById("_master_server_port").value = "8082";
+        }
     </script>
     <style>
         body {
             background-color: black;
             background-image: url("./images/oototransparent.png");
-            background-repeat: no-repeat;
+            background-repeat: repeat;
             background-position: center;
             background-attachment: fixed;
             background-size: cover;
@@ -60,66 +77,131 @@
             padding: 20px;
             overflow: auto;
         }
+
+        .tabulator-row {
+            position: relative;
+            box-sizing: border-box;
+            min-height: 22px;
+            background-color: #345072;
+        }
+
+        .tabulator .tabulator-footer .tabulator-page {
+            display: inline-block;
+            margin: 0 2px;
+            padding: 2px 5px;
+            border: 1px solid #aaa;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #FFF;
+            font-family: inherit;
+            font-weight: inherit;
+            font-size: inherit;
+        }
+
+        .ui-widget-content {
+            background-color: rgba(42, 76, 136, 0.3);
+            background-image: none;
+        }
+
+        .ui-tooltip {
+            background-image: url("./images/oototransparent.png");
+            opacity: 1;
+        }
     </style>
 </head>
 
 <body>
+    <div id="background"></div>
+    <div id="midground"></div>
+    <div id="foreground"></div>
+    <div id="Logo">
+        <img src="images\pixel_icons.png">
+    </div>
     <div id="tabs">
         <ul>
             <li><a href="#tabs-1">General Settings</a></li>
             <li><a href="#tabs-server">Server</a></li>
             <li><a href="#tabs-2">Customization</a></li>
-            <li><a href="#tabs-3">Status</a></li>
             <li><a href="#tabs-4">Lobby Browser</a></li>
             <li><a href="#tabs-5">Console</a></li>
-            <li><a href="#tabs-6">Advanced</a></li>
+            <li><a href="#tabs-6">Help</a></li>
+            <li><a href="#tabs-7">Credits</a></li>
         </ul>
         <div id="tabs-1">
-            <h1>Client Settings</h1>
-            <label for="nickname">Nickname: </label><input type="text" name="nickname" id="_nickname" /><br />
-            <label for="game_room">Lobby: </label><input type="text" name="game_room" id="_GAME_ROOM" /><br />
-            <label for="game_password">Password: </label><input type="password" name="game_password"
-                id="_game_password" /><br />
-            <label for="rom">Rom: </label><select id="rom">
-            </select><br/>
-            <label for="mod">Mod: </label><select id="mod">
+            <h2>Lobby Settings</h2>
+            <label for="nickname" align="left">Username: </label> <input type="text" name="nickname"
+                id="_nickname" /><br /><br />
+            <label for="game_room">Lobby Name:</label> <input type="text" name="game_room" id="_GAME_ROOM"
+                title="Pick a unique name and give it to your friends! This is case sensitive." /><br /><br />
+            <label for="game_password">Lobby Password: </label> <input type="password" name="game_password"
+                id="_game_password" /><br /><br />
+
+            <h2>Game Settings</h2>
+
+            <label for="_isMaster">Host Server</label><input type="checkbox" id="_isMaster" />
+            <label for="_isClient">Run Client</label><input type="checkbox" id="_isClient" />
+            <br /><br/>
+            <label for="rom">Rom: </label> <select id="rom">
+                <option value="None">None</option>
+            </select><br /><br />
+            <label for="mod">Mod: </label> <select id="mod">
                 <option value="Vanilla">None</option>
             </select>
-            <br />
+            <br /><br />
             <div class="widget">
-                <button id="connect" onclick="hooks.onStartClient()">Connect to Server</button>
+                <button id="connect" onclick="hooks.onStartClient()">Connect</button>
             </div>
         </div>
         <div id="tabs-server">
-            <h1>Server Settings</h1>
-            <label for="server">Server: </label><input type="text" name="server" id="_master_server_ip" /><br />
-            <label for="port">Port: </label><input type="text" name="port" id="_master_server_port" /><br />
+            <h2>Server Settings</h2>
+            <label for="server">Server: </label> <input type="text" name="server" id="_master_server_ip"
+                title="The IP address for the master server. Most players don't need to change this." /><br /><br />
+            <label for="port">Port: </label> <input type="text" name="port" id="_master_server_port"
+                title="The port for the master server. Most players don't need to change this." /><br /><br />
+            <div class="widget">
+                <button id="server_save" onclick="hooks.onIPChange()">Save</button>
+                <button id="server_reset" onclick="resetMasterServerInfo()"
+                    title="Reset to the official master server info.">Reset</button>
+            </div>
         </div>
         <div id="tabs-2">
-            <label for="kokiri">Kokiri Tunic Color:</label><input type="color" id="kokiri" value="#1e69ab"
+            <label for="kokiri">Kokiri Tunic Color:</label> <input type="color" id="kokiri" value="#ffffff"
                 onchange="hooks.onConfigChanged()" /><br />
-            <label for="goron">Goron Tunic Color:</label><input type="color" id="goron" value="#641400"
+            <label for="goron">Goron Tunic Color:</label> <input type="color" id="goron" value="#aaaaaa"
                 onchange="hooks.onConfigChanged()" /><br />
-            <label for="zora">Zora Tunic Color:</label><input type="color" id="zora" value="#003c64"
+            <label for="zora">Zora Tunic Color:</label> <input type="color" id="zora" value="#000000"
                 onchange="hooks.onConfigChanged()" /><br />
         </div>
-        <div id="tabs-3">
+        <div id="tabs-6">
+            <pre id="faq">
+        </pre>
+        </div>
+        <div id="tabs-4">
             Connection Status: <li id="connection_status">Not connected.</li><br />
             Current Lobby: <li id="current_lobby"></li>
             Player List:
             <ul id="player_list">
-
             </ul>
-        </div>
-        <div id="tabs-4">
             <div id="lobby_browser"></div>
         </div>
         <div id="tabs-5">
             <div id="terminal"></div>
         </div>
-        <div id="tabs-6">
-            <label for="_isMaster">Host Server</label><input type="checkbox" id="_isMaster" />
-            <label for="_isClient">Run Client</label><input type="checkbox" id="_isClient" />
+        <div id="tabs-7">
+            <pre id="credits_pre">
+                Development Team:
+                denoflions
+                Ideka
+                MelonSpeedruns
+                glank
+
+                Testing Team:
+                Psi-Hate
+
+                Art:
+                Psi-Hate
+                Nikki
+            </pre>
         </div>
     </div>
 
@@ -159,6 +241,7 @@
                 { title: "Mod", field: "patchFile", sorter: "string" }
             ]
         });
+        //lobby_browser.setData([{ index: 0, name: "Test", isPrivate: true, playerCount: 255, patchFile: "" }]);
         let hooks = require('./renderer.js');
         hooks.console = function (msg) {
             term.echo(msg);
@@ -174,14 +257,19 @@
                 x.add(option);
             }
         }
-        hooks.roms = function(data){
+        hooks.roms = function (data) {
             for (let i = 0; i < data.length; i++) {
                 var x = document.getElementById("rom");
                 var option = document.createElement("option");
                 option.text = data[i];
                 x.add(option);
+                x.value = data[i];
             }
         }
+
+        addEventListener("load", function(){
+            hooks.onWindowReady();
+        });
     </script>
 </body>
 

@@ -13,10 +13,10 @@ var SERVER_URL = "http://localhost:8083/LobbyBrowser"
 onTabOpen["Lobby Browser"] = {
     tag: "Lobby Browser", callback: function () {
         allow_lobby_refresh = true;
-        if (!lobby_browser_loaded){
+        if (!lobby_browser_loaded) {
             console.log("Refreshing lobby list...");
             lobby_browser_loaded = true;
-            $.getJSON(SERVER_URL, function( data ) {
+            $.getJSON(SERVER_URL, function (data) {
                 RENDER_OBJ.lobby_browser(data);
             });
         }
@@ -32,7 +32,7 @@ onTabClosed["Lobby Browser"] = {
 
 setInterval(function () {
     if (allow_lobby_refresh && CONNECTED) {
-        $.getJSON(SERVER_URL, function( data ) {
+        $.getJSON(SERVER_URL, function (data) {
             RENDER_OBJ.lobby_browser(data);
         });
     }
@@ -42,16 +42,17 @@ RENDER_OBJ["console"] = function (msg) {
     console.log(msg);
 }
 
-RENDER_OBJ["romhacks"] = function(data){
+RENDER_OBJ["romhacks"] = function (data) {
 }
 
-RENDER_OBJ["roms"] = function(data){
+RENDER_OBJ["roms"] = function (data) {
 }
 
 ipcRenderer.on('GUI_ConfigLoaded', function (wtfisthis, event) {
     processConfigObject(event.config);
     RENDER_OBJ.romhacks(event.mods);
-    
+    SERVER_URL = "http://" + event.config._master_server_ip + ":8083/LobbyBrowser"
+    console.log(SERVER_URL);
     RENDER_OBJ.roms(event.roms);
 });
 
@@ -69,7 +70,7 @@ ipcRenderer.on('GUI_ResetButton', function (wtfisthis, event) {
     document.getElementById("connect").textContent = "Connect to Server";
 });
 
-RENDER_OBJ["lobby_browser"] = function(data){
+RENDER_OBJ["lobby_browser"] = function (data) {
 }
 
 ipcRenderer.on('GUI_updateLobbyBrowser_Reply', function (wtfisthis, event) {
@@ -77,6 +78,7 @@ ipcRenderer.on('GUI_updateLobbyBrowser_Reply', function (wtfisthis, event) {
 });
 
 ipcRenderer.on('onBizHawkInstall', function (wtfisthis, event) {
+    console.log(event);
     if (!event.done) {
         document.getElementById("connect").disabled = true;
         document.getElementById("connect").textContent = "Installing BizHawk...";
@@ -150,16 +152,32 @@ function configChanged() {
 }
 
 function startClient() {
+    let rom = document.getElementById('rom').value;
+    console.log(rom);
+    if (rom === "None"){
+        alert("You can't start the client without a rom!")
+        return;
+    }
     configChanged();
     document.getElementById("connect").textContent = "Starting client, please wait...";
     setTimeout(function () {
         document.getElementById("connect").textContent = "Client Started.";
     }, 10000);
     document.getElementById("connect").disabled = true;
-    sendToMainProcess("postEvent", { id: "GUI_StartButtonPressed", start: true })
+    sendToMainProcess("postEvent", { id: "GUI_StartButtonPressed", start: true, rom: ""})
 }
+
+function onIPChange() {
+    SERVER_URL = "http://" + document.getElementById("_master_server_ip").value + ":8083/LobbyBrowser"
+    console.log(SERVER_URL);
+}
+
+RENDER_OBJ["onIPChange"] = onIPChange;
 
 RENDER_OBJ["onConfigChanged"] = configChanged;
 RENDER_OBJ["onStartClient"] = startClient;
+RENDER_OBJ["onWindowReady"] = function(){
+    sendToMainProcess("onWindowReady", { id: "onWindowReady", start: true})
+}
 
 module.exports = RENDER_OBJ;

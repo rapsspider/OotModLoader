@@ -25,7 +25,7 @@
   position: relative;
   box-sizing: border-box;
   width: 100%;
-  border-bottom: 1px solid #999;
+  border-bottom: 1px solid #121b4c;
   background-color: #333;
   color: #fff;
   font-weight: bold;
@@ -42,7 +42,7 @@
   position: relative;
   box-sizing: border-box;
   border-right: 1px solid #aaa;
-  background-color: #333;
+  background-color: #121b4c;
   text-align: left;
   vertical-align: bottom;
   overflow: hidden;
@@ -275,7 +275,7 @@
 .tabulator .tabulator-tableHolder .tabulator-table {
   position: relative;
   display: inline-block;
-  background-color: #666;
+  background-color: #345782;
   white-space: nowrap;
   overflow: visible;
   color: #fff;
@@ -314,7 +314,7 @@
 .tabulator .tabulator-footer {
   padding: 5px 10px;
   border-top: 1px solid #999;
-  background-color: #333;
+  background-color: #121b4c;
   text-align: right;
   color: #333;
   font-weight: bold;
@@ -375,7 +375,7 @@
   border: 1px solid #aaa;
   border-radius: 3px;
   background: rgba(255, 255, 255, 0.2);
-  color: #333;
+  color: #FFF;
   font-family: inherit;
   font-weight: inherit;
   font-size: inherit;
@@ -386,7 +386,7 @@
 }
 
 .tabulator .tabulator-footer .tabulator-page:disabled {
-  opacity: .5;
+  opacity: 1;
 }
 
 .tabulator .tabulator-footer .tabulator-page:not(.disabled):hover {

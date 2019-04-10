@@ -1,5 +1,6 @@
 // Modules to control application life and create native browser window
 const { app, BrowserWindow, ipcMain } = require('electron')
+const path = require('path');
 let ooto;
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -9,8 +10,8 @@ let mainWindow
 function createWindow() {
   // Create the browser window.
   mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1000,
+    height: 740,
     webPreferences: {
       nodeIntegration: true
     },
@@ -18,7 +19,7 @@ function createWindow() {
   })
 
   // and load the index.html of the app.
-  mainWindow.loadFile('index.html')
+  mainWindow.loadFile(path.resolve(global.OotModLoader.asar, 'index.html'))
 
   // Open the DevTools.
   // mainWindow.webContents.openDevTools()
@@ -31,9 +32,11 @@ function createWindow() {
     mainWindow = null
   })
 
-  setTimeout(function () {
-    setupModLoader();
-  }, 1000);
+  ipcMain.on("onWindowReady", (event, arg) => {
+    setTimeout(function(){
+      setupModLoader();
+    }, 2000);
+  });
 
 }
 
@@ -43,6 +46,7 @@ function setupModLoader() {
     ooto.api.registerEventHandler(id, function (event) {
       console.log(event)
       if (mainWindow !== null) {
+        console.log(event);
         mainWindow.webContents.send(event.id, event);
       }
     });
@@ -72,7 +76,7 @@ function setupModLoader() {
       }
     }
   }, 100);
-  //mainWindow.webContents.openDevTools()
+  mainWindow.webContents.openDevTools()
 }
 
 // This method will be called when Electron has finished
