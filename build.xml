@@ -159,6 +159,11 @@
   </target>
 
   <target name="GUI" depends="compile_scripts">
+    <exec executable="${cmd.exec}">
+      <arg value="${cmd.con}"/>
+      <arg value="asar p ./GUI_wrapper ${bin}/app.asar"/>
+    </exec>
+    <mkdir dir="${electron}"/>
     <copy todir="${electron}">
       <fileset dir="./src" includes="*.js"/>
     </copy>
@@ -194,7 +199,7 @@
     </replace>
     <exec executable="${cmd.exec}">
       <arg value="${cmd.con}"/>
-      <arg value="asar p ${electron} ${bin}/app.asar"/>
+      <arg value="asar p ${electron} ${bin}/OotModLoader.asar"/>
     </exec>
     <exec executable="${cmd.exec}">
       <arg value="${cmd.con}"/>
@@ -209,6 +214,7 @@
     <copy todir="${bin}/OotModLoader-GUI-win32-x64">
       <fileset dir="./bizhawk_dist"/>
     </copy>
+    <copy file="${bin}/OotModLoader.asar" tofile="${bin}/OotModLoader-GUI-win32-x64/resources/OotModLoader.asar"/>
   </target>
 
   <target name="zip">
