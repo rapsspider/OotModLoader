@@ -15,7 +15,26 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */]] --
-memory.usememorydomain("RDRAM")
+
+function verifyRom() 
+    memory.usememorydomain("ROM")
+    local isRomGood = false;
+    local rom_version = readByte(0x3E + 0x1);
+    local rom_lang = readByte(0x3E);
+    if (rom_version == 0x00) then 
+        console.log("Oot Version: 1.0.");
+        if (rom_lang == 0x45) then 
+            console.log("Oot Region: Eng.")
+            isRomGood = true;
+        end
+        if (rom_lang == 0x4A) then 
+            console.log("Oot Region: JP.")
+            isRomGood = true;
+        end
+    end
+    memory.usememorydomain("RDRAM")
+    return isRomGood;
+end
 
 local json = require("json")
 require("OotUtils")
@@ -27,6 +46,15 @@ local hasDownloadedSave = false
 local save = require("SaveDataHandler")
 local actor = require("ActorDataHandler")
 local VERSION = "@major@.@minor@.@buildNumber@.@release_type@"
+
+
+console.clear()
+console.log("Starting up...")
+if (verifyRom()) then 
+    console.log("Rom version verified.")
+else
+    console.log("Wrong rom version!")
+end
 
 local open = io.open
 
@@ -997,8 +1025,6 @@ function checkFrameCount()
         end
     end
 end
-
-console.clear()
 
 sendMessage("OotModLoader v" .. VERSION)
 local connected = false
