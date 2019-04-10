@@ -494,6 +494,14 @@ class OotOnline {
                     inst.PuppetMap[key].puppet.setup();
                 });
                 inst._nicknames = {};
+                inst._sceneList = {};
+                context = 0x600000;
+                logger.log("Starting context at: 80" + context.toString(16).toUpperCase());
+                puppet_spawn_param = context + 0x0140;
+                puppet_spawn_param += 0x80000000;
+                logger.log("Spawn params: " + puppet_spawn_param.toString(16).toUpperCase());
+                current_puppet_buffer_slot = context + 0x0090;
+                logger.log("Command Buffer: 80" + current_puppet_buffer_slot.toString(16).toUpperCase());
             });
 
             Object.keys(inst.PuppetMap).forEach(function (key) {
@@ -620,6 +628,7 @@ class OotOnline {
                     Object.keys(inst._tunic_colors).forEach(function (index) {
                         emulator.sendViaSocket({ packet_id: "changeColor", data: inst._tunic_colors[index], writeHandler: "range", addr: "0x000F7AD8", offset: index * 3 });
                     });
+                    logger.log("Setting tunic colors.");
                 }
             });
 
@@ -681,19 +690,15 @@ class OotOnline {
                     logger.log(
                         "Removing player " + event.player.uuid + " from puppet manager."
                     );
+                    delete inst._sceneList[event.player.uuid];
                     emulator.sendViaSocket({ packet_id: "inventory_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: 9 * 16, sy: 19 * 16, sw: 16, sh: 16, msg: inst._nicknames[event.player.uuid] + " has left the game.", sound: "0x4828" })
                     delete inst._nicknames[event.player.uuid];
                 } catch (err) {
                     logger.log(err.message);
-                 }
+                }
             });
 
             api.registerEventHandler("onServerConnection", function (event) {
-                Object.keys(inst.PuppetMap).forEach(function (player) {
-                    inst.PuppetMap[player].uuid = "";
-                    inst.PuppetMap[player].puppet.shovelPuppet();
-                });
-                inst._playerToPuppetMap = {};
             });
 
             api.registerEventHandler("onConfigUpdate", function (event) {
@@ -707,6 +712,4 @@ class OotOnline {
 }
 
 const ooto = new OotOnline();
-
-api.registerModule("OotOnline", ooto);
 module.exports = ooto;
