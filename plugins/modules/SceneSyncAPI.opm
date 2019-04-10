@@ -44,6 +44,7 @@ class SceneSync_API {
 
     init(api) {
         (function (inst) {
+            logger.log("--------------------")
             logger.log("Loading templates...");
             inst._actorList = api.loadVariables("actor_lists");
             Object.keys(inst._actorList).forEach(function (key) {
@@ -59,16 +60,17 @@ class SceneSync_API {
             let templates = fs.readdirSync(__dirname + "/templates");
             Object.keys(templates).forEach(function (key) {
                 let file = templates[key];
-                //logger.log("Loading " + file + ".");
-                let temp = require(__dirname + "/templates/" + file);
+                logger.log("Loading " + file + ".");
+                let temp = pluginRequire("./modules/templates/" + file);
                 inst.registerTemplate(temp.id, temp);
             });
+            logger.log("--------------------")
             logger.log("Loading actor data...");
             let actors = fs.readdirSync(__dirname + "/actors");
             Object.keys(actors).forEach(function (key) {
                 let file = actors[key];
-                //logger.log("Loading " + file + ".");
-                let temp = require(__dirname + "/actors/" + file);
+                logger.log("Loading " + file + ".");
+                let temp = pluginRequire("./modules/actors/" + file);
                 if (temp.hasOwnProperty("setup")) {
                     temp.setup(temp, api);
                 }
