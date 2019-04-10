@@ -1198,27 +1198,7 @@ SAVE_DATA_HANDLER["hook"] = function()
     end)
 end
 
-SAVE_DATA_HANDLER["debug_hook"] = function()
-    if (readByte(save_handler_context + save_handler_context_map["DEBUG"]["write"]["trigger"]) > 0) then
-        writeByte(
-            save_handler_context + save_handler_context_map["DEBUG"]["write"]["trigger"],
-            0x0
-        )
-        update_inventory(false)
-        update_upgrades(0, false)
-        update_upgrades(1, false)
-        update_upgrades(2, false)
-        update_equipment(false)
-        update_quest(false)
-        update_biggoron(false)
-        update_heart_containers(false)
-        --
-        --
-        update_defense(false)
-        --
-        update_magic(false)
-        addToBuffer(function() setStatusMessage("") end)
-    end
+SAVE_DATA_HANDLER["processHook"] = function()
     if next(update_buffer) ~= nil then
         if (SAVE_DATA_HANDLER.link_exists()) then
             local fn = table.remove(update_buffer, 1)
