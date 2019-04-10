@@ -1071,6 +1071,7 @@ registerMainLoopHook(makeFrozen)
 registerMainLoopHook(checkFrameCount);
 
 local triggerNext = false
+local lastSkullCount = 0;
 
 function updateSaveData()
     if (tokenStorage["@link_instance@"] == nil) then return false end
@@ -1078,6 +1079,11 @@ function updateSaveData()
     if (doesLinkExist() ~= true) then return end
     local state = readByte(tokenStorage["@link_instance@"] + tokenStorage["@link_state@"])
     if (state == 0x20 or state == 0x30) then triggerNext = true end
+    local _skull_count = readTwoByteUnsigned(tokenStorage["@save_context@"] + 0x00D0);
+    if (_skull_count > lastSkullCount) then 
+        lastSkullCount = _skull_count;
+        triggerNext = true;
+    end
     if (readByte(tokenStorage["@link_instance@"] + tokenStorage["@link_state@"]) == 0x0) then
         if (triggerNext == true) then
             -- sendMessage("Updating save data...");
@@ -1096,7 +1102,7 @@ writehandlers["sceneTrigger"] = save.sceneTrigger
 actor["console"] = console
 actor["send"] = function(data) sendPacket("actorSpawned", {data = data}, {}) end
 registerMainLoopHook(updateSaveData)
-registerMainLoopHook(save.debug_hook)
+registerMainLoopHook(save.processHook)
 registerMainLoopHook(actor.hook)
 
 function mainLoop()
