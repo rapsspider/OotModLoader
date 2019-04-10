@@ -1079,7 +1079,7 @@ function updateSaveData()
     if (doesLinkExist() ~= true) then return end
     local state = readByte(tokenStorage["@link_instance@"] + tokenStorage["@link_state@"])
     if (state == 0x20 or state == 0x30) then triggerNext = true end
-    local _skull_count = readTwoByteUnsigned(tokenStorage["@save_context@"] + 0x00D0);
+    local _skull_count = readTwoByteUnsigned(tokenStorage["@save_data@"] + 0x00D0);
     if (_skull_count > lastSkullCount) then 
         lastSkullCount = _skull_count;
         triggerNext = true;
