@@ -40,12 +40,16 @@ class OotAPI {
         this._plugindir = dir;
     }
 
-    registerModule(name, m) {
+    registerPlugin(name, m) {
         this._ModuleStorage[name] = m;
     }
 
-    getModule(name) {
+    getPlugin(name) {
         return this._ModuleStorage[name];
+    }
+
+    getAllPlugins(){
+        return this._ModuleStorage;
     }
 
     getServerSideStorage(room) {
