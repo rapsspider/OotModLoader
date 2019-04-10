@@ -21,7 +21,7 @@ const emulator = require(global.OotRunDir + "/OotBizHawk");
 const logger = require(global.OotRunDir + "/OotLogger")("SceneSync");
 const client = require(global.OotRunDir + "/OotClient");
 const CONFIG = require(global.OotRunDir + "/OotConfig");
-const scene_api = require('./modules/SceneSyncAPI.opm');
+const scene_api = pluginRequire('./modules/SceneSyncAPI.opm');
 
 let INSTANCE;
 
