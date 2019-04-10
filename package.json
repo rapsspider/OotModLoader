@@ -9,6 +9,7 @@
   "bin": "./src/app.js",
   "dependencies": {
     "asar": "^1.0.0",
+    "bitwise": "^2.0.3",
     "body-parser": "^1.18.3",
     "chalk": "^2.4.1",
     "cross-spawn": "^6.0.5",
