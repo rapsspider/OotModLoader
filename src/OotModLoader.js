@@ -45,6 +45,7 @@ var ncp = require('ncp').ncp;
 var path = require("path");
 const spawn = require('cross-spawn');
 const lb = require("./OotLobbyBrowser");
+const byte = require('./OotBitwise');
 
 let packetTransformers = {};
 let packetRoutes = {};
@@ -240,15 +241,20 @@ function registerClientSidePacketHook(packet_id, hook) {
 }
 
 // Going out to server.
-function parseData(data) {
+function parseData(incoming) {
     try {
         let sendToMaster = true;
-        let incoming = data;
         if (clientsideHooks.hasOwnProperty(incoming.packet_id)) {
             sendToMaster = clientsideHooks[incoming.packet_id](incoming);
         }
         if (sendToMaster) {
             if (packetRoutes.hasOwnProperty(incoming.packet_id)) {
+                if (api._clientSideChannelHandlers.hasOwnProperty(packetRoutes[incoming.packet_id])){
+                    incoming = api._clientSideChannelHandlers[packetRoutes[incoming.packet_id]](incoming);
+                    if (incoming === null){
+                        return;
+                    }
+                }
                 client.sendDataToMasterOnChannel(packetRoutes[incoming.packet_id], incoming);
             } else {
                 client.sendDataToMaster(incoming);
@@ -273,9 +279,6 @@ function writeToFile(file, data) {
 // Coming in from server.
 function processData(data) {
     try {
-        if (api._clientSideChannelHandlers.hasOwnProperty(data.channel)){
-            data = api._clientSideChannelHandlers[data.channel](data);
-        }
         if (packetTransformers.hasOwnProperty(data["payload"]["packet_id"])) {
             data = packetTransformers[data["payload"]["packet_id"]](data);
         }
