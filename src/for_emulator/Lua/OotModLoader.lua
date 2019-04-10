@@ -911,11 +911,11 @@ end
 local void_out_flag = false
 local has_been_in_game = false
 
-local chk_N0 = 0x00000000
+local chk_N0 = 0x275A2440
 local SOFT_RESETTING = false;
 
 function checkForSoftReset()
-    local chk = readFourBytesUnsigned(0x1CA1F6)
+    local chk = readFourBytesUnsigned(0x00000004)
     if (chk == chk_N0) then has_been_in_game = true end
     if (chk ~= chk_N0 and has_been_in_game) then
         has_been_in_game = false
