@@ -14,13 +14,12 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
-*/]]--
-
+*/]] --
 require("OotUtils")
 
 local context = 0x600000
+local counter = -1;
 local offset = 0x1E0
-local counter = readByte(context + 0x11E0)
 
 local ACTOR_DATA_HANDLER = {}
 ACTOR_DATA_HANDLER["console"] = {}
@@ -29,6 +28,13 @@ ACTOR_DATA_HANDLER["send"] = function(data) end
 ACTOR_DATA_HANDLER["reset"] = function() counter = 0 end
 
 ACTOR_DATA_HANDLER["hook"] = function()
+    process();
+end
+
+function process()
+    if (counter == -1) then 
+        counter = readByte(context + 0x11E0);
+    end
     local addr = context + offset + (counter * 16)
     local package = {}
     package["type"] = readFourBytesUnsigned(addr)
@@ -38,7 +44,7 @@ ACTOR_DATA_HANDLER["hook"] = function()
             package.type = readFourBytesUnsigned(addr)
             counter = counter + 1
             if (counter == 0x100) then counter = 0x0 end
-            return;
+            return
         end
         if (package.type == 3) then
             package["pointer"] = readPointer(addr + 4)
