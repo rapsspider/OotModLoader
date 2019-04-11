@@ -1171,7 +1171,9 @@ function handleSkulltulaCountSlotUpgrade(packet)
 end
 
 SAVE_DATA_HANDLER["hook"] = function()
-    SAVE_DATA_HANDLER["send"]("save_update_status", {bool=true});
+    addToBuffer(function() 
+        SAVE_DATA_HANDLER["send"]("save_update_status", {bool=true});
+    end)
     update_inventory(true)
     update_upgrades(0, true)
     update_upgrades(1, true)
