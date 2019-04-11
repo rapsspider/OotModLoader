@@ -14,8 +14,7 @@
 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
-*/]]--
-
+*/]] --
 require("OotUtils")
 
 SAVE_DATA_HANDLER = {}
@@ -140,10 +139,7 @@ save_handler_context_map["skulltula"]["write"]["this_is_two_bytes"] = assignByte
 
 save_handler_context_map["scratch"] = {}
 save_handler_context_map["scratch"]["write"] = {}
-for i = 1, 8, 1 do
-    local b = assignByte()
-    save_handler_context_map.scratch.write["scratch_pad_" .. tostring(i)] = b
-end
+save_handler_context_map.scratch.write["scratch_pad_0"] = assignByte()
 
 save_handler_context_map["DEBUG"] = {}
 save_handler_context_map["DEBUG"]["write"] = {}
@@ -197,7 +193,12 @@ local upgrade_2_payloads = {
         level_3 = {1, 0},
         level_4 = {1, 1}
     },
-    upgrade_wallet = {level_0 = {0, 0}, level_1 = {0, 1}, level_2 = {1, 0}, level_3 = {1, 1}},
+    upgrade_wallet = {
+        level_0 = {0, 0},
+        level_1 = {0, 1},
+        level_2 = {1, 0},
+        level_3 = {1, 1}
+    },
     upgrade_scale = {level_0 = {0, 0}, level_1 = {0, 1}, level_2 = {1, 0}}
 }
 
@@ -308,8 +309,8 @@ function IntToLevel(level)
 end
 
 function update_inventory(bool)
-    for k, v in pairs(save_handler_context_map.inventory.read) do
-        addToBuffer(function()
+    addToBuffer(function()
+        for k, v in pairs(save_handler_context_map.inventory.read) do
             setStatusMessage("Updating " .. k .. ".")
             local r = readByte(v)
             if (bool) then
@@ -322,8 +323,8 @@ function update_inventory(bool)
                 k,
                 readByte(save_handler_context + save_handler_context_map.inventory.write[k])
             )
-        end)
-    end
+        end
+    end)
 end
 
 function update_upgrades(byte, bool)
@@ -732,19 +733,14 @@ function update_scenes()
         addToBuffer(function()
             for i = 0, 0x0B0C, 1 do
                 setStatusMessage("Updating scenes " .. tostring(math.floor((i / 0x0B0C) * 100)) .. "%")
-                local d = readByteAsBinary(save_context + scene_offset + i)
-                for k, v in pairs(d) do
-                    writeByte(
-                        save_handler_context + save_handler_context_map.scratch.write["scratch_pad_" .. tostring(k)],
-                        v
-                    )
-                end
+                local d = readByte(save_context + scene_offset + i)
+                writeByte(
+                    save_handler_context + save_handler_context_map.scratch.write["scratch_pad_0"],
+                    d
+                )
                 SAVE_DATA_HANDLER["send"](
                     "scene_" .. tostring(i),
-                    readByteRange(
-                        save_handler_context + save_handler_context_map.scratch.write["scratch_pad_1"],
-                        0x8
-                    )
+                    readByte(save_handler_context + save_handler_context_map.scratch.write["scratch_pad_0"])
                 )
             end
         end)
@@ -754,44 +750,34 @@ function update_scenes()
         local c = readTwoByteUnsigned(save_handler_context + save_handler_context_map.scene.current) * 0x1C
         local addr = save_context + scene_offset + p
         local addr2 = save_context + scene_offset + c
-        for i = 0, 0x1C, 1 do
-            addToBuffer(function()
+        addToBuffer(function()
+            for i = 0, 0x1C, 1 do
                 setStatusMessage("Updating previous scene " .. tostring(math.floor((i / 0x1C) * 100)) .. "%")
-                local d = readByteAsBinary(addr + i)
-                for k, v in pairs(d) do
-                    writeByte(
-                        save_handler_context + save_handler_context_map.scratch.write["scratch_pad_" .. tostring(k)],
-                        v
-                    )
-                end
+                local d = readByte(addr + i)
+                writeByte(
+                    save_handler_context + save_handler_context_map.scratch.write["scratch_pad_0"],
+                    d
+                )
                 SAVE_DATA_HANDLER["send"](
                     "scene_" .. tostring(p + i),
-                    readByteRange(
-                        save_handler_context + save_handler_context_map.scratch.write["scratch_pad_1"],
-                        0x8
-                    )
+                    readByte(save_handler_context + save_handler_context_map.scratch.write["scratch_pad_0"])
                 )
-            end)
-        end
-        for i = 0, 0x1C, 1 do
-            addToBuffer(function()
+            end
+        end)
+        addToBuffer(function()
+            for i = 0, 0x1C, 1 do
                 setStatusMessage("Updating current scene " .. tostring(math.floor((i / 0x1C) * 100)) .. "%")
-                local d = readByteAsBinary(addr2 + i)
-                for k, v in pairs(d) do
-                    writeByte(
-                        save_handler_context + save_handler_context_map.scratch.write["scratch_pad_" .. tostring(k)],
-                        v
-                    )
-                end
+                local d = readByte(addr2 + i)
+                writeByte(
+                    save_handler_context + save_handler_context_map.scratch.write["scratch_pad_0"],
+                    d
+                )
                 SAVE_DATA_HANDLER["send"](
                     "scene_" .. tostring(c + i),
-                    readByteRange(
-                        save_handler_context + save_handler_context_map.scratch.write["scratch_pad_1"],
-                        0x8
-                    )
+                    readByte(save_handler_context + save_handler_context_map.scratch.write["scratch_pad_0"])
                 )
-            end)
-        end
+            end
+        end)
     end
 end
 
@@ -819,125 +805,100 @@ function update_skulltula()
             readTwoByteUnsigned(save_handler_context + save_handler_context_map.skulltula.write.count)
         )
     end)
-    for i = 0, skulltula_flags_size, 1 do
-        addToBuffer(function()
+    addToBuffer(function()
+        for i = 0, skulltula_flags_size, 1 do
             setStatusMessage("Updating skulltula flags " .. tostring(math.floor((i / skulltula_flags_size) * 100)) .. "%")
-            local b = readByteAsBinary(save_context + skulltula_flags_offset + i)
-            for k, v in pairs(b) do
-                writeByte(
-                    save_handler_context + save_handler_context_map.scratch.write["scratch_pad_" .. tostring(k)],
-                    v
-                )
-            end
+            local b = readByte(save_context + skulltula_flags_offset + i)
+            writeByte(
+                save_handler_context + save_handler_context_map.scratch.write["scratch_pad_0"],
+                b
+            )
             SAVE_DATA_HANDLER["send"](
                 "skulltula_flag_" .. tostring(i),
-                readByteRange(
-                    save_handler_context + save_handler_context_map.scratch.write["scratch_pad_1"],
-                    0x8
-                )
+                readByte(save_handler_context + save_handler_context_map.scratch.write["scratch_pad_0"])
             )
-        end)
-    end
+        end
+    end)
 end
 
 local event_flags_offset = 0x0ED4
 local event_flags_size = 0x1C
 
 function update_event_flags()
-    for i = 0, event_flags_size, 1 do
-        addToBuffer(function()
+    addToBuffer(function()
+        for i = 0, event_flags_size, 1 do
             setStatusMessage("Updating event flags " .. tostring(math.floor((i / event_flags_size) * 100)) .. "%")
-            local b = readByteAsBinary(save_context + event_flags_offset + i)
-            for k, v in pairs(b) do
-                writeByte(
-                    save_handler_context + save_handler_context_map.scratch.write["scratch_pad_" .. tostring(k)],
-                    v
-                )
-            end
+            local b = readByte(save_context + event_flags_offset + i)
+            writeByte(
+                save_handler_context + save_handler_context_map.scratch.write["scratch_pad_0"],
+                b
+            )
             SAVE_DATA_HANDLER["send"](
                 "event_flag_" .. tostring(i),
-                readByteRange(
-                    save_handler_context + save_handler_context_map.scratch.write["scratch_pad_1"],
-                    0x8
-                )
+                readByte(save_handler_context + save_handler_context_map.scratch.write["scratch_pad_0"])
             )
-        end)
-    end
+        end
+    end)
 end
 
 local item_flags_offset = 0x0EF0
 local item_flags_size = 0x8
 
 function update_item_flags()
-    for i = 0, item_flags_size, 1 do
-        addToBuffer(function()
+    addToBuffer(function()
+        for i = 0, item_flags_size, 1 do
             setStatusMessage("Updating item flags " .. tostring(math.floor((i / item_flags_size) * 100)) .. "%")
-            local b = readByteAsBinary(save_context + item_flags_offset + i)
-            for k, v in pairs(b) do
-                writeByte(
-                    save_handler_context + save_handler_context_map.scratch.write["scratch_pad_" .. tostring(k)],
-                    v
-                )
-            end
+            local b = readByte(save_context + item_flags_offset + i)
+            writeByte(
+                save_handler_context + save_handler_context_map.scratch.write["scratch_pad_0"],
+                b
+            )
             SAVE_DATA_HANDLER["send"](
                 "item_flag_" .. tostring(i),
-                readByteRange(
-                    save_handler_context + save_handler_context_map.scratch.write["scratch_pad_1"],
-                    0x8
-                )
+                readByte(save_handler_context + save_handler_context_map.scratch.write["scratch_pad_0"])
             )
-        end)
-    end
+        end
+    end)
 end
 
 local inf_table_offset = 0x0EF8
 local inf_table_size = 0x3C
 
 function update_inf_table()
-    for i = 0, inf_table_size, 1 do
-        addToBuffer(function()
+    addToBuffer(function()
+        for i = 0, inf_table_size, 1 do
             setStatusMessage("Updating inf flags " .. tostring(math.floor((i / inf_table_size) * 100)) .. "%")
-            local b = readByteAsBinary(save_context + inf_table_offset + i)
-            for k, v in pairs(b) do
-                writeByte(
-                    save_handler_context + save_handler_context_map.scratch.write["scratch_pad_" .. tostring(k)],
-                    v
-                )
-            end
+            local b = readByte(save_context + inf_table_offset + i)
+            writeByte(
+                save_handler_context + save_handler_context_map.scratch.write["scratch_pad_0"],
+                b
+            )
             SAVE_DATA_HANDLER["send"](
                 "inf_table_" .. tostring(i),
-                readByteRange(
-                    save_handler_context + save_handler_context_map.scratch.write["scratch_pad_1"],
-                    0x8
-                )
+                readByte(save_handler_context + save_handler_context_map.scratch.write["scratch_pad_0"])
             )
-        end)
-    end
+        end
+    end)
 end
 
 local dungeon_items_offset = 0x00A8
 local dungeon_item_bytes = 0x14
 
 function update_dungeon_items()
-    for i = 0, dungeon_item_bytes, 1 do
-        addToBuffer(function()
+    addToBuffer(function()
+        for i = 0, dungeon_item_bytes, 1 do
             setStatusMessage("Updating dungeon items " .. tostring(math.floor((i / dungeon_item_bytes) * 100)) .. "%")
-            local b = readByteAsBinary(save_context + dungeon_items_offset + i)
-            for k, v in pairs(b) do
-                writeByte(
-                    save_handler_context + save_handler_context_map.scratch.write["scratch_pad_" .. tostring(k)],
-                    v
-                )
-            end
+            local b = readByte(save_context + dungeon_items_offset + i)
+            writeByte(
+                save_handler_context + save_handler_context_map.scratch.write["scratch_pad_0"],
+                b
+            )
             SAVE_DATA_HANDLER["send"](
                 "dungeon_items_" .. tostring(i),
-                readByteRange(
-                    save_handler_context + save_handler_context_map.scratch.write["scratch_pad_1"],
-                    0x8
-                )
+                readByte(save_handler_context + save_handler_context_map.scratch.write["scratch_pad_0"])
             )
-        end)
-    end
+        end
+    end)
 end
 
 writeFourBytesUnsigned(
@@ -949,23 +910,17 @@ SAVE_DATA_HANDLER["link_exists"] = function() return false end
 
 function handleInventorySlotUpdate(packet)
     local last = readByte(save_handler_context_map.inventory.read[packet.packet_id])
-    if (last == 255) then
-        last = -1;
-    end
-    if (packet.data == 255) then
-        packet.data = -1;
-    end
-    if (packet.data > last) then 
+    if (last == 255) then last = -1 end
+    if (packet.data == 255) then packet.data = -1 end
+    if (packet.data > last) then
         writeByte(
             save_handler_context_map.inventory.read[packet.packet_id],
             packet.data
         )
-        if (packet.packet_id == "inventory_slot_8") then 
+        if (packet.packet_id == "inventory_slot_8") then
             -- Got bombchus. Give the player some.
-            local qty = readByte(save_context + ammo_offset + 0x8);
-            if (qty == 0) then 
-                writeByte(save_context + ammo_offset + 0x8, 10);
-            end 
+            local qty = readByte(save_context + ammo_offset + 0x8)
+            if (qty == 0) then writeByte(save_context + ammo_offset + 0x8, 10) end
         end
         if (last == 0xFF or packet.data == 0xFF) then return end
         -- Check buttons.
@@ -1032,6 +987,7 @@ function handleUpgradeSlotUpdate(packet)
     local addr = upgrade_address_lookup_table[key]
     local target = upgrade_objects[key].targets[packet.packet_id]
     local payload = upgrade_objects[key].payloads[packet.packet_id][IntToLevel(packet.data)]
+
     local r = readByteAsBinary(addr)
     local c = 0
     for k, v in pairs(target) do
@@ -1041,12 +997,12 @@ function handleUpgradeSlotUpdate(packet)
     writeByteAsBinary(addr, r)
     local ammo_key = packet.packet_id .. "_" .. tostring(packet.data)
     if (ammo_map[ammo_key] ~= nil) then
-        local current_ammo = readByte(save_context + ammo_offset + ammo_item_map[packet.packet_id]);
+        local current_ammo = readByte(save_context + ammo_offset + ammo_item_map[packet.packet_id])
         if (current_ammo < ammo_map[ammo_key]) then
             writeByte(
-            save_context + ammo_offset + ammo_item_map[packet.packet_id],
-            ammo_map[ammo_key]
-        ) 
+                save_context + ammo_offset + ammo_item_map[packet.packet_id],
+                ammo_map[ammo_key]
+            )
         end
     end
 end
@@ -1091,9 +1047,7 @@ end
 
 function handleDoubleDefenseSlotUpgrade(packet)
     local addr = save_context + defense_offset
-    if (packet.data > 0) then 
-        writeByte(save_context + 0x3D, 0x1);
-    end
+    if (packet.data > 0) then writeByte(save_context + 0x3D, 0x1) end
     writeByte(addr, packet.data)
 end
 
@@ -1123,7 +1077,7 @@ local isDirty = false
 local dirtyTimer = -1
 
 function handleBitflagBundle(packet, offset, key)
-    packet["byte"] = tonumber(bizstring.replace(packet.packet_id, key, ""));
+    packet["byte"] = tonumber(bizstring.replace(packet.packet_id, key, ""))
     local addr = save_context + offset + packet.byte
     local current = readByteAsBinary(addr)
     local markDirty = false
@@ -1141,28 +1095,26 @@ function handleBitflagBundle(packet, offset, key)
     end
 end
 
-function handleSceneSlotUpgrade(packet)
-    handleBitflagBundle(packet, scene_offset, "scene_");
-end
+function handleSceneSlotUpgrade(packet) handleBitflagBundle(packet, scene_offset, "scene_") end
 
 function handleEventSlotUpgrade(packet)
-    handleBitflagBundle(packet, event_flags_offset, "event_flag_");
+    handleBitflagBundle(packet, event_flags_offset, "event_flag_")
 end
 
 function handleItemFlagSlotUpgrade(packet)
-    handleBitflagBundle(packet, item_flags_offset, "item_flag_");
+    handleBitflagBundle(packet, item_flags_offset, "item_flag_")
 end
 
 function handleInfFlagSlotUpgrade(packet)
-    handleBitflagBundle(packet, inf_table_offset, "inf_table_");
+    handleBitflagBundle(packet, inf_table_offset, "inf_table_")
 end
 
 function handleDungeonItemSlotUpgrade(packet)
-    handleBitflagBundle(packet, dungeon_items_offset, "dungeon_items_");
+    handleBitflagBundle(packet, dungeon_items_offset, "dungeon_items_")
 end
 
 function handleSkulltulaFlagSlotUpgrade(packet)
-    handleBitflagBundle(packet, skulltula_flags_offset, "skulltula_flag_");
+    handleBitflagBundle(packet, skulltula_flags_offset, "skulltula_flag_")
 end
 
 function handleSkulltulaCountSlotUpgrade(packet)
@@ -1171,8 +1123,8 @@ function handleSkulltulaCountSlotUpgrade(packet)
 end
 
 SAVE_DATA_HANDLER["hook"] = function()
-    addToBuffer(function() 
-        SAVE_DATA_HANDLER["send"]("save_update_status", {bool=true});
+    addToBuffer(function()
+        SAVE_DATA_HANDLER["send"]("save_update_status", {bool = true})
     end)
     update_inventory(true)
     update_upgrades(0, true)
@@ -1193,11 +1145,18 @@ SAVE_DATA_HANDLER["hook"] = function()
     update_item_flags()
     update_inf_table()
     update_dungeon_items()
-    addToBuffer(function() 
-        setStatusMessage("") 
-        SAVE_DATA_HANDLER["send"]("save_update_status", {bool=false});
-        client.saveram();
+    addToBuffer(function()
+        setStatusMessage("")
+        SAVE_DATA_HANDLER["send"]("save_update_status", {bool = false})
+        client.saveram()
     end)
+    for i = 1, 12, 1 do
+        for j = 1, 10, 1 do
+            addToBuffer(function()
+                drawSprite("icons/" .. tostring(i) .. ".png", 0, 0, 16, 16, 0, 20)
+            end)
+        end
+    end
 end
 
 SAVE_DATA_HANDLER["processHook"] = function()
@@ -1221,7 +1180,6 @@ SAVE_DATA_HANDLER["processHook"] = function()
         dirtyTimer = -1
         isDirty = false
     end
-    gui.drawString(0, 20, status_message)
 end
 
 SAVE_DATA_HANDLER["writeHandler"] = function(packet)

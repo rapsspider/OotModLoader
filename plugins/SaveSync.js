@@ -67,7 +67,7 @@ class GenericBitPackHandler {
         }
         // REPLICATE THIS SHIT CLIENT SIDE.
         //decompress["byte"] = Number(decompress.packet_id.replace("scene_", ""));
-        return server.getRoomsArray()[room][this._table_id][id].update(data);
+        return server.getRoomsArray()[room][this._table_id][id].update(bits.read(data));
     }
 }
 
@@ -80,8 +80,8 @@ class IntegerStorage {
     update(data) {
         let bool = false;
         if (data !== 255) {
-            bool = data !== this._int;
             if (this._check(this, data)) {
+                bool = data !== this._int;
                 this._int = data;
             }
         }
@@ -98,7 +98,7 @@ class IntegerArrayStorage {
         let array = bits.read(this._byte);
         Object.keys(array).forEach(function (key) {
             if (array[key] === 0 && data[key] === 1) {
-                array[key] = data[key];
+                array[key] = 1;
             }
         });
         this._byte = bits.write(array);
@@ -198,6 +198,10 @@ class SaveSync {
                 let value = inst._int;
                 if (value === 0xFFFF) {
                     value = -1;
+                }
+                let v2 = data;
+                if (v2 === 0xFFFF){
+                    v2 = -1;
                 }
                 return data > value;
             }
