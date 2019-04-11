@@ -197,6 +197,12 @@
       <replacefilter token="@buildNumber@" property="build.number"/>
       <replacefilter token="@release_type@" value="${release_type}"/>
     </replace>
+    <replace file="${electron}/index.html" propertyFile="build.properties">
+      <replacefilter token="@major@" property="major"/>
+      <replacefilter token="@minor@" property="minor"/>
+      <replacefilter token="@release_type@" value="${release_type}"/>
+      <replacefilter token="@buildNumber@" property="build.number"/>
+    </replace>
     <exec executable="${cmd.exec}">
       <arg value="${cmd.con}"/>
       <arg value="asar p ${electron} ${bin}/OotModLoader.asar"/>
