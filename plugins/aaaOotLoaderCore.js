@@ -167,13 +167,13 @@ class OotLoaderCore {
 
         api.registerClientSidePacketHook("softReset", function (data) {
             api.postEvent({ id: "onSoftReset", data: true });
-            logger.log(data)
             return false;
         });
 
         api.registerClientSidePacketHook("softReset_Post", function(data){
-            api.postEvent({ id: "onSoftReset_Post", data: true });
-            logger.log(data)
+            setTimeout(function(){
+                api.postEvent({ id: "onSoftReset_Post", data: true });
+            }, 2000);
             return false;
         })
 
