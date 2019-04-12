@@ -721,14 +721,19 @@ local scene_offset = 0x00D4
 local scene_full_send = true
 
 function update_scenes()
-    writeTwoByteUnsigned(
-        save_handler_context + save_handler_context_map.scene.previous,
-        readTwoByteUnsigned(save_handler_context + save_handler_context_map.scene.current)
-    )
-    writeTwoByteUnsigned(
-        save_handler_context + save_handler_context_map.scene.current,
-        readTwoByteUnsigned(scene_addr)
-    )
+    local cur_scene = readTwoByteUnsigned(scene_addr)
+    local last_known_scene = readTwoByteUnsigned(save_handler_context + save_handler_context_map.scene.current)
+    local prev_scene = readTwoByteUnsigned(save_handler_context + save_handler_context_map.scene.previous)
+    if (cur_scene ~= last_known_scene) then
+        writeTwoByteUnsigned(
+            save_handler_context + save_handler_context_map.scene.previous,
+            last_known_scene
+        )
+        writeTwoByteUnsigned(
+            save_handler_context + save_handler_context_map.scene.current,
+            cur_scene
+        )
+    end
     if (scene_full_send) then
         addToBuffer(function()
             for i = 0, 0x0B0C, 1 do
