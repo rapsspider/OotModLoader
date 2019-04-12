@@ -147,12 +147,12 @@ class Client {
             websocket.on('id', function (data) {
                 data = encoder.decompressData(data);
                 CONFIG.my_uuid = data.id;
-                logger.log("Client: My UUID: " + CONFIG.my_uuid);
+                logger.log("My UUID: " + CONFIG.my_uuid);
                 websocket.emit('room', encoder.compressData({ room: CONFIG.GAME_ROOM, nickname: CONFIG.nickname, patchFile: CONFIG._patchFile, password: CONFIG.getPasswordHash() }));
             });
             websocket.on('room', function (data) {
                 logger.log(data.msg);
-                api.postEvent({ id: "onServerConnection", ip: CONFIG.master_server_ip, port: CONFIG.master_server_port, room: CONFIG.GAME_ROOM });
+                api.postEvent({ id: "onServerConnection", ip: CONFIG.master_server_ip, port: CONFIG.master_server_port, room: CONFIG.GAME_ROOM, isModdedLobby: data.isModdedLobby });
                 websocket.emit('room_ping', encoder.compressData({ room: CONFIG.GAME_ROOM, uuid: CONFIG.my_uuid, nickname: CONFIG.nickname, patchFile: CONFIG.patchFile }));
             });
             websocket.on('requestPatch', function (data) {

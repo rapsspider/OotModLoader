@@ -17,6 +17,11 @@
 */
 
 global.OotRunDir = __dirname;
+if (!global.hasOwnProperty("OotModLoader")) {
+    global["OotModLoader"] = {};
+}
+global.OotModLoader["OVERRIDE_PATCH_FILE"] = "";
+global.OotModLoader["OVERRIDE_ROM_FILE"] = "";
 
 const original_console = console.log;
 let console_hook = function (msg) { };
@@ -40,7 +45,6 @@ const fs = require("fs");
 const colors = require('./OotColors');
 const localizer = require('./OotLocalizer');
 const BUILD_TYPE = "@BUILD_TYPE@";
-const unzip = require('unzip');
 var ncp = require('ncp').ncp;
 var path = require("path");
 const spawn = require('cross-spawn');
@@ -90,6 +94,12 @@ fs.readdirSync("./rom").forEach(file => {
 });
 
 rom = roms_list[roms_list.length - 1];
+if (CONFIG._rom !== "") {
+    rom = CONFIG._rom;
+} else {
+    CONFIG._rom = rom;
+    CONFIG.save();
+}
 
 if (rom !== "") {
     logger.log(rom);
@@ -98,7 +108,7 @@ if (rom !== "") {
 let mods = [];
 
 fs.readdirSync("./mods").forEach(file => {
-    if (file.indexOf(".bps") > -1){
+    if (file.indexOf(".bps") > -1) {
         mods.push(file);
     }
 });
@@ -107,7 +117,6 @@ logger.log("Mods list:");
 logger.log(mods);
 
 api.registerEvent("BPSPatchDownloaded");
-api.registerEvent("onBizHawkInstall");
 api.registerEvent("GUI_BadVersion");
 
 emu.setDataParseFn(parseData);
@@ -134,56 +143,32 @@ plugins.load(function () {
     } else {
         var LUA_LOC = ".";
         ncp.limit = 16;
-        if (!fs.existsSync("./BizHawk")) {
-            api.postEvent({ id: "onBizHawkInstall", done: false });
-            fs.mkdirSync("./BizHawk");
-            fs.createReadStream('./bizhawk_prereqs_v2.1.zip').pipe(unzip.Extract({ path: './BizHawk' })).on('close', function () {
-            });
-            logger.log("Unzipping BizHawk...");
-            fs.createReadStream('./BizHawk-2.3.1.zip').pipe(unzip.Extract({ path: './BizHawk' })).on('close', function () {
-                api.postEvent({ id: "onBizHawkInstall", done: true });
-            });
-            if (!fs.existsSync("./BizHawk/config.ini")) {
-                fs.copyFileSync(LUA_LOC + "/config.ini", "./BizHawk/config.ini");
-            }
-        }
         api.registerEvent("GUI_StartButtonPressed");
         api.registerEvent("GUI_StartFailed");
         api.registerEvent("GUI_ResetButton");
 
         logger.log("Awaiting start command from GUI.");
         api.registerEventHandler("GUI_StartButtonPressed", function (event) {
+            if (global.OotModLoader.OVERRIDE_ROM_FILE !== "") {
+                rom = global.OotModLoader.OVERRIDE_ROM_FILE;
+                CONFIG._rom = global.OotModLoader.OVERRIDE_ROM_FILE;
+                CONFIG.save();
+            }
+            CONFIG._patchFile = global.OotModLoader.OVERRIDE_PATCH_FILE;
+            CONFIG.save();
             if (CONFIG.isMaster) {
-                if (!isMasterSetup){
+                if (!isMasterSetup) {
                     master.setup();
                     lb.setup();
                     isMasterSetup = true;
                 }
             }
             if (CONFIG.isClient) {
-                if (!isClientSetup){
+                if (!isClientSetup) {
                     client.setProcessFn(processData);
                     client.setup();
                     isClientSetup = true;
                 }
-            }
-            logger.log("Starting BizHawk...");
-            try {
-                let lobby_path = "./temp/" + CONFIG.GAME_ROOM + path.extname(rom);
-                let clean_rom_data = fs.readFileSync(path.resolve(rom));
-                let buf = Buffer.from("544845204C4547454E44204F46204F4E4C494E4500", "hex");
-                buf.copy(clean_rom_data, 0x20, 0x0, buf.length);
-                fs.writeFileSync(path.resolve(lobby_path), clean_rom_data);
-                logger.log("Loading " + path.resolve(lobby_path) + ".");
-                var child = spawn('./BizHawk/EmuHawk.exe', ['--lua=' + path.resolve("./BizHawk/Lua/OotModLoader.lua"), path.resolve(lobby_path)], { stdio: 'inherit' });
-                child.on('close', function(code, signal){
-                    logger.log("BizHawk has closed!");
-                    api.postEvent({id: "GUI_ResetButton", code: code});
-                    isClientSetup = false;
-                });
-            } catch (err) {
-                api.postEvent({ id: "GUI_StartFailed" });
-                logger.log(err.message);
             }
         });
         api.registerEvent("GUI_ConfigChanged");
@@ -214,6 +199,9 @@ plugins.load(function () {
             }
             logger.log("Installed Lua files!");
             fs.writeFileSync("./BizHawk/Lua/OotModLoader-data.json", JSON.stringify(CONFIG._localPort));
+            if (!fs.existsSync("./BizHawk/config.ini")) {
+                fs.copyFileSync(LUA_LOC + "/config.ini", "./BizHawk/config.ini");
+            }
         });
         ncp(LUA_LOC + "/mime", "./BizHawk/mime", function (err) {
             if (err) {
@@ -249,9 +237,9 @@ function parseData(incoming) {
         }
         if (sendToMaster) {
             if (packetRoutes.hasOwnProperty(incoming.packet_id)) {
-                if (api._clientSideChannelHandlers.hasOwnProperty(packetRoutes[incoming.packet_id])){
+                if (api._clientSideChannelHandlers.hasOwnProperty(packetRoutes[incoming.packet_id])) {
                     incoming = api._clientSideChannelHandlers[packetRoutes[incoming.packet_id]](incoming);
-                    if (incoming === null){
+                    if (incoming === null) {
                         return;
                     }
                 }
@@ -301,16 +289,53 @@ function onPlayerConnected(nickname, uuid) {
     api.postEvent({ id: "onPlayerJoined", player: { nickname: nickname, uuid: uuid } });
 }
 
+function mangleRomHeader(rom, out) {
+    let lobby_path = out;
+    let clean_rom_data = fs.readFileSync(path.resolve(rom));
+    let buf = Buffer.from("4F4F544D4F444C4F414445525F424554415631", "hex");
+    buf.copy(clean_rom_data, 0x20, 0x0, buf.length);
+    fs.writeFileSync(path.resolve(lobby_path), clean_rom_data);
+    return lobby_path;
+}
+
+function startBizHawk(lobby_path){
+    if (BUILD_TYPE === "GUI") {
+        logger.log("Starting BizHawk...");
+        try {
+            logger.log("Loading " + path.resolve(lobby_path) + ".");
+            var child = spawn('./BizHawk/EmuHawk.exe', ['--lua=' + path.resolve("./BizHawk/Lua/OotModLoader.lua"), path.resolve(lobby_path)], { stdio: 'inherit' });
+            child.on('close', function (code, signal) {
+                logger.log("BizHawk has closed!");
+                api.postEvent({ id: "GUI_ResetButton", code: code });
+                isClientSetup = false;
+            });
+        } catch (err) {
+            api.postEvent({ id: "GUI_StartFailed" });
+            logger.log(err.message);
+        }
+    }
+}
+
+api.registerEventHandler("onServerConnection", function (event) {
+    let lobby_path = "./temp/" + event.room + path.extname(rom);
+    if (!event.isModdedLobby){
+        mangleRomHeader(rom, lobby_path);
+        startBizHawk(lobby_path);
+    }
+});
+
 api.registerEventHandler("BPSPatchDownloaded", function (event) {
-    fs.writeFileSync("./temp/temp.bps", event.data);
+    let bps_name = "./temp/" + CONFIG.GAME_ROOM + ".bps";
+    fs.writeFileSync(bps_name, event.data);
     let bps_class = require('./OotBPS');
     let bps = new bps_class();
     try {
-        var newRom = bps.tryPatch(rom, "./temp/temp.bps");
-        emu.sendViaSocket({ packet_id: "loadrom", writeHandler: "loadRom", rom: path.resolve(newRom), override: true });
+        var newRom = bps.tryPatch(rom, bps_name);
+        mangleRomHeader(newRom, newRom);
+        startBizHawk(newRom);
     } catch (err) {
         logger.log(JSON.stringify(err));
     }
 });
 
-module.exports = { api: api, config: CONFIG, console: console_log , mods: mods, roms: roms_list};
+module.exports = { api: api, config: CONFIG, console: console_log, mods: mods, roms: roms_list };

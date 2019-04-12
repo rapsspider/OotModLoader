@@ -30,6 +30,7 @@ const time = require("./OotTimeEmulation");
 const api = require("./OotAPI");
 const version = require('./OotVersion');
 var path = require("path");
+const fs = require("fs");
 
 const _channelHandlers = {};
 
@@ -98,6 +99,7 @@ class MasterServer {
 
     getAllRoomInfo(){
         let data = [];
+        let crap = [];
         let rooms = this.getRoomsArray();
         let i = 0;
         Object.keys(rooms).forEach(function(key){
@@ -113,8 +115,12 @@ class MasterServer {
                 }
                 data.push(r);
                 i++;
+            }else{
+                crap.push(rooms[key]);
             }
         });
+        fs.writeFileSync("lobby_list.json", JSON.stringify(data, null, 2));
+        fs.writeFileSync("client_list.json", JSON.stringify(crap, null, 2));
         return data;
     }
 
@@ -206,7 +212,7 @@ class MasterServer {
                         socket.join(data.room);
                         server
                             .to(socket.id)
-                            .emit("room", { msg: "Joined room " + data.room + "." });
+                            .emit("room", { msg: "Joined room " + data.room + ".", isModdedLobby: data.patchFile !== ""});
                         inst.getRoomsArray()[data.room]["clientList"] = {};
                         inst.getRoomsArray()[data.room]["password"] = data.password;
                         api.postEvent({ id: "onPlayerJoined_ServerSide", player: { uuid: socket.id, room: data.room, nickname: data.nickname }, server: inst });
@@ -227,11 +233,11 @@ class MasterServer {
                         if (inst.getRoomsArray()[data.room]["password"] === data.password){
                             logger.log("Room " + data.room + " joined by " + socket.id + ".");
                             socket.join(data.room);
-                            server.to(socket.id).emit("room", { msg: "Joined room " + data.room + "." });
+                            server.to(socket.id).emit("room", { msg: "Joined room " + data.room + ".", isModdedLobby: inst.getRoomsArray()[data.room].hasOwnProperty("patchFile")});
                             socket.to(data.room).emit("joined", { uuid: socket.id, nickname: data.nickname });
                             if (inst.getRoomsArray()[data.room].hasOwnProperty("patchFile")) {
                                 logger.log("Sending patch to user.");
-                                server.to(socket.id).emit('receivePatch', { data: inst.getRoomsArray()[data.room].patchFile })
+                                server.to(socket.id).emit('receivePatch', { data: inst.getRoomsArray()[data.room].patchFile.data })
                             }
                             socket["ootRoom"] = data.room;
                             inst.getRoomsArray()[data.room]["clientList"][socket.id] = {

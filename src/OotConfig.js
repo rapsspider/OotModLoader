@@ -19,6 +19,7 @@
 const hri = require('human-readable-ids').hri;
 const crypto = require('crypto');
 const fs = require("fs");
+const logger = require('./OotLogger')("Config")
 
 // Config
 class Configuration {
@@ -26,9 +27,6 @@ class Configuration {
     constructor() {
         this._my_uuid = "";
         this.file = "./OotModLoader-config.json";
-        if (!fs.existsSync(this.file)){
-            this.file = process.cwd() + "/OotModLoader-config.json";
-        }
         this.cfg = {};
         if (fs.existsSync(this.file)) {
             this.cfg = JSON.parse(fs.readFileSync(this.file));
@@ -52,6 +50,7 @@ class Configuration {
                 tcp: 1337,
                 udp: 60001
             };
+            this.cfg.CLIENT["ROM"] = "",
             this.cfg.PLUGINS = {};
             fs.writeFileSync(this.file, JSON.stringify(this.cfg, null, 2));
         }
@@ -65,6 +64,7 @@ class Configuration {
         this._master_server_udp = 1;
         this._tunic_colors = this.cfg.CLIENT.tunic_colors;
         this._patchFile = this.cfg.CLIENT.patchFile;
+        this._rom = this.cfg.CLIENT.ROM;
         if (!this.cfg.hasOwnProperty("PLUGINS")){
             this.cfg["PLUGINS"] = {};
         }
@@ -73,6 +73,9 @@ class Configuration {
                 tcp: 1337,
                 udp: 60001
             };
+        }
+        if (!this.cfg.CLIENT.hasOwnProperty("ROM")){
+            this.cfg.CLIENT["ROM"] = ""
         }
         this._localPort = this.cfg.CLIENT.localPort;
         this._plugins = this.cfg.PLUGINS;
@@ -205,6 +208,8 @@ class Configuration {
         this.cfg.CLIENT["game_room"] = this._GAME_ROOM;
         this.cfg.CLIENT["game_password"] = this._game_password;
         this.cfg.PLUGINS = this._plugins;
+        this.cfg.CLIENT["ROM"] = this._rom;
+        this.cfg.CLIENT["patchFile"] = this._patchFile;
         fs.writeFileSync(this.file, JSON.stringify(this.cfg, null, 2));
     }
 }

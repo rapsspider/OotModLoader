@@ -49,11 +49,11 @@ RENDER_OBJ["roms"] = function (data) {
 }
 
 ipcRenderer.on('GUI_ConfigLoaded', function (wtfisthis, event) {
-    processConfigObject(event.config);
     RENDER_OBJ.romhacks(event.mods);
     SERVER_URL = "http://" + event.config._master_server_ip + ":8083/LobbyBrowser"
     console.log(SERVER_URL);
     RENDER_OBJ.roms(event.roms);
+    processConfigObject(event.config);
 });
 
 ipcRenderer.on('argv', function (wtfisthis, event) {
@@ -71,7 +71,7 @@ ipcRenderer.on('GUI_StartFailed', function (wtfisthis, event) {
 
 ipcRenderer.on('GUI_ResetButton', function (wtfisthis, event) {
     document.getElementById("connect").disabled = false;
-    document.getElementById("connect").textContent = "Connect to Server";
+    document.getElementById("connect").textContent = "Connect";
 });
 
 RENDER_OBJ["lobby_browser"] = function (data) {
@@ -79,17 +79,6 @@ RENDER_OBJ["lobby_browser"] = function (data) {
 
 ipcRenderer.on('GUI_updateLobbyBrowser_Reply', function (wtfisthis, event) {
     RENDER_OBJ.lobby_browser(event.table);
-});
-
-ipcRenderer.on('onBizHawkInstall', function (wtfisthis, event) {
-    console.log(event);
-    if (!event.done) {
-        document.getElementById("connect").disabled = true;
-        document.getElementById("connect").textContent = "Installing BizHawk...";
-    } else {
-        document.getElementById("connect").disabled = false;
-        document.getElementById("connect").textContent = "Connect to Server";
-    }
 });
 
 ipcRenderer.on('GUI_BadVersion', function (wtfisthis, event) {
@@ -136,6 +125,20 @@ function processConfigObject(config) {
             processConfigObject(config[key]);
         }
     });
+    var sel = document.getElementById("rom");
+    for (let i = 0; i < sel.options.length; i++) {
+        console.log(sel.options[i].text);
+        if (sel.options[i].text === config["_rom"]) {
+            sel.selectedIndex = i;
+        }
+    }
+    sel = document.getElementById('mod');
+    for (let i = 0; i < sel.options.length; i++) {
+        console.log(sel.options[i].text + " vs " + config["_patchFile"])
+        if (sel.options[i].text === config["_patchFile"]) {
+            sel.selectedIndex = i;
+        }
+    }
 }
 
 function sendToMainProcess(id, event) {
@@ -156,11 +159,21 @@ function configChanged() {
 }
 
 function startClient() {
-    let rom = document.getElementById('rom').value;
+    var sel = document.getElementById("rom");
+    let rom = sel.options[sel.selectedIndex].text;
     console.log(rom);
-    if (rom === "None"){
+    if (rom === "None") {
         alert("You can't start the client without a rom!")
         return;
+    } else {
+        ipcRenderer.send('setGlobal', { id: "OVERRIDE_ROM_FILE", value: rom });
+    }
+    sel = document.getElementById('mod');
+    let mod = sel.options[sel.selectedIndex].text;
+    if (mod !== "None") {
+        ipcRenderer.send('setGlobal', { id: "OVERRIDE_PATCH_FILE", value: mod });
+    } else {
+        ipcRenderer.send('setGlobal', { id: "OVERRIDE_PATCH_FILE", value: "" });
     }
     configChanged();
     document.getElementById("connect").textContent = "Starting client, please wait...";
@@ -168,7 +181,8 @@ function startClient() {
         document.getElementById("connect").textContent = "Client Started.";
     }, 10000);
     document.getElementById("connect").disabled = true;
-    sendToMainProcess("postEvent", { id: "GUI_StartButtonPressed", start: true, rom: ""})
+
+    sendToMainProcess("postEvent", { id: "GUI_StartButtonPressed", start: true, rom: "" })
 }
 
 function onIPChange() {
@@ -180,8 +194,8 @@ RENDER_OBJ["onIPChange"] = onIPChange;
 
 RENDER_OBJ["onConfigChanged"] = configChanged;
 RENDER_OBJ["onStartClient"] = startClient;
-RENDER_OBJ["onWindowReady"] = function(){
-    sendToMainProcess("onWindowReady", { id: "onWindowReady", start: true})
+RENDER_OBJ["onWindowReady"] = function () {
+    sendToMainProcess("onWindowReady", { id: "onWindowReady", start: true })
 }
 
 module.exports = RENDER_OBJ;

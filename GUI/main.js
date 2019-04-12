@@ -6,7 +6,7 @@ let ooto;
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow
-
+app.disableHardwareAcceleration()
 function createWindow() {
   // Create the browser window.
   mainWindow = new BrowserWindow({
@@ -33,9 +33,7 @@ function createWindow() {
   })
 
   ipcMain.on("onWindowReady", (event, arg) => {
-    setTimeout(function () {
-      setupModLoader();
-    }, 2000);
+    setupModLoader();
   });
 
 }
@@ -63,13 +61,15 @@ function setupModLoader() {
   ipcMain.on('postEvent', (event, arg) => {
     ooto.api.postEvent(arg);
   })
+  ipcMain.on('setGlobal', (event, arg) => {
+    global.OotModLoader[arg.id] = arg.value;
+    console.log(arg);
+  });
   if (ooto !== null) {
-    setTimeout(function () {
-      if (mainWindow !== null) {
-        mainWindow.webContents.send("GUI_ConfigLoaded", ooto);
-        mainWindow.webContents.send("argv", process.argv)
-      }
-    }, 1000);
+    if (mainWindow !== null) {
+      mainWindow.webContents.send("GUI_ConfigLoaded", ooto);
+      mainWindow.webContents.send("argv", process.argv)
+    }
   }
   setInterval(function () {
     if (ooto.console.length > 0) {
