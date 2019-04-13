@@ -317,10 +317,12 @@ function startBizHawk(lobby_path){
 }
 
 api.registerEventHandler("onServerConnection", function (event) {
-    let lobby_path = "./temp/" + event.room + path.extname(rom);
-    if (!event.isModdedLobby){
-        mangleRomHeader(rom, lobby_path);
-        startBizHawk(lobby_path);
+    if (BUILD_TYPE === "GUI") {
+        let lobby_path = "./temp/" + event.room + path.extname(rom);
+        if (!event.isModdedLobby){
+            mangleRomHeader(rom, lobby_path);
+            startBizHawk(lobby_path);
+        }
     }
 });
 

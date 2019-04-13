@@ -194,8 +194,5 @@ RENDER_OBJ["onIPChange"] = onIPChange;
 
 RENDER_OBJ["onConfigChanged"] = configChanged;
 RENDER_OBJ["onStartClient"] = startClient;
-RENDER_OBJ["onWindowReady"] = function () {
-    sendToMainProcess("onWindowReady", { id: "onWindowReady", start: true })
-}
 
 module.exports = RENDER_OBJ;

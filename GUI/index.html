@@ -4,14 +4,16 @@
     <title>OotModLoader Launcher @major@.@minor@.@buildNumber@.@release_type@</title>
     <script>if (typeof module === 'object') { window.module = module; module = undefined; }</script>
     <script src="./js/jquery-3.3.1.min.js"></script>
+    <script>if (window.module) module = window.module;</script>
     <link rel="stylesheet" href="./jquery-ui-1.12.1.custom/jquery-ui.css">
     <link rel="stylesheet" href="./jquery-ui-1.12.1.custom/jquery-ui.theme.min.css">
     <script src="./jquery-ui-1.12.1.custom/jquery-ui.min.js"></script>
+    <link href="./css/OOT.css" rel="stylesheet">
+    <script src="./js/OOT.js"></script>
     <script src="https://unpkg.com/jquery.terminal@1.x.x/js/jquery.terminal.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/jquery.terminal@1.x.x/css/jquery.terminal.min.css" />
     <link href="./css/tabulator_midnight.css" rel="stylesheet">
     <script type="text/javascript" src="./js/tabulator.min.js"></script>
-    <script>if (window.module) module = window.module;</script>
     <script>
         var onTabOpen = {};
         var onTabClosed = {};
@@ -32,82 +34,12 @@
                     }
                 }
             });
-            $(document).tooltip();
-        });
-        $(function () {
-            $(".widget input[type=submit], .widget a, .widget button").button();
-            $("button, a").click(function (event) { });
-        });
-        $(function () {
-            var x = 0;
-            setInterval(function () {
-                x -= 0.5;
-                if (Number($('body').css('background-position-x').replace("px", "")) < -5000) {
-                    $('body').css('background-position', '0px 0');
-                    x = 0;
-                } else {
-                    $('body').css('background-position', x + 'px 0');
-                }
-            }, 10);
         });
         function resetMasterServerInfo(data) {
             document.getElementById("_master_server_ip").value = "192.99.70.23";
             document.getElementById("_master_server_port").value = "8082";
         }
     </script>
-    <style>
-        body {
-            background-color: black;
-            background-image: url("./images/oototransparent.png");
-            background-repeat: repeat;
-            background-position: center;
-            background-attachment: fixed;
-            background-size: cover;
-        }
-
-        label {
-            display: inline-block;
-            width: 100px;
-            text-align: right;
-        }
-
-        #terminal {
-            width: auto;
-            height: 300px;
-            padding: 20px;
-            overflow: auto;
-        }
-
-        .tabulator-row {
-            position: relative;
-            box-sizing: border-box;
-            min-height: 22px;
-            background-color: #345072;
-        }
-
-        .tabulator .tabulator-footer .tabulator-page {
-            display: inline-block;
-            margin: 0 2px;
-            padding: 2px 5px;
-            border: 1px solid #aaa;
-            border-radius: 3px;
-            background: rgba(255, 255, 255, 0.2);
-            color: #FFF;
-            font-family: inherit;
-            font-weight: inherit;
-            font-size: inherit;
-        }
-
-        .ui-widget-content {
-            background-color: rgba(42, 76, 136, 0.3);
-            background-image: none;
-        }
-
-        .ui-tooltip {
-            background-image: url("./images/oototransparent.png");
-            opacity: 1;
-        }
-    </style>
 </head>
 
 <body>
@@ -138,13 +70,13 @@
 
             <h2>Game Settings</h2>
 
-            <label for="_isMaster">Host Server</label><input type="checkbox" id="_isMaster" />
-            <label for="_isClient">Run Client</label><input type="checkbox" id="_isClient" />
+            <label for="_isMaster">Host Server</label><input type="checkbox" id="_isMaster" title="You don't need to host your own server to play."/>
+            <label for="_isClient">Run Client</label><input type="checkbox" id="_isClient" title="Uncheck this to be a dedicated host."/>
             <br /><br/>
             <label for="rom">Rom: </label> <select id="rom">
                 <option>None</option>
             </select><br /><br />
-            <label for="mod">Mod: </label> <select id="mod">
+            <label for="mod">Mod: </label> <select id="mod" title=".bps patches only">
                 <option>None</option>
             </select>
             <br /><br />
@@ -266,10 +198,6 @@
                 x.value = data[i];
             }
         }
-
-        addEventListener("load", function(){
-            hooks.onWindowReady();
-        });
     </script>
 </body>
 

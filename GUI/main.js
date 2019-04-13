@@ -2,6 +2,7 @@
 const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path');
 let ooto;
+let discord;
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -15,7 +16,25 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: true
     },
-    icon: ""
+    icon: "",
+    show: false
+  })
+
+  mainWindow.once('ready-to-show', () => {
+    setupModLoader();
+    mainWindow.show()
+    let jw = require('./joinWindow');
+    let test = new jw();
+    test.load({
+      "id": "132514269370646529",
+      "username": "denoflions",
+      "discriminator": "0541",
+      "avatar": "4ab68383f09c6dcf1f3815de6bcdb645",
+      "verified": true,
+      "email": "nelly@discordapp.com",
+      "flags": 64,
+      "premium_type": 1
+    });
   })
 
   // and load the index.html of the app.
@@ -32,16 +51,13 @@ function createWindow() {
     mainWindow = null
   })
 
-  ipcMain.on("onWindowReady", (event, arg) => {
-    setupModLoader();
-  });
-
 }
 
 function setupModLoader() {
   // Tell computers that are trying to start us in appdata to fuck off.
   process.chdir(path.dirname(process.argv[0]));
   ooto = require('./OotModLoader')
+  discord = require('./OotDiscord');
   let event_reg = function (id) {
     ooto.api.registerEventHandler(id, function (event) {
       console.log(event)
@@ -58,6 +74,20 @@ function setupModLoader() {
   event_reg("onPlayerDisconnected");
   event_reg("GUI_updateLobbyBrowser_Reply");
   event_reg("GUI_ResetButton");
+  ooto.api.registerEventHandler("GUI_StartButtonPressed", function(event){
+    discord.loadingGame();
+  })
+  ooto.api.registerEventHandler("onLuaStart", function(event){
+    discord.titleScreen();
+  })
+  ooto.api.registerEventHandler("GUI_ResetButton", function(event){
+    discord.onLauncher();
+  })
+  ooto.api.registerEventHandler("onSceneChange", function(event){
+    if (event.player.isMe){
+      discord.onSceneChange(event.scene);
+    }
+  })
   ipcMain.on('postEvent', (event, arg) => {
     ooto.api.postEvent(arg);
   })

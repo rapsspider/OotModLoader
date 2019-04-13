@@ -9,6 +9,7 @@ let En_Door = {
     writeHandler: "actor_80",
     actorid: 0x0009,
     actorCategory: 10,
+    value: 0,
     template: "Conditional",
     overrideSafety: true,
     value: 0,

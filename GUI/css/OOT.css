@@ -1,0 +1,51 @@
+body {
+    background-color: black;
+    background-image: url("../images/oototransparent.png");
+    background-repeat: repeat;
+    background-position: center;
+    background-attachment: fixed;
+    background-size: cover;
+}
+
+label {
+    display: inline-block;
+    width: 100px;
+    text-align: right;
+}
+
+#terminal {
+    width: auto;
+    height: 300px;
+    padding: 20px;
+    overflow: auto;
+}
+
+.tabulator-row {
+    position: relative;
+    box-sizing: border-box;
+    min-height: 22px;
+    background-color: #345072;
+}
+
+.tabulator .tabulator-footer .tabulator-page {
+    display: inline-block;
+    margin: 0 2px;
+    padding: 2px 5px;
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.2);
+    color: #FFF;
+    font-family: inherit;
+    font-weight: inherit;
+    font-size: inherit;
+}
+
+.ui-widget-content {
+    background-color: rgba(42, 76, 136, 0.3);
+    background-image: none;
+}
+
+.ui-tooltip {
+    background-image: url("../images/oototransparent.png");
+    opacity: 1;
+}

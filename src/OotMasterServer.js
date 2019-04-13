@@ -99,28 +99,26 @@ class MasterServer {
 
     getAllRoomInfo(){
         let data = [];
-        let crap = [];
-        let rooms = this.getRoomsArray();
-        let i = 0;
-        Object.keys(rooms).forEach(function(key){
-            if (rooms[key].hasOwnProperty("clientList")){
-                let r = {};
-                r["index"] = i;
-                r["name"] = key;
-                r["isPrivate"] = rooms[key].password !== "d41d8cd98f00b204e9800998ecf8427e";
-                r["playerCount"] = rooms[key].length;
-                r["patchFile"] = "";
-                if (rooms[key].hasOwnProperty("patchFile")){
-                    r.patchFile = rooms[key].patchFile.name;
+        try{
+            let rooms = this.getRoomsArray();
+            let i = 0;
+            Object.keys(rooms).forEach(function(key){
+                if (rooms[key].hasOwnProperty("clientList")){
+                    let r = {};
+                    r["index"] = i;
+                    r["name"] = key;
+                    r["isPrivate"] = rooms[key].password !== "d41d8cd98f00b204e9800998ecf8427e";
+                    r["playerCount"] = Object.keys(rooms[key].clientList).length;
+                    r["patchFile"] = "";
+                    if (rooms[key].hasOwnProperty("patchFile")){
+                        r.patchFile = rooms[key].patchFile.name;
+                    }
+                    data.push(r);
+                    i++;
                 }
-                data.push(r);
-                i++;
-            }else{
-                crap.push(rooms[key]);
-            }
-        });
-        fs.writeFileSync("lobby_list.json", JSON.stringify(data, null, 2));
-        fs.writeFileSync("client_list.json", JSON.stringify(crap, null, 2));
+            });
+        }catch(err){
+        }
         return data;
     }
 
@@ -226,9 +224,7 @@ class MasterServer {
                             ip: socket.request.connection.remoteAddress.split(":")[3],
                             port: "unknown"
                         };
-                        logger.log(inst.getRoomsArray()[data.room]["clientList"]);
                         server.to(socket.id).emit("udp", { port: inst._udp.port });
-                        logger.log(data);
                     } else {
                         if (inst.getRoomsArray()[data.room]["password"] === data.password){
                             logger.log("Room " + data.room + " joined by " + socket.id + ".");

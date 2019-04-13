@@ -59,6 +59,7 @@ class OotLoaderCore {
         api.registerEvent("onStateChanged");
         api.registerEvent("onActorSpawned");
         api.registerEvent("onFrameCount");
+        api.registerEvent("onLuaStart")
 
         api.registerPacket({
             packet_id: "scene",
@@ -238,6 +239,11 @@ class OotLoaderCore {
                         logger.log("Networking looks good.", "green");
                     }
                 }, 10 * 1000);
+            });
+            
+
+            api.registerClientSidePacketHook("onLuaStart", function(packet){
+                api.postEvent({id: "onLuaStart", data: packet})
             });
         })(this);
 

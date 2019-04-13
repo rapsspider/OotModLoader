@@ -13,6 +13,7 @@
     "body-parser": "^1.18.3",
     "chalk": "^2.4.1",
     "cross-spawn": "^6.0.5",
+    "discord-rich-presence": "0.0.8",
     "download-file": "^0.1.5",
     "express": "^4.16.3",
     "hex-rgb": "^3.0.0",

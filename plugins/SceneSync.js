@@ -111,7 +111,6 @@ class SceneSync {
             });
 
             api.registerPacketTransformer("switch_flag_sync", function (packet) {
-                //logger.log("Received scene data from other client.");
                 return packet;
             });
         })(this);

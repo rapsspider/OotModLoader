@@ -108,6 +108,7 @@ function connectToNode()
     udp:setpeername('127.0.0.1', 1337)
     udp:settimeout(0)
     -- udp2:settimeout(0);
+    sendPacket("onLuaStart", {}, {});
     return t == 1
 end
 
@@ -222,7 +223,6 @@ function checkMessages()
             displayMessageTimer = 0
         end
     end
-    -- gui.drawString(0, 20, "Pending Tasks: " .. tostring(#frameHooks));
 end
 
 function reloadCoreState()
