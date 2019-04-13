@@ -2,10 +2,10 @@ const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path');
 
 class JoinWindow {
-    constructor() {
+    constructor(callback) {
         this.window = null;
         ipcMain.on("onJoinClicked", (event, arg) => {
-
+            callback(arg);
         });
     }
 

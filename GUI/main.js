@@ -23,18 +23,6 @@ function createWindow() {
   mainWindow.once('ready-to-show', () => {
     setupModLoader();
     mainWindow.show()
-    let jw = require('./joinWindow');
-    let test = new jw();
-    test.load({
-      "id": "132514269370646529",
-      "username": "denoflions",
-      "discriminator": "0541",
-      "avatar": "4ab68383f09c6dcf1f3815de6bcdb645",
-      "verified": true,
-      "email": "nelly@discordapp.com",
-      "flags": 64,
-      "premium_type": 1
-    });
   })
 
   // and load the index.html of the app.
@@ -57,7 +45,8 @@ function setupModLoader() {
   // Tell computers that are trying to start us in appdata to fuck off.
   process.chdir(path.dirname(process.argv[0]));
   ooto = require('./OotModLoader')
-  discord = require('./OotDiscord');
+  let d = require('./OotDiscord');
+  discord = new d(ooto.config);
   let event_reg = function (id) {
     ooto.api.registerEventHandler(id, function (event) {
       console.log(event)

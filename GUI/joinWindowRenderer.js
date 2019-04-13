@@ -10,6 +10,14 @@ ipcRenderer.on('player', function (wtfisthis, event) {
     a.src = "https://cdn.discordapp.com/avatars/" + event.id + "/" + event.avatar + ".png"
 });
 
+function onAccept(){
+    sendToMainProcess("onJoinClicked", {accept: true})
+}
+
+function onReject(){
+    sendToMainProcess("onJoinClicked", {accept: false})
+}
+
 function sendToMainProcess(id, event) {
     ipcRenderer.send(id, event);
 }
