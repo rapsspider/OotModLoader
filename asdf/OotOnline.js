@@ -23,7 +23,6 @@ const client = require(global.OotRunDir + "/OotClient");
 const emulator = require(global.OotRunDir + "/OotBizHawk");
 const encoder = require(global.OotRunDir + "/OotEncoder");
 const logger = require(global.OotRunDir + "/OotLogger")("OotOnline");
-const fs = require("fs");
 const colors = require(global.OotRunDir + "/OotColors");
 
 let ears;
@@ -246,11 +245,11 @@ class OotOnline {
             CONFIG.setPluginValue("OotOnline", "max_players", 16)
         }
         this.setupTunics();
-        api.registerPacket(__dirname + "/packets/link_packet.json");
-        api.registerPacket(__dirname + "/packets/link_loading.json");
-        api.registerPacket(__dirname + "/packets/link_sound.json");
-        ears = api.loadVariables("ears");
-        shadow = api.loadVariables("shadow");
+        api.registerPacket(this._fileSystem.readFileSync(__dirname + "/packets/link_packet.json"));
+        api.registerPacket(this._fileSystem.readFileSync(__dirname + "/packets/link_loading.json"));
+        api.registerPacket(this._fileSystem.readFileSync(__dirname + "/packets/link_sound.json"));
+        ears = require(__dirname + '/versions/10/ears.json');
+        shadow = require(__dirname + '/versions/10/shadow.json');
         context = 0x600000;
         logger.log("Starting context at: 80" + context.toString(16).toUpperCase());
         api.registerToken({

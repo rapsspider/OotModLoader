@@ -29,15 +29,9 @@ class OotAPI {
         this._tokenStorage = {};
         this._channelFn = function () { };
         this.GAME_VERSION = "10";
-        this._plugindir = "";
         this._serverSideStorage = function () { };
         this._ModuleStorage = {};
         this._clientSideChannelHandlers = {};
-    }
-
-    set plugindir(dir) {
-        logger.log("Plugin directory set to " + dir + ".");
-        this._plugindir = dir;
     }
 
     registerPlugin(name, m) {
@@ -117,8 +111,7 @@ class OotAPI {
     registerPacket(packet) {
         let p = packet;
         if (typeof packet === "string") {
-            let d = fs.readFileSync(packet).toString().replace("﻿", "");
-            p = JSON.parse(d);
+            p = JSON.parse(packet);
         }
         emulator.registerDynamicPacket({ packet_id: "registerPacket", data: p });
     }
@@ -155,7 +148,7 @@ class OotAPI {
 
     loadVariables(name) {
         try {
-            let LOAD_YOU = require(this._plugindir +
+            let LOAD_YOU = require("./plugins" +
                 "/versions/" +
                 this.GAME_VERSION +
                 "/" +

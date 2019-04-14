@@ -23,14 +23,12 @@ const encoder = require(global.OotRunDir + "/OotEncoder");
 let api = require(global.OotRunDir + "/OotAPI");
 const emulator = require(global.OotRunDir + "/OotBizHawk");
 const client = require(global.OotRunDir + "/OotClient");
-const server = require(global.OotRunDir + "/OotMasterServer");
 let tokens;
 
 class OotLoaderCore {
     constructor() {
         this._name = "OotLoaderCore";
-        api.plugindir = __dirname;
-        tokens = api.loadVariables("tokens").tokens;
+        tokens = require(__dirname + '/versions/10/tokens').tokens;
         this._lastRoomPointer = 0;
         this._udpOk = false;
         this._stateTimer = null;

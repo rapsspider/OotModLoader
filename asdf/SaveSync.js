@@ -23,7 +23,6 @@ const localization = require(global.OotRunDir + "/OotLocalizer");
 const encoder = require(global.OotRunDir + "/OotEncoder");
 const CONFIG = require(global.OotRunDir + "/OotConfig");
 const client = require(global.OotRunDir + "/OotClient");
-const fs = require('fs');
 const bits = require(global.OotRunDir + "/OotBitwise");
 
 function default_int_check(inst, data) {
@@ -110,9 +109,6 @@ class SaveSync {
     constructor() {
         this._name = "SaveSync";
         this._download = true;
-        this._lang = localization.create("en_US");
-        this._inventorySlotToLangKey = localization.create("item_numbers");
-        this._icons = localization.icons("icon_coordinates");
         //
         this._savePacketHandlers = {};
         this._packetNameCache = [];
@@ -124,11 +120,14 @@ class SaveSync {
     }
 
     preinit() {
+        this._lang = localization.create(this._fileSystem.readFileSync(__dirname + "/localization/en_US.json"));
+        this._inventorySlotToLangKey = localization.create(this._fileSystem.readFileSync(__dirname + "/localization/item_numbers.json"));
+        this._icons = localization.icons(this._fileSystem.readFileSync(__dirname + "/localization/icon_coordinates.json"));
         (function (inst) {
             api.registerPacketRoute("requestSaveData", "savesync");
             api.registerPacketRoute("savesync_data", "savesync");
             let temp = function (text, handler) {
-                let original = fs.readFileSync(__dirname + '/packet_txt/' + text, "utf8");
+                let original = inst._fileSystem.readFileSync(__dirname + '/packet_txt/' + text, "utf8");
                 let items = original.split(/\r?\n/);
                 Object.keys(items).forEach(function (key) {
                     api.registerPacketRoute(items[key], "savesync");

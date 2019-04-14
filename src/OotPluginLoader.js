@@ -17,120 +17,90 @@
 */
 
 const logger = require('./OotLogger')("PluginManager");
-const fs = require("fs");
 const gameshark = require(global.OotRunDir + "/GamesharkToInjectConverter");
 const emulator = require(global.OotRunDir + "/OotBizHawk");
-var util = require('util');
 const path = require('path');
 const api = require(global.OotRunDir + "/OotAPI");
-const asar = require('asar/lib/disk');
-var requireFromString = require('require-from-string');
-let fs_protos = { readFileSync: {}, readdirSync: {} };
+const Volume = require('memfs').Volume;
+const real_fs = require('fs');
+const Union = require('unionfs').Union;
+const monkey_patch = require('fs-monkey');
+const virtual_fs = new Union().use(real_fs);
+const AdmZip = require('adm-zip');
+monkey_patch.patchRequire(virtual_fs, true);
 
 class PluginSystem {
     constructor() {
         this._plugins = [];
-        this._asar_plugins = [];
         api.registerEvent("onPluginPreinit");
         api.registerEvent("onPluginInit");
         api.registerEvent("onPluginPostinit");
-
-        (function (inst) {
-            fs_protos.readFileSync = fs.readFileSync;
-            fs_protos.readdirSync = fs.readdirSync;
-            fs.readFileSync = function (_path, options) {
-                let f;
-                let id;
-                let relPath = _path.replace("./", "");
-                for (let i = 0; i < inst._asar_plugins.length; i++) {
-                    try {
-                        f = inst._asar_plugins[i].getFile(relPath);
-                    } catch (err) {
-                        f = null;
-                    }
-                    if (f) {
-                        id = i;
-                        break;
-                    }
-                }
-                if (f) {
-                    return asar.readFileSync(inst._asar_plugins[id], _path, f);
-                } else {
-                    return fs_protos.readFileSync(_path, options);
-                }
-            }
-
-            fs.readdirSync = function (_path, options) {
-                let f = [];
-                let id;
-                let relPath = _path.replace("./", "");
-                let search = relPath.replace("/", "\\");
-                for (let i = 0; i < inst._asar_plugins.length; i++) {
-                    let list = inst._asar_plugins[i].listFiles();
-                    for (let j = 0; j < list.length; j++) {
-                        if (list[j].indexOf(search) > -1 && list[j].indexOf(".") > -1) {
-                            let k = list[j].replace("/\\/", "/");
-                            k = k.substring(1, k.length);
-                            f.push(path.basename(k));
-                        }
-                    }
-                }
-                if (f.length > 0){
-                    return f;
-                }else{
-                    return fs_protos.readdirSync(_path, options);
-                }
-            }
-
-            function pluginRequire(_path) {
-                let f;
-                let id;
-                let relPath = path.relative(api._plugindir, _path);
-                relPath = relPath.replace("..\\", "");
-                relPath = relPath.replace("/\\/", "/");
-                for (let i = 0; i < inst._asar_plugins.length; i++) {
-                    try {
-                        f = inst._asar_plugins[i].getFile(relPath);
-                    } catch (err) {
-                        f = null;
-                    }
-                    if (f) {
-                        id = i;
-                        break;
-                    }
-                }
-                if (f) {
-                    return requireFromString(asar.readFileSync(inst._asar_plugins[id], _path, f).toString());
-                } else {
-                    return require(path.resolve(api._plugindir, _path));
-                }
-            };
-
-            global["pluginRequire"] = pluginRequire;
-        })(this)
     }
 
     loadPlugins(params) {
         (function (inst) {
             for (let i = 0; i < params.paths.length; i++) {
-                fs.readdirSync(params.paths[i]).forEach(function (file) {
-                    if (file.indexOf(".js") > -1) {
-                        inst._plugins.push(require(path.join(params.paths[i], file)));
-                    } else if (file.indexOf(".asar") > -1) {
-                        logger.log(file);
-                        inst._asar_plugins.push(asar.readFilesystemSync(path.join(params.paths[i], file)));
-                        logger.log(inst._asar_plugins[inst._asar_plugins.length - 1].listFiles());
-                        let manifest = inst._asar_plugins[inst._asar_plugins.length - 1].getFile("manifest.json");
-                        if (manifest) {
-                            let parse_manifest = JSON.parse(asar.readFileSync(inst._asar_plugins[inst._asar_plugins.length - 1], path.join("manifest.json"), manifest).toString());
-                            logger.log(parse_manifest);
-                            let plugin = pluginRequire(parse_manifest.mainFile);
-                            plugin["_manifest"] = {
-                                name: plugins[i]._name,
-                                desc: "Put stuff here!"
-                            };
-                            inst._plugins.push(plugin);
-                        }
+                // Do first pass.
+                real_fs.readdirSync(params.paths[i]).forEach(function (file) {
+                    if (file.indexOf(".zip") > -1) {
+                        logger.log("Loading " + file + " to virtual file system.")
+                        let pluginFS = new Volume();
+                        virtual_fs.use(pluginFS);
+                        monkey_patch.patchRequire(virtual_fs, true);
+                        // Copy this file into our virtual space.
+                        let buf = real_fs.readFileSync(params.paths[i] + file);
+                        pluginFS.writeFileSync("/" + file, buf);
+                        let revert = monkey_patch.patchFs(pluginFS);
+                        var zip = new AdmZip("/" + file);
+                        zip.extractAllTo("/", true);
+                        revert();
+                        pluginFS.readdirSync("/").forEach(function (vfile) {
+                            logger.log(vfile);
+                            if (vfile.indexOf(".js") > -1) {
+                                try {
+                                    let plugin = require("/" + vfile);
+                                    plugin["_fileSystem"] = pluginFS;
+                                    plugin["_payloads"] = [];
+                                    if (pluginFS.existsSync("/payloads")) {
+                                        let payloads = pluginFS.readdirSync("/payloads");
+                                        Object.keys(payloads).forEach(function (key) {
+                                            if (payloads[key].indexOf(".payload") > -1) {
+                                                logger.log("Loading payload: " + payloads[key] + ".");
+                                                let j = gameshark.read(pluginFS.readFileSync('/payloads/' + payloads[key]).toString());
+                                                plugin["_payloads"].push(j);
+                                            }
+                                        });
+                                    }
+                                    inst._plugins.push(plugin);
+                                } catch (err) {
+                                    logger.log(err.stack);
+                                }
+                            }
+                        });
+
+                    }
+                });
+                real_fs.readdirSync(params.paths[i]).forEach(function (file) {
+                    if (real_fs.lstatSync(path.join(params.paths[i], file)).isDirectory()) {
+                        real_fs.readdirSync(path.join(params.paths[i], file)).forEach(function (file2) {
+                            if (file2.indexOf(".js") > -1) {
+                                let plugin = require(path.join(params.paths[i], file, file2));
+                                plugin["_fileSystem"] = real_fs;
+                                plugin["_payloads"] = [];
+                                let payloads_path = path.join(params.paths[i], file, "/payloads");
+                                if (real_fs.existsSync(payloads_path)) {
+                                    let payloads = real_fs.readdirSync(payloads_path);
+                                    Object.keys(payloads).forEach(function (key) {
+                                        if (payloads[key].indexOf(".payload") > -1) {
+                                            logger.log("Loading payload: " + payloads[key] + ".");
+                                            let j = gameshark.read(real_fs.readFileSync(path.join(payloads_path, payloads[key])).toString());
+                                            plugin["_payloads"].push(j);
+                                        }
+                                    });
+                                }
+                                inst._plugins.push(plugin);
+                            }
+                        });
                     }
                 });
             }
@@ -151,7 +121,8 @@ class PluginSystem {
 pluginSystem = new PluginSystem();
 
 class PluginLoader {
-    constructor() {
+    constructor(pluginSystem) {
+        this._pluginSystem = pluginSystem;
     }
 
     load(callback) {
@@ -168,33 +139,27 @@ class PluginLoader {
                     api.registerPlugin(plugins[i]);
                     logger.log("Plugin Preinit: " + plugins[i]._name);
                     plugins[i].preinit();
-                    api.postEvent({id: "onPluginPreinit", plugin: plugins[i]});
+                    api.postEvent({ id: "onPluginPreinit", plugin: plugins[i] });
                 }
                 logger.log("Starting init phase.", "green");
                 for (let i = 0; i < plugins.length; i++) {
                     logger.log("Plugin Init: " + plugins[i]._name);
                     plugins[i].init();
-                    api.postEvent({id: "onPluginInit", plugin: plugins[i]});
+                    api.postEvent({ id: "onPluginInit", plugin: plugins[i] });
                 }
                 logger.log("Starting postinit phase.", "green");
                 for (let i = 0; i < plugins.length; i++) {
                     logger.log("Plugin Postinit: " + plugins[i]._name);
                     plugins[i].postinit();
-                    api.postEvent({id: "onPluginPostinit", plugin: plugins[i]});
+                    api.postEvent({ id: "onPluginPostinit", plugin: plugins[i] });
                 }
                 logger.log("Plugin loading complete.", "green");
                 callback();
             })
-        let payloads = fs.readdirSync(process.cwd() + '/plugins/payloads_10');
         let p = [];
-        logger.log("Starting payload loading phase.", "green");
-        Object.keys(payloads).forEach(function (key) {
-            if (payloads[key].indexOf(".payload") > -1) {
-                logger.log("Loading payload: " + payloads[key] + ".");
-                let j = gameshark.read(process.cwd() + '/plugins/payloads_10/' + payloads[key]);
-                p.push(j);
-            }
-        });
+        for (let i = 0; i < this._pluginSystem._plugins.length; i++) {
+            p = p.concat(this._pluginSystem._plugins._payloads);
+        }
         emulator.setConnectedFn(function () {
             for (let i = 0; i < p.length; i++) {
                 if (p[i].params.event !== undefined) {
@@ -220,4 +185,4 @@ class PluginLoader {
     }
 }
 
-module.exports = new PluginLoader();
+module.exports = new PluginLoader(pluginSystem);

@@ -105,7 +105,7 @@ if (CONFIG._rom !== "") {
     CONFIG.save();
 }
 
-if (rom !== "") {
+if (rom !== undefined) {
     logger.log(rom);
 }
 
@@ -117,8 +117,10 @@ fs.readdirSync("./mods").forEach(file => {
     }
 });
 
-logger.log("Mods list:");
-logger.log(mods);
+if (mods.length > 0){
+    logger.log("Mods list:");
+    logger.log(mods);
+}
 
 api.registerEvent("BPSPatchDownloaded");
 api.registerEvent("GUI_BadVersion");

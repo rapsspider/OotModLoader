@@ -21,9 +21,8 @@ const logger = require('./OotLogger')("Localization");
 
 class OotLocalizer{
 
-    constructor(file){
-        logger.log("Loading file: " + file + ".");
-        this._data = JSON.parse(fs.readFileSync(process.cwd() + '/plugins/localization/' + file + ".json"));
+    constructor(str){
+        this._data = JSON.parse(str);
     }
 
     getLocalizedString(key){
@@ -33,9 +32,8 @@ class OotLocalizer{
 }
 
 class OotIconizer{
-    constructor(file){
-        logger.log("Loading file: " + file + ".");
-        this._data = JSON.parse(fs.readFileSync(process.cwd() + '/plugins/localization/' + file + ".json"));
+    constructor(str){
+        this._data = JSON.parse(str);
     }
 
     getIcon(key){
@@ -43,22 +41,8 @@ class OotIconizer{
     }
 }
 
-class OotTextReader{
-    constructor(file){
-        logger.log("Loading file: " + file + ".");
-        let original = fs.readFileSync(process.cwd() + '/plugins/localization/' + file, "utf8");
-        this._data = original.split(/\r?\n/);
-    }
-
-    getData(){
-        return this._data;
-    }
-}
-
 module.exports = {create: function(file){
     return new OotLocalizer(file);
 }, icons: function(file){
     return new OotIconizer(file);
-}, text: function(file){
-    return new OotTextReader(file);
 }};

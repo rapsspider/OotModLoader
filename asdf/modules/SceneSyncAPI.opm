@@ -46,7 +46,7 @@ class SceneSync_API {
         (function (inst) {
             logger.log("--------------------")
             logger.log("Loading templates...");
-            inst._actorList = api.loadVariables("actor_lists");
+            inst._actorList = require(inst._parent._currentDir + '/versions/10/actor_lists.json');
             Object.keys(inst._actorList).forEach(function (key) {
                 if (key !== "global" && key !== "table_offset") {
                     let value =
@@ -57,20 +57,20 @@ class SceneSync_API {
                     inst._actorCategories.push(value);
                 }
             });
-            let templates = fs.readdirSync(__dirname + "/templates");
+            let templates = inst._parent._fileSystem.readdirSync(inst._parent._currentDir + "/modules/templates");
             Object.keys(templates).forEach(function (key) {
                 let file = templates[key];
                 logger.log("Loading " + file + ".");
-                let temp = pluginRequire("./modules/templates/" + file);
+                let temp = require(inst._parent._currentDir + "/modules/templates/" + file);
                 inst.registerTemplate(temp.id, temp);
             });
             logger.log("--------------------")
             logger.log("Loading actor data...");
-            let actors = fs.readdirSync(__dirname + "/actors");
+            let actors = inst._parent._fileSystem.readdirSync(inst._parent._currentDir + "/modules/actors");
             Object.keys(actors).forEach(function (key) {
                 let file = actors[key];
                 logger.log("Loading " + file + ".");
-                let temp = pluginRequire("./modules/actors/" + file);
+                let temp = require(inst._parent._currentDir + "/modules/actors/" + file);
                 if (temp.hasOwnProperty("setup")) {
                     temp.setup(temp, api);
                 }

@@ -26,8 +26,8 @@ class Gameshark {
     constructor() {
     }
 
-    read(path) {
-        let original = fs.readFileSync(path, "utf8");
+    read(data) {
+        let original = data;
 
         let lines = original.split(/\r?\n/);
         let commands = {

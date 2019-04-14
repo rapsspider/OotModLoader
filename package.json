@@ -8,18 +8,19 @@
   },
   "bin": "./src/app.js",
   "dependencies": {
-    "asar": "^1.0.0",
+    "adm-zip": "^0.4.13",
     "bitwise": "^2.0.3",
     "body-parser": "^1.18.3",
     "chalk": "^2.4.1",
     "cross-spawn": "^6.0.5",
     "discord-rich-presence": "0.0.8",
-    "download-file": "^0.1.5",
     "express": "^4.16.3",
+    "fs-monkey": "^0.3.3",
     "hex-rgb": "^3.0.0",
     "human-readable-ids": "^1.0.4",
     "json-socket": "^0.3.0",
     "jsonpack": "^1.1.5",
+    "memfs": "^2.15.2",
     "nat-upnp": "^1.1.1",
     "ncp": "^2.0.0",
     "require-from-string": "^2.0.2",
@@ -27,6 +28,6 @@
     "serve-static-restify": "^2.1.0",
     "socket.io": "^2.1.1",
     "socket.io-client": "^2.1.1",
-    "unzip": "^0.1.11"
+    "unionfs": "^4.2.0"
   }
 }

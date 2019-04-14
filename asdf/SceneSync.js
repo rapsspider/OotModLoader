@@ -21,7 +21,7 @@ const emulator = require(global.OotRunDir + "/OotBizHawk");
 const logger = require(global.OotRunDir + "/OotLogger")("SceneSync");
 const client = require(global.OotRunDir + "/OotClient");
 const CONFIG = require(global.OotRunDir + "/OotConfig");
-const scene_api = pluginRequire('./modules/SceneSyncAPI.opm');
+const scene_api = require(__dirname + '/modules/SceneSyncAPI.opm');
 
 let INSTANCE;
 
@@ -43,6 +43,7 @@ class SceneSync {
         this._computeList = [];
         this._forbidHandler;
         this._needRoomCheck = false;
+        this._currentDir = __dirname;
         this._api = new scene_api(this, emulator, api);
     }
 
@@ -52,7 +53,7 @@ class SceneSync {
 
     preinit() {
         api.registerEvent("onSceneContextUpdate");
-        api.registerPacket(__dirname + "/packets/scene_flags.json");
+        api.registerPacket(this._fileSystem.readFileSync(__dirname + "/packets/scene_flags.json"));
         api.registerEvent("syncSafety");
         api.registerEvent("ZeldaDespawned");
         this._api.init(api);
