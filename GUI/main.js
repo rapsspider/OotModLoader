@@ -1,7 +1,7 @@
 // Modules to control application life and create native browser window
 const { app, BrowserWindow, ipcMain } = require('electron')
 const path = require('path');
-let ooto;
+let ooto = null;
 let discord;
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -45,8 +45,8 @@ function setupModLoader() {
   // Tell computers that are trying to start us in appdata to fuck off.
   process.chdir(path.dirname(process.argv[0]));
   ooto = require('./OotModLoader')
-  let d = require('./OotDiscord');
-  discord = new d(ooto.config);
+  discord = require('./OotDiscord');
+  discord.setup(ooto.config);
   let event_reg = function (id) {
     ooto.api.registerEventHandler(id, function (event) {
       console.log(event)
@@ -55,7 +55,6 @@ function setupModLoader() {
       }
     });
   }
-  event_reg("onBizHawkInstall");
   event_reg("GUI_StartFailed");
   event_reg("GUI_BadVersion");
   event_reg("onServerConnection");
@@ -64,17 +63,17 @@ function setupModLoader() {
   event_reg("GUI_updateLobbyBrowser_Reply");
   event_reg("GUI_ResetButton");
   ooto.api.registerEventHandler("GUI_StartButtonPressed", function(event){
-    discord.loadingGame();
+    //discord.loadingGame();
   })
   ooto.api.registerEventHandler("onLuaStart", function(event){
-    discord.titleScreen();
+    //discord.titleScreen();
   })
   ooto.api.registerEventHandler("GUI_ResetButton", function(event){
-    discord.onLauncher();
+    //discord.onLauncher();
   })
   ooto.api.registerEventHandler("onSceneChange", function(event){
     if (event.player.isMe){
-      discord.onSceneChange(event.scene);
+      //discord.onSceneChange(event.scene);
     }
   })
   ipcMain.on('postEvent', (event, arg) => {

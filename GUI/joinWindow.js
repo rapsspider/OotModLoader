@@ -6,13 +6,14 @@ class JoinWindow {
         this.window = null;
         ipcMain.on("onJoinClicked", (event, arg) => {
             callback(arg);
+            this.window.close();
         });
     }
 
     load(user) {
         this.window = new BrowserWindow({
             width: 300,
-            height: 250,
+            height: 300,
             webPreferences: {
                 nodeIntegration: true
             },

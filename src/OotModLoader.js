@@ -15,7 +15,6 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-
 global.OotRunDir = __dirname;
 if (!global.hasOwnProperty("OotModLoader")) {
     global["OotModLoader"] = {};
