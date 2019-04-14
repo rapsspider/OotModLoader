@@ -158,6 +158,10 @@ function configChanged() {
     sendToMainProcess("postEvent", { id: "GUI_ConfigChanged", config: cfg });
 }
 
+ipcRenderer.on('GUI_DiscordJoin', function (wtfisthis, event) {
+    startClient();
+});
+
 function startClient() {
     var sel = document.getElementById("rom");
     let rom = sel.options[sel.selectedIndex].text;
@@ -181,7 +185,6 @@ function startClient() {
         document.getElementById("connect").textContent = "Client Started.";
     }, 10000);
     document.getElementById("connect").disabled = true;
-
     sendToMainProcess("postEvent", { id: "GUI_StartButtonPressed", start: true, rom: "" })
 }
 

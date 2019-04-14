@@ -46,7 +46,7 @@ function setupModLoader() {
   process.chdir(path.dirname(process.argv[0]));
   ooto = require('./OotModLoader')
   discord = require('./OotDiscord');
-  discord.setup(ooto.config);
+  discord.setup(ooto);
   let event_reg = function (id) {
     ooto.api.registerEventHandler(id, function (event) {
       console.log(event)
@@ -62,14 +62,15 @@ function setupModLoader() {
   event_reg("onPlayerDisconnected");
   event_reg("GUI_updateLobbyBrowser_Reply");
   event_reg("GUI_ResetButton");
+  event_reg("GUI_DiscordJoin")
   ooto.api.registerEventHandler("GUI_StartButtonPressed", function(event){
-    //discord.loadingGame();
+    discord.loadingGame();
   })
   ooto.api.registerEventHandler("onLuaStart", function(event){
-    //discord.titleScreen();
+    discord.titleScreen();
   })
   ooto.api.registerEventHandler("GUI_ResetButton", function(event){
-    //discord.onLauncher();
+    discord.onLauncher();
   })
   ooto.api.registerEventHandler("onSceneChange", function(event){
     if (event.player.isMe){

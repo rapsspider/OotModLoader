@@ -22,6 +22,11 @@ if (!global.hasOwnProperty("OotModLoader")) {
 global.OotModLoader["OVERRIDE_PATCH_FILE"] = "";
 global.OotModLoader["OVERRIDE_ROM_FILE"] = "";
 
+global.OotModLoader["OVERRIDE_IP"] = "";
+global.OotModLoader["OVERRIDE_PORT"] = "";
+global.OotModLoader["OVERRIDE_ROOM"] = "";
+global.OotModLoader["OVERRIDE_PASSWORD"] = "";
+
 const original_console = console.log;
 let console_hook = function (msg) { };
 
@@ -148,6 +153,17 @@ plugins.load(function () {
 
         logger.log("Awaiting start command from GUI.");
         api.registerEventHandler("GUI_StartButtonPressed", function (event) {
+            if (global.OotModLoader.OVERRIDE_IP !== "") {
+                CONFIG._master_server_ip = global.OotModLoader.OVERRIDE_IP;
+                CONFIG._master_server_port = global.OotModLoader.OVERRIDE_PORT;
+                CONFIG._GAME_ROOM = global.OotModLoaderOVERRIDE_ROOM;
+                CONFIG._game_password = global.OotModLoader.OVERRIDE_PASSWORD;
+                global.OotModLoader["OVERRIDE_IP"] = "";
+                global.OotModLoader["OVERRIDE_PORT"] = "";
+                global.OotModLoader["OVERRIDE_ROOM"] = "";
+                global.OotModLoader["OVERRIDE_PASSWORD"] = "";
+                CONFIG.save();
+            }
             if (global.OotModLoader.OVERRIDE_ROM_FILE !== "") {
                 rom = global.OotModLoader.OVERRIDE_ROM_FILE;
                 CONFIG._rom = global.OotModLoader.OVERRIDE_ROM_FILE;
@@ -297,7 +313,7 @@ function mangleRomHeader(rom, out) {
     return lobby_path;
 }
 
-function startBizHawk(lobby_path){
+function startBizHawk(lobby_path) {
     if (BUILD_TYPE === "GUI") {
         logger.log("Starting BizHawk...");
         try {
@@ -318,7 +334,7 @@ function startBizHawk(lobby_path){
 api.registerEventHandler("onServerConnection", function (event) {
     if (BUILD_TYPE === "GUI") {
         let lobby_path = "./temp/" + event.room + path.extname(rom);
-        if (!event.isModdedLobby){
+        if (!event.isModdedLobby) {
             mangleRomHeader(rom, lobby_path);
             startBizHawk(lobby_path);
         }

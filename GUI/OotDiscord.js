@@ -7,10 +7,12 @@ const client = new RPC.Client({ transport: 'ipc' });
 let lang = localization.create("en_US");
 let sceneNumberToLangKey = localization.create("scene_numbers");
 let config;
+let ooto;
 
-function setup(_config) {
-    config = _config;
-    client.on('ready', async () => {
+function setup(_ooto) {
+    config = _ooto.config;
+    ooto = _ooto;
+    client.on('ready', () => {
         onLauncher();
         client.on('RPC_MESSAGE_RECEIVED', (event) => {
             console.log(event);
@@ -24,14 +26,21 @@ function setup(_config) {
                         }
                     });
                     jw.load(event.data.user);
-                }else if (event.evt === "ACTIVITY_JOIN"){
-                    
+                } else if (event.evt === "ACTIVITY_JOIN") {
+                    let parse = event.data.secret.split(",");
+                    global.OotModLoader["OVERRIDE_IP"] = parse[0];
+                    global.OotModLoader["OVERRIDE_PORT"] = parse[1];
+                    global.OotModLoader["OVERRIDE_ROOM"] = parse[2];
+                    global.OotModLoader["OVERRIDE_PASSWORD"] = parse[3];
+                    ooto.api.postEvent({id: "GUI_DiscordJoin"});
                 }
             }
         });
         client.subscribe('ACTIVITY_JOIN', function (stuff) {
         });
         client.subscribe('ACTIVITY_JOIN_REQUEST', function (stuff) {
+        });
+        client.subscribe('GAME_JOIN', function (stuff) {
         });
     });
     client.login({ clientId });
@@ -62,8 +71,8 @@ function titleScreen() {
         startTimestamp: Date.now(),
         largeImageKey: 'untitled-1_copy',
         instance: true,
-        matchSecret: config.cfg.CLIENT.game_room,
-        joinSecret: config.cfg.CLIENT.game_password
+        partyId: config.cfg.CLIENT.game_room,
+        joinSecret: config.cfg.CLIENT.game_room + "," + config.cfg.CLIENT.game_password
     });
 }
 
@@ -74,8 +83,8 @@ function onSceneChange(num) {
         startTimestamp: Date.now(),
         largeImageKey: 'untitled-1_copy',
         instance: true,
-        matchSecret: config.cfg.CLIENT.game_room,
-        joinSecret: config.cfg.CLIENT.game_password
+        partyId: config.cfg.CLIENT.game_room,
+        joinSecret: config.cfg.SERVER.master_server_ip + "," + config.cfg.SERVER.master_server_port + "," + config.cfg.CLIENT.game_room + "," + config.cfg.CLIENT.game_password
     });
 }
 
