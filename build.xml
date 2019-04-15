@@ -27,6 +27,7 @@
     <mkdir dir="${bin}"/>
     <mkdir dir="${bin}/Lua"/>
     <mkdir dir="${build_temp}"/>
+    <mkdir dir="./empty_folder"/>
   </target>
 
   <target name="build">
@@ -119,7 +120,7 @@
     </exec>
     <exec executable="${cmd.exec}">
       <arg value="${cmd.con}"/>
-      <arg value="electron-packager ./asdsad --all --out=${build_temp} --prebuilt-asar=${build_temp}/app.asar --electron-version=4.1.2 --icon 'OotOnline_Icon.ico'"/>
+      <arg value="electron-packager ./empty_folder --all --out=${build_temp} --prebuilt-asar=${build_temp}/app.asar --electron-version=4.1.2 --icon 'OotOnline_Icon.ico'"/>
     </exec>
     <antcall target="copy_files">
       <param name="tfolder" value="${build_temp}/OotModLoader-linux-x64"/>

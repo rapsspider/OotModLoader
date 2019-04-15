@@ -357,7 +357,7 @@ function startBizHawk(lobby_path) {
         logger.log("Starting BizHawk...");
         try {
             logger.log("Loading " + path.resolve(lobby_path) + ".");
-            var child = spawn('./BizHawk/OOTO-Emu.exe', ['--lua=' + path.resolve("./BizHawk/Lua/OotModLoader.lua"), path.resolve(lobby_path)], { stdio: 'inherit' });
+            var child = spawn('./BizHawk/EmuHawk.exe', ['--lua=' + path.resolve("./BizHawk/Lua/OotModLoader.lua"), path.resolve(lobby_path)], { stdio: 'inherit' });
             child.on('close', function (code, signal) {
                 logger.log("BizHawk has closed!");
                 api.postEvent({ id: "GUI_ResetButton", code: code });
