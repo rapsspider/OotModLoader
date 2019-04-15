@@ -17,17 +17,11 @@
 */
 
 const logger = require('./OotLogger')("PluginManager");
-const gameshark = require(global.OotRunDir + "/GamesharkToInjectConverter");
-const emulator = require(global.OotRunDir + "/OotBizHawk");
+const gameshark = require("./GamesharkToInjectConverter");
+const emulator = require("./OotBizHawk");
 const path = require('path');
-const api = require(global.OotRunDir + "/OotAPI");
-const Volume = require('memfs').Volume;
+const api = require("./OotAPI");
 const real_fs = require('fs');
-const Union = require('unionfs').Union;
-const monkey_patch = require('fs-monkey');
-const virtual_fs = new Union().use(real_fs);
-const AdmZip = require('adm-zip');
-monkey_patch.patchRequire(virtual_fs, true);
 
 class PluginSystem {
     constructor() {
@@ -42,44 +36,6 @@ class PluginSystem {
         (function (inst) {
             for (let i = 0; i < params.paths.length; i++) {
                 // Do first pass.
-                real_fs.readdirSync(params.paths[i]).forEach(function (file) {
-                    if (file.indexOf(".zip") > -1) {
-                        logger.log("Loading " + file + " to virtual file system.")
-                        let pluginFS = new Volume();
-                        virtual_fs.use(pluginFS);
-                        monkey_patch.patchRequire(virtual_fs, true);
-                        // Copy this file into our virtual space.
-                        let buf = real_fs.readFileSync(params.paths[i] + file);
-                        pluginFS.writeFileSync("/" + file, buf);
-                        let revert = monkey_patch.patchFs(pluginFS);
-                        var zip = new AdmZip("/" + file);
-                        zip.extractAllTo("/", true);
-                        revert();
-                        pluginFS.readdirSync("/").forEach(function (vfile) {
-                            logger.log(vfile);
-                            if (vfile.indexOf(".js") > -1) {
-                                try {
-                                    let plugin = require("/" + vfile);
-                                    plugin["_fileSystem"] = pluginFS;
-                                    inst._plugins.push(plugin);
-                                } catch (err) {
-                                    logger.log(err.stack);
-                                }
-                            }
-                        });
-                        let payloads_path = path.join(params.paths[i], file, "/payloads");
-                        if (pluginFS.existsSync("/payloads")) {
-                            let payloads = pluginFS.readdirSync("/payloads");
-                            Object.keys(payloads).forEach(function (key) {
-                                if (payloads[key].indexOf(".payload") > -1) {
-                                    logger.log("Loading payload: " + payloads[key] + ".");
-                                    let j = gameshark.read(pluginFS.readFileSync('/payloads/' + payloads[key]).toString());
-                                    inst._payloads.push(j);
-                                }
-                            });
-                        }
-                    }
-                });
                 real_fs.readdirSync(params.paths[i]).forEach(function (file) {
                     if (real_fs.lstatSync(path.join(params.paths[i], file)).isDirectory()) {
                         real_fs.readdirSync(path.join(params.paths[i], file)).forEach(function (file2) {

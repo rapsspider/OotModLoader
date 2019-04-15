@@ -1,4 +1,4 @@
-const localization = require('./OotLocalizer');
+const localization = require('../OotLocalizer');
 const joinWindow = require('./joinWindow');
 const clientId = "566152040711979019";
 const RPC = require('discord-rpc')

@@ -1,18 +1,16 @@
 // Modules to control application life and create native browser window
-const { app, BrowserWindow, ipcMain } = require('electron')
-const path = require('path');
+const { BrowserWindow, ipcMain } = require('electron')
 let ooto = null;
 let discord;
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow
-app.disableHardwareAcceleration()
-function createWindow() {
+function createWindow(instance) {
   // Create the browser window.
   mainWindow = new BrowserWindow({
     width: 1000,
-    height: 740,
+    height: 800,
     webPreferences: {
       nodeIntegration: true
     },
@@ -21,15 +19,15 @@ function createWindow() {
   })
 
   mainWindow.once('ready-to-show', () => {
-    setupModLoader();
+    setup(instance);
     mainWindow.show()
   })
 
   // and load the index.html of the app.
-  mainWindow.loadFile(path.resolve(global.OotModLoader.asar, 'index.html'))
+  mainWindow.loadFile(__dirname + '/index.html')
 
   // Open the DevTools.
-  // mainWindow.webContents.openDevTools()
+  mainWindow.webContents.openDevTools()
 
   // Emitted when the window is closed.
   mainWindow.on('closed', function () {
@@ -41,10 +39,8 @@ function createWindow() {
 
 }
 
-function setupModLoader() {
-  // Tell computers that are trying to start us in appdata to fuck off.
-  process.chdir(path.dirname(process.argv[0]));
-  ooto = require('./OotModLoader')
+function setup(instance){
+  ooto = instance;
   discord = require('./OotDiscord');
   discord.setup(ooto);
   let event_reg = function (id) {
@@ -106,30 +102,10 @@ function setupModLoader() {
       }
     }
   }, 100);
-  //mainWindow.webContents.openDevTools()
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.on('ready', createWindow)
+function setupModLoader(instance) {
+  createWindow(instance);
+}
 
-// Quit when all windows are closed.
-app.on('window-all-closed', function () {
-  // On macOS it is common for applications and their menu bar
-  // to stay active until the user quits explicitly with Cmd + Q
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
-})
-
-app.on('activate', function () {
-  // On macOS it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  if (mainWindow === null) {
-    createWindow()
-  }
-})
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
+module.exports = {setupModLoader: setupModLoader};

@@ -16,7 +16,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-const emulator = require(global.OotRunDir + "/OotBizHawk");
+const emulator = require("./OotBizHawk");
 const logger = require('./OotLogger')("API");
 const fs = require("fs");
 

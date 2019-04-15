@@ -15,6 +15,40 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+
+const { app } = require('electron')
+const CONFIG = require('./OotConfig');
+
+let master = require('./OotMasterServer');
+let client = require('./OotClient');
+let emu = require('./OotBizHawk');
+let api = require('./OotAPI');
+let plugins = require('./OotPluginLoader');
+const encoder = require('./OotEncoder');
+let gs = require('./GamesharkToInjectConverter');
+let logger = require('./OotLogger')('Core');
+const fs = require("fs");
+const colors = require('./OotColors');
+const localizer = require('./OotLocalizer');
+//const BUILD_TYPE = "GUI";
+const BUILD_TYPE = "@BUILD_TYPE@";
+var ncp = require('ncp').ncp;
+var path = require("path");
+const spawn = require('cross-spawn');
+const lb = require("./OotLobbyBrowser");
+const byte = require('./OotBitwise');
+
+let packetTransformers = {};
+let packetRoutes = {};
+let clientsideHooks = {};
+let rom = "";
+let console_log = [];
+let isMasterSetup = false;
+let isClientSetup = false;
+let rom_dir = "./rom";
+let roms_list = [];
+let mods = [];
+
 global.OotRunDir = __dirname;
 if (!global.hasOwnProperty("OotModLoader")) {
     global["OotModLoader"] = {};
@@ -35,34 +69,6 @@ console.log = function (msg) {
     console_hook(msg);
 }
 
-const CONFIG = require('./OotConfig');
-
-let master = require('./OotMasterServer');
-let client = require('./OotClient');
-let emu = require('./OotBizHawk');
-let api = require('./OotAPI');
-let plugins = require('./OotPluginLoader');
-const encoder = require('./OotEncoder');
-let gs = require('./GamesharkToInjectConverter');
-let logger = require('./OotLogger')('Core');
-const fs = require("fs");
-const colors = require('./OotColors');
-const localizer = require('./OotLocalizer');
-const BUILD_TYPE = "@BUILD_TYPE@";
-var ncp = require('ncp').ncp;
-var path = require("path");
-const spawn = require('cross-spawn');
-const lb = require("./OotLobbyBrowser");
-const byte = require('./OotBitwise');
-
-let packetTransformers = {};
-let packetRoutes = {};
-let clientsideHooks = {};
-let rom = "";
-let console_log = [];
-let isMasterSetup = false;
-let isClientSetup = false;
-
 console_hook = function (msg) {
     if (typeof (str) === "string") {
         console_log.push(msg)
@@ -71,167 +77,198 @@ console_hook = function (msg) {
     }
 };
 
-let rom_dir = "./rom";
-
-if (!fs.existsSync("./temp")) {
-    fs.mkdirSync("./temp");
-}
-
-if (!fs.existsSync(rom_dir)) {
-    logger.log("Failed to find rom directory at " + path.resolve(rom_dir));
-    rom_dir = __dirname + "/rom";
-    logger.log("Trying " + path.resolve(rom_dir) + " instead.");
-}
-
-let roms_list = [];
-
-fs.readdirSync("./rom").forEach(file => {
-    if (file.indexOf(".z64") > -1) {
-        roms_list.push("./rom/" + file);
+app.on('ready', function () {
+    if (BUILD_TYPE === "GUI"){
+        let gui = require('./gui/OotGUI');
+        gui.setupModLoader({ api: api, config: CONFIG, console: console_log, mods: mods, roms: roms_list });
     }
-    if (file.indexOf(".n64") > -1) {
-        roms_list.push("./rom/" + file);
+
+    if (!fs.existsSync("./temp")) {
+        fs.mkdirSync("./temp");
     }
-    if (file.indexOf(".v64") > -1) {
-        roms_list.push("./rom/" + file);
+
+    if (!fs.existsSync(rom_dir)) {
+        logger.log("Failed to find rom directory at " + path.resolve(rom_dir));
+        rom_dir = __dirname + "/rom";
+        logger.log("Trying " + path.resolve(rom_dir) + " instead.");
     }
-});
 
-rom = roms_list[roms_list.length - 1];
-if (CONFIG._rom !== "") {
-    rom = CONFIG._rom;
-} else {
-    CONFIG._rom = rom;
-    CONFIG.save();
-}
-
-if (rom !== undefined) {
-    logger.log(rom);
-}
-
-let mods = [];
-
-fs.readdirSync("./mods").forEach(file => {
-    if (file.indexOf(".bps") > -1) {
-        mods.push(file);
-    }
-});
-
-if (mods.length > 0){
-    logger.log("Mods list:");
-    logger.log(mods);
-}
-
-api.registerEvent("BPSPatchDownloaded");
-api.registerEvent("GUI_BadVersion");
-
-emu.setDataParseFn(parseData);
-client.setProcessFn(processData);
-api.setRouteFn(registerPacketRoute);
-api.setTransformerFn(registerPacketTransformer);
-api.setClientHookFn(registerClientSidePacketHook);
-client.setOnPlayerConnected(onPlayerConnected);
-
-master.preSetup();
-logger.log(process.cwd());
-logger.log("Loading plugins...");
-plugins.load(function () {
-    CONFIG.save();
-    if (BUILD_TYPE !== "GUI") {
-        if (CONFIG.isMaster) {
-            master.setup();
-            lb.setup();
+    fs.readdirSync("./rom").forEach(file => {
+        if (file.indexOf(".z64") > -1) {
+            roms_list.push("./rom/" + file);
         }
-        if (CONFIG.isClient) {
-            client.setProcessFn(processData);
-            client.setup();
+        if (file.indexOf(".n64") > -1) {
+            roms_list.push("./rom/" + file);
         }
+        if (file.indexOf(".v64") > -1) {
+            roms_list.push("./rom/" + file);
+        }
+    });
+
+    rom = roms_list[roms_list.length - 1];
+    if (CONFIG._rom !== "") {
+        rom = CONFIG._rom;
     } else {
-        var LUA_LOC = ".";
-        ncp.limit = 16;
-        api.registerEvent("GUI_StartButtonPressed");
-        api.registerEvent("GUI_StartFailed");
-        api.registerEvent("GUI_ResetButton");
+        CONFIG._rom = rom;
+        CONFIG.save();
+    }
 
-        logger.log("Awaiting start command from GUI.");
-        api.registerEventHandler("GUI_StartButtonPressed", function (event) {
-            if (global.OotModLoader.OVERRIDE_IP !== "") {
-                CONFIG._master_server_ip = global.OotModLoader.OVERRIDE_IP;
-                CONFIG._master_server_port = global.OotModLoader.OVERRIDE_PORT;
-                CONFIG._GAME_ROOM = global.OotModLoader.OVERRIDE_ROOM;
-                CONFIG._game_password = global.OotModLoader.OVERRIDE_PASSWORD;
-                global.OotModLoader["OVERRIDE_IP"] = "";
-                global.OotModLoader["OVERRIDE_PORT"] = "";
-                global.OotModLoader["OVERRIDE_ROOM"] = "";
-                global.OotModLoader["OVERRIDE_PASSWORD"] = "";
-                CONFIG.save();
-            }
-            if (global.OotModLoader.OVERRIDE_ROM_FILE !== "") {
-                rom = global.OotModLoader.OVERRIDE_ROM_FILE;
-                CONFIG._rom = global.OotModLoader.OVERRIDE_ROM_FILE;
-                CONFIG.save();
-            }
-            CONFIG._patchFile = global.OotModLoader.OVERRIDE_PATCH_FILE;
-            CONFIG.save();
+    if (rom !== undefined) {
+        logger.log(rom);
+    }
+
+    fs.readdirSync("./mods").forEach(file => {
+        if (file.indexOf(".bps") > -1) {
+            mods.push(file);
+        }
+    });
+
+    if (mods.length > 0) {
+        logger.log("Mods list:");
+        logger.log(mods);
+    }
+
+    api.registerEvent("BPSPatchDownloaded");
+    api.registerEvent("GUI_BadVersion");
+
+    emu.setDataParseFn(parseData);
+    client.setProcessFn(processData);
+    api.setRouteFn(registerPacketRoute);
+    api.setTransformerFn(registerPacketTransformer);
+    api.setClientHookFn(registerClientSidePacketHook);
+    client.setOnPlayerConnected(onPlayerConnected);
+
+    master.preSetup();
+    logger.log(process.cwd());
+    logger.log("Loading plugins...");
+    plugins.load(function () {
+        CONFIG.save();
+        if (BUILD_TYPE !== "GUI") {
             if (CONFIG.isMaster) {
-                if (!isMasterSetup) {
-                    master.setup();
-                    lb.setup();
-                    isMasterSetup = true;
-                }
+                master.setup();
+                lb.setup();
             }
             if (CONFIG.isClient) {
-                if (!isClientSetup) {
-                    client.setProcessFn(processData);
-                    client.setup();
-                    isClientSetup = true;
-                }
+                client.setProcessFn(processData);
+                client.setup();
             }
-        });
-        api.registerEvent("GUI_ConfigChanged");
-        api.registerEvent("onConfigUpdate");
-        api.registerEventHandler("GUI_ConfigChanged", function (event) {
-            logger.log(event);
-            Object.keys(event.config).forEach(function (key) {
-                if (CONFIG.hasOwnProperty(key)) {
-                    if (event.config[key] == 'on') {
-                        event.config[key] = true;
+        } else {
+            var LUA_LOC = ".";
+            ncp.limit = 16;
+            api.registerEvent("GUI_StartButtonPressed");
+            api.registerEvent("GUI_StartFailed");
+            api.registerEvent("GUI_ResetButton");
+
+            logger.log("Awaiting start command from GUI.");
+            api.registerEventHandler("GUI_StartButtonPressed", function (event) {
+                if (global.OotModLoader.OVERRIDE_IP !== "") {
+                    CONFIG._master_server_ip = global.OotModLoader.OVERRIDE_IP;
+                    CONFIG._master_server_port = global.OotModLoader.OVERRIDE_PORT;
+                    CONFIG._GAME_ROOM = global.OotModLoader.OVERRIDE_ROOM;
+                    CONFIG._game_password = global.OotModLoader.OVERRIDE_PASSWORD;
+                    global.OotModLoader["OVERRIDE_IP"] = "";
+                    global.OotModLoader["OVERRIDE_PORT"] = "";
+                    global.OotModLoader["OVERRIDE_ROOM"] = "";
+                    global.OotModLoader["OVERRIDE_PASSWORD"] = "";
+                    CONFIG.save();
+                }
+                if (global.OotModLoader.OVERRIDE_ROM_FILE !== "") {
+                    rom = global.OotModLoader.OVERRIDE_ROM_FILE;
+                    CONFIG._rom = global.OotModLoader.OVERRIDE_ROM_FILE;
+                    CONFIG.save();
+                }
+                CONFIG._patchFile = global.OotModLoader.OVERRIDE_PATCH_FILE;
+                CONFIG.save();
+                if (CONFIG.isMaster) {
+                    if (!isMasterSetup) {
+                        master.setup();
+                        lb.setup();
+                        isMasterSetup = true;
                     }
-                    if (event.config[key] == "off") {
-                        event.config[key] = false;
+                }
+                if (CONFIG.isClient) {
+                    if (!isClientSetup) {
+                        client.setProcessFn(processData);
+                        client.setup();
+                        isClientSetup = true;
                     }
-                    CONFIG[key] = event.config[key];
-                } else if (CONFIG._tunic_colors.hasOwnProperty(key)) {
-                    CONFIG._tunic_colors[key] = event.config[key];
                 }
             });
-            CONFIG.save();
-            setTimeout(function () {
-                api.postEvent({ id: "onConfigUpdate", config: CONFIG });
-            }, 1000);
-        });
-        ncp(LUA_LOC + "/Lua", "./BizHawk/Lua", function (err) {
-            if (err) {
-                return console.error(err);
+            api.registerEvent("GUI_ConfigChanged");
+            api.registerEvent("onConfigUpdate");
+            api.registerEventHandler("GUI_ConfigChanged", function (event) {
+                logger.log(event);
+                Object.keys(event.config).forEach(function (key) {
+                    if (CONFIG.hasOwnProperty(key)) {
+                        if (event.config[key] == 'on') {
+                            event.config[key] = true;
+                        }
+                        if (event.config[key] == "off") {
+                            event.config[key] = false;
+                        }
+                        CONFIG[key] = event.config[key];
+                    } else if (CONFIG._tunic_colors.hasOwnProperty(key)) {
+                        CONFIG._tunic_colors[key] = event.config[key];
+                    }
+                });
+                CONFIG.save();
+                setTimeout(function () {
+                    api.postEvent({ id: "onConfigUpdate", config: CONFIG });
+                }, 1000);
+            });
+            ncp(LUA_LOC + "/Lua", "./BizHawk/Lua", function (err) {
+                if (err) {
+                    return console.error(err);
+                }
+                logger.log("Installed Lua files!");
+                fs.writeFileSync("./BizHawk/Lua/OotModLoader-data.json", JSON.stringify(CONFIG._localPort));
+                if (!fs.existsSync("./BizHawk/config.ini")) {
+                    fs.copyFileSync(LUA_LOC + "/config.ini", "./BizHawk/config.ini");
+                }
+            });
+            ncp(LUA_LOC + "/mime", "./BizHawk/mime", function (err) {
+                if (err) {
+                    return console.error(err);
+                }
+            });
+            ncp(LUA_LOC + "/socket", "./BizHawk/socket", function (err) {
+                if (err) {
+                    return console.error(err);
+                }
+            });
+        }
+    });
+
+    api.registerEventHandler("onServerConnection", function (event) {
+        if (BUILD_TYPE === "GUI") {
+            let lobby_path = "./temp/" + event.room + path.extname(rom);
+            if (!event.isModdedLobby) {
+                mangleRomHeader(rom, lobby_path);
+                startBizHawk(lobby_path);
             }
-            logger.log("Installed Lua files!");
-            fs.writeFileSync("./BizHawk/Lua/OotModLoader-data.json", JSON.stringify(CONFIG._localPort));
-            if (!fs.existsSync("./BizHawk/config.ini")) {
-                fs.copyFileSync(LUA_LOC + "/config.ini", "./BizHawk/config.ini");
-            }
-        });
-        ncp(LUA_LOC + "/mime", "./BizHawk/mime", function (err) {
-            if (err) {
-                return console.error(err);
-            }
-        });
-        ncp(LUA_LOC + "/socket", "./BizHawk/socket", function (err) {
-            if (err) {
-                return console.error(err);
-            }
-        });
-    }
+        }
+    });
+
+    api.registerEventHandler("BPSPatchDownloaded", function (event) {
+        let bps_name = "./temp/" + CONFIG.GAME_ROOM + ".bps";
+        fs.writeFileSync(bps_name, event.data);
+        let bps_class = require('./OotBPS');
+        let bps = new bps_class();
+        try {
+            var newRom = bps.tryPatch(rom, bps_name);
+            mangleRomHeader(newRom, newRom);
+            startBizHawk(newRom);
+        } catch (err) {
+            logger.log(JSON.stringify(err));
+        }
+    });
 });
+
+app.on('window-all-closed', function () {
+    if (process.platform !== 'darwin') {
+        app.quit()
+    }
+})
 
 function registerPacketRoute(packet_id, route) {
     packetRoutes[packet_id] = route;
@@ -320,7 +357,7 @@ function startBizHawk(lobby_path) {
         logger.log("Starting BizHawk...");
         try {
             logger.log("Loading " + path.resolve(lobby_path) + ".");
-            var child = spawn('./BizHawk/EmuHawk.exe', ['--lua=' + path.resolve("./BizHawk/Lua/OotModLoader.lua"), path.resolve(lobby_path)], { stdio: 'inherit' });
+            var child = spawn('./BizHawk/OOTO-Emu.exe', ['--lua=' + path.resolve("./BizHawk/Lua/OotModLoader.lua"), path.resolve(lobby_path)], { stdio: 'inherit' });
             child.on('close', function (code, signal) {
                 logger.log("BizHawk has closed!");
                 api.postEvent({ id: "GUI_ResetButton", code: code });
@@ -332,29 +369,5 @@ function startBizHawk(lobby_path) {
         }
     }
 }
-
-api.registerEventHandler("onServerConnection", function (event) {
-    if (BUILD_TYPE === "GUI") {
-        let lobby_path = "./temp/" + event.room + path.extname(rom);
-        if (!event.isModdedLobby) {
-            mangleRomHeader(rom, lobby_path);
-            startBizHawk(lobby_path);
-        }
-    }
-});
-
-api.registerEventHandler("BPSPatchDownloaded", function (event) {
-    let bps_name = "./temp/" + CONFIG.GAME_ROOM + ".bps";
-    fs.writeFileSync(bps_name, event.data);
-    let bps_class = require('./OotBPS');
-    let bps = new bps_class();
-    try {
-        var newRom = bps.tryPatch(rom, bps_name);
-        mangleRomHeader(newRom, newRom);
-        startBizHawk(newRom);
-    } catch (err) {
-        logger.log(JSON.stringify(err));
-    }
-});
 
 module.exports = { api: api, config: CONFIG, console: console_log, mods: mods, roms: roms_list };

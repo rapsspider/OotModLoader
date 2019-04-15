@@ -174,7 +174,7 @@
             ]
         });
         //lobby_browser.setData([{ index: 0, name: "Test", isPrivate: true, playerCount: 255, patchFile: "" }]);
-        let hooks = require('./renderer.js');
+        let hooks = require(__dirname + '/OotGUI_Renderer.js');
         hooks.console = function (msg) {
             term.echo(msg);
         }
