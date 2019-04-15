@@ -245,9 +245,9 @@ class OotOnline {
             CONFIG.setPluginValue("OotOnline", "max_players", 16)
         }
         this.setupTunics();
-        api.registerPacket(this._fileSystem.readFileSync(__dirname + "/packets/link_packet.json"));
-        api.registerPacket(this._fileSystem.readFileSync(__dirname + "/packets/link_loading.json"));
-        api.registerPacket(this._fileSystem.readFileSync(__dirname + "/packets/link_sound.json"));
+        api.registerPacket(this._fileSystem.readFileSync(__dirname + "/packets/link_packet.json", 'utf8'));
+        api.registerPacket(this._fileSystem.readFileSync(__dirname + "/packets/link_loading.json", 'utf8'));
+        api.registerPacket(this._fileSystem.readFileSync(__dirname + "/packets/link_sound.json", 'utf8'));
         ears = require(__dirname + '/versions/10/ears.json');
         shadow = require(__dirname + '/versions/10/shadow.json');
         context = 0x600000;
@@ -459,8 +459,7 @@ class OotOnline {
 
             // SERVER SIDE
             api.registerServerChannel("ootonline", function (server, data) {
-                let parse = data;
-                let people = server.getAllClientsInMyScene(parse.room, parse.uuid);
+                let people = server.getAllClientsInMyScene(data.room, data.uuid);
                 for (let i = 0; i < people.length; i++) {
                     server._ws_server.to(people[i]).emit("msg", data);
                 }

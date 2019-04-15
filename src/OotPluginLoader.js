@@ -32,6 +32,7 @@ monkey_patch.patchRequire(virtual_fs, true);
 class PluginSystem {
     constructor() {
         this._plugins = [];
+        this._payloads = [];
         api.registerEvent("onPluginPreinit");
         api.registerEvent("onPluginInit");
         api.registerEvent("onPluginPostinit");
@@ -60,24 +61,23 @@ class PluginSystem {
                                 try {
                                     let plugin = require("/" + vfile);
                                     plugin["_fileSystem"] = pluginFS;
-                                    plugin["_payloads"] = [];
-                                    if (pluginFS.existsSync("/payloads")) {
-                                        let payloads = pluginFS.readdirSync("/payloads");
-                                        Object.keys(payloads).forEach(function (key) {
-                                            if (payloads[key].indexOf(".payload") > -1) {
-                                                logger.log("Loading payload: " + payloads[key] + ".");
-                                                let j = gameshark.read(pluginFS.readFileSync('/payloads/' + payloads[key]).toString());
-                                                plugin["_payloads"].push(j);
-                                            }
-                                        });
-                                    }
                                     inst._plugins.push(plugin);
                                 } catch (err) {
                                     logger.log(err.stack);
                                 }
                             }
                         });
-
+                        let payloads_path = path.join(params.paths[i], file, "/payloads");
+                        if (pluginFS.existsSync("/payloads")) {
+                            let payloads = pluginFS.readdirSync("/payloads");
+                            Object.keys(payloads).forEach(function (key) {
+                                if (payloads[key].indexOf(".payload") > -1) {
+                                    logger.log("Loading payload: " + payloads[key] + ".");
+                                    let j = gameshark.read(pluginFS.readFileSync('/payloads/' + payloads[key]).toString());
+                                    inst._payloads.push(j);
+                                }
+                            });
+                        }
                     }
                 });
                 real_fs.readdirSync(params.paths[i]).forEach(function (file) {
@@ -87,20 +87,20 @@ class PluginSystem {
                                 let plugin = require(path.join(params.paths[i], file, file2));
                                 plugin["_fileSystem"] = real_fs;
                                 plugin["_payloads"] = [];
-                                let payloads_path = path.join(params.paths[i], file, "/payloads");
-                                if (real_fs.existsSync(payloads_path)) {
-                                    let payloads = real_fs.readdirSync(payloads_path);
-                                    Object.keys(payloads).forEach(function (key) {
-                                        if (payloads[key].indexOf(".payload") > -1) {
-                                            logger.log("Loading payload: " + payloads[key] + ".");
-                                            let j = gameshark.read(real_fs.readFileSync(path.join(payloads_path, payloads[key])).toString());
-                                            plugin["_payloads"].push(j);
-                                        }
-                                    });
-                                }
                                 inst._plugins.push(plugin);
                             }
                         });
+                        let payloads_path = path.join(params.paths[i], file, "/payloads");
+                        if (real_fs.existsSync(payloads_path)) {
+                            let payloads = real_fs.readdirSync(payloads_path);
+                            Object.keys(payloads).forEach(function (key) {
+                                if (payloads[key].indexOf(".payload") > -1) {
+                                    logger.log("Loading payload: " + payloads[key] + ".");
+                                    let j = gameshark.read(real_fs.readFileSync(path.join(payloads_path, payloads[key])).toString());
+                                    inst._payloads.push(j);
+                                }
+                            });
+                        }
                     }
                 });
             }
@@ -156,10 +156,7 @@ class PluginLoader {
                 logger.log("Plugin loading complete.", "green");
                 callback();
             })
-        let p = [];
-        for (let i = 0; i < this._pluginSystem._plugins.length; i++) {
-            p = p.concat(this._pluginSystem._plugins._payloads);
-        }
+        let p = this._pluginSystem._payloads;
         emulator.setConnectedFn(function () {
             for (let i = 0; i < p.length; i++) {
                 if (p[i].params.event !== undefined) {

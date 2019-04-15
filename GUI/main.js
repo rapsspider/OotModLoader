@@ -63,6 +63,15 @@ function setupModLoader() {
   event_reg("GUI_updateLobbyBrowser_Reply");
   event_reg("GUI_ResetButton");
   event_reg("GUI_DiscordJoin")
+
+  ooto.api.registerEventHandler("onPlayerJoined", function(event){
+    discord.addPlayer();
+  })
+
+  ooto.api.registerEventHandler("onPlayerDisconnected", function(event){
+    discord.rmPlayer();
+  })
+
   ooto.api.registerEventHandler("GUI_StartButtonPressed", function(event){
     discord.loadingGame();
   })
@@ -74,7 +83,7 @@ function setupModLoader() {
   })
   ooto.api.registerEventHandler("onSceneChange", function(event){
     if (event.player.isMe){
-      //discord.onSceneChange(event.scene);
+      discord.onSceneChange(event.scene);
     }
   })
   ipcMain.on('postEvent', (event, arg) => {
@@ -97,7 +106,7 @@ function setupModLoader() {
       }
     }
   }, 100);
-  mainWindow.webContents.openDevTools()
+  //mainWindow.webContents.openDevTools()
 }
 
 // This method will be called when Electron has finished

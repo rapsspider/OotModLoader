@@ -7,7 +7,7 @@
   <property name="bin" value="./bin"/>
   <property name="electron" value="./electron"/>
   <property name="major" value="1"/>
-  <property name="minor" value="0"/>
+  <property name="minor" value="1"/>
   <property name="emu" value="./src/for_emulator"/>
   <property name="release_type" value="DEV"/>
 
@@ -31,9 +31,9 @@
 
   <target name="build">
     <antcall target="node"/>
-    <antcall target="build_windows"/>
+    <!-- <antcall target="build_windows"/>
     <antcall target="build_linux"/>
-    <antcall target="build_mac"/>
+    <antcall target="build_mac"/> -->
     <antcall target="GUI"/>
     <antcall target="zip"/>
   </target>
@@ -225,11 +225,11 @@
 
   <target name="zip">
     <property file="build.properties"/>
-    <zip destfile="${dist}/OotModLoader-CLI_${major}.${minor}.${build.number}_${release_type}_win64.zip" basedir="./bin/win/x64"/>
+    <!-- <zip destfile="${dist}/OotModLoader-CLI_${major}.${minor}.${build.number}_${release_type}_win64.zip" basedir="./bin/win/x64"/>
     <zip destfile="${dist}/OotModLoader-CLI_${major}.${minor}.${build.number}_${release_type}_linux64.zip" basedir="./bin/linux/x64"/>
     <zip destfile="${dist}/OotModLoader-CLI_${major}.${minor}.${build.number}_${release_type}_macos64.zip" basedir="./bin/macos/x64"/>
-    <!-- GUI Stuff -->
-    <zip destfile="${dist}/OotModLoader-GUI_${major}.${minor}.${build.number}_${release_type}_win64.zip" basedir="${bin}/OotModLoader-GUI-win32-x64"/>
+     -->
+	 <zip destfile="${dist}/OotModLoader-GUI_${major}.${minor}.${build.number}_${release_type}_win64.zip" basedir="${bin}/OotModLoader-GUI-win32-x64"/>
     <zip destfile="${dist}/OotModLoader-CLI_${major}.${minor}.${build.number}_${release_type}_Node.zip" basedir="${bin}/node"/>
     <copy todir="${dist}">
       <fileset dir="./dev_portal"/>

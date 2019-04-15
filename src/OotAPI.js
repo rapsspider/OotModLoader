@@ -111,7 +111,13 @@ class OotAPI {
     registerPacket(packet) {
         let p = packet;
         if (typeof packet === "string") {
-            p = JSON.parse(packet);
+            try{
+                p = JSON.parse(packet);
+            }catch(err){
+                if (err){
+                    p = JSON.parse(packet.substr(1, p.length));
+                }
+            }
         }
         emulator.registerDynamicPacket({ packet_id: "registerPacket", data: p });
     }

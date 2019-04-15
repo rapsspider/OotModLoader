@@ -19,30 +19,38 @@
 const fs = require("fs");
 const logger = require('./OotLogger')("Localization");
 
-class OotLocalizer{
+const loaded_files = {};
 
-    constructor(str){
+class OotLocalizer {
+
+    constructor(id, str) {
         this._data = JSON.parse(str);
+        loaded_files[id] = this;
     }
 
-    getLocalizedString(key){
+    getLocalizedString(key) {
         return this._data[key];
     }
 
 }
 
-class OotIconizer{
-    constructor(str){
+class OotIconizer {
+    constructor(id, str) {
         this._data = JSON.parse(str);
+        loaded_files[id] = this;
     }
 
-    getIcon(key){
+    getIcon(key) {
         return this._data[key];
     }
 }
 
-module.exports = {create: function(file){
-    return new OotLocalizer(file);
-}, icons: function(file){
-    return new OotIconizer(file);
-}};
+module.exports = {
+    create: function (id, file) {
+        return new OotLocalizer(id, file);
+    }, icons: function (id, file) {
+        return new OotIconizer(id, file);
+    }, getLoadedObject: function (id) {
+        return loaded_files[id];
+    }
+};

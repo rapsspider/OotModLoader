@@ -1,4 +1,6 @@
 var ipcRenderer = require('electron').ipcRenderer;
+const remote = require('electron').remote;
+
 // cdn https://cdn.discordapp.com/
 ipcRenderer.on('player', function (wtfisthis, event) {
     console.log(event);
@@ -10,12 +12,16 @@ ipcRenderer.on('player', function (wtfisthis, event) {
     a.src = "https://cdn.discordapp.com/avatars/" + event.id + "/" + event.avatar + ".png"
 });
 
-function onAccept(){
-    sendToMainProcess("onJoinClicked", {accept: true})
+function onAccept() {
+    sendToMainProcess("onJoinClicked", { accept: true })
+    var window = remote.getCurrentWindow();
+    window.close();
 }
 
-function onReject(){
-    sendToMainProcess("onJoinClicked", {accept: false})
+function onReject() {
+    sendToMainProcess("onJoinClicked", { accept: false })
+    var window = remote.getCurrentWindow();
+    window.close();
 }
 
 function sendToMainProcess(id, event) {

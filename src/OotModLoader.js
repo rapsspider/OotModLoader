@@ -158,7 +158,7 @@ plugins.load(function () {
             if (global.OotModLoader.OVERRIDE_IP !== "") {
                 CONFIG._master_server_ip = global.OotModLoader.OVERRIDE_IP;
                 CONFIG._master_server_port = global.OotModLoader.OVERRIDE_PORT;
-                CONFIG._GAME_ROOM = global.OotModLoaderOVERRIDE_ROOM;
+                CONFIG._GAME_ROOM = global.OotModLoader.OVERRIDE_ROOM;
                 CONFIG._game_password = global.OotModLoader.OVERRIDE_PASSWORD;
                 global.OotModLoader["OVERRIDE_IP"] = "";
                 global.OotModLoader["OVERRIDE_PORT"] = "";

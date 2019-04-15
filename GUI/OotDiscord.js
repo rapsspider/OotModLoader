@@ -4,10 +4,47 @@ const clientId = "566152040711979019";
 const RPC = require('discord-rpc')
 RPC.register(clientId);
 const client = new RPC.Client({ transport: 'ipc' });
-let lang = localization.create("en_US");
-let sceneNumberToLangKey = localization.create("scene_numbers");
+let lang = localization.getLoadedObject("en_US");
+let sceneNumberToLangKey = localization.getLoadedObject("scene_numbers");
 let config;
 let ooto;
+const jpack = require('jsonpack');
+const zlib = require('zlib');
+let max_players = 4;
+let current_players = 1;
+let CURRENT_STATUS = { fn: function () { } };
+
+function addPlayer() {
+    current_players++;
+    if (CURRENT_STATUS.hasOwnProperty("arg")) {
+        CURRENT_STATUS.fn(CURRENT_STATUS.arg)
+    } else {
+        CURRENT_STATUS.fn()
+    }
+}
+
+function removePlayer() {
+    current_players--;
+    if (CURRENT_STATUS.hasOwnProperty("arg")) {
+        CURRENT_STATUS.fn(CURRENT_STATUS.arg)
+    } else {
+        CURRENT_STATUS.fn()
+    }
+}
+
+function createSecret(obj) {
+    let temp = jpack.pack(obj);
+    let comp = zlib.deflateSync(temp);
+    let base = Buffer.from(comp).toString('base64');
+    return base;
+}
+
+function parseSecret(secret) {
+    let buf = Buffer.from(secret, 'base64');
+    let decomp = zlib.inflateSync(buf).toString();
+    let unpack = jpack.unpack(decomp);
+    return unpack;
+}
 
 function setup(_ooto) {
     config = _ooto.config;
@@ -15,24 +52,21 @@ function setup(_ooto) {
     client.on('ready', () => {
         onLauncher();
         client.on('RPC_MESSAGE_RECEIVED', (event) => {
+            console.log("RPC_MESSAGE_RECEIVED")
             console.log(event);
             if (event.cmd === "DISPATCH") {
-                if (event.evt === "ACTIVITY_JOIN_REQUEST") {
-                    let jw = new joinWindow(function (arg) {
-                        if (arg.accept) {
-                            client.sendJoinInvite(event.data.user);
-                        } else {
-                            client.closeJoinRequest(event.data.user);
-                        }
-                    });
-                    jw.load(event.data.user);
-                } else if (event.evt === "ACTIVITY_JOIN") {
-                    let parse = event.data.secret.split(",");
-                    global.OotModLoader["OVERRIDE_IP"] = parse[0];
-                    global.OotModLoader["OVERRIDE_PORT"] = parse[1];
-                    global.OotModLoader["OVERRIDE_ROOM"] = parse[2];
-                    global.OotModLoader["OVERRIDE_PASSWORD"] = parse[3];
-                    ooto.api.postEvent({id: "GUI_DiscordJoin"});
+                console.log(event.evt);
+                if (event.evt === "ACTIVITY_JOIN") {
+                    try {
+                        let parse = parseSecret(event.data.secret);
+                        global.OotModLoader["OVERRIDE_IP"] = parse.server;
+                        global.OotModLoader["OVERRIDE_PORT"] = parse.port;
+                        global.OotModLoader["OVERRIDE_ROOM"] = parse.room;
+                        global.OotModLoader["OVERRIDE_PASSWORD"] = parse.password;
+                        ooto.api.postEvent({ id: "GUI_DiscordJoin" });
+                    } catch (err) {
+                        console.log(err.stack);
+                    }
                 }
             }
         });
@@ -53,6 +87,7 @@ function onLauncher() {
         largeImageKey: 'untitled-1_copy',
         instance: true,
     });
+    CURRENT_STATUS = { fn: onLauncher };
 }
 
 function loadingGame() {
@@ -62,30 +97,37 @@ function loadingGame() {
         largeImageKey: 'untitled-1_copy',
         instance: true,
     });
+    CURRENT_STATUS = { fn: loadingGame };
 }
 
 function titleScreen() {
     client.setActivity({
-        state: 'On the title screen',
-        details: 'In-game',
+        state: 'In-game',
+        details: 'On the title screen',
         startTimestamp: Date.now(),
         largeImageKey: 'untitled-1_copy',
         instance: true,
         partyId: config.cfg.CLIENT.game_room,
-        joinSecret: config.cfg.CLIENT.game_room + "," + config.cfg.CLIENT.game_password
+        partySize: current_players,
+        partyMax: max_players,
+        joinSecret: createSecret({ server: config.cfg.SERVER.master_server_ip, port: config.cfg.SERVER.master_server_port, room: config.cfg.CLIENT.game_room, password: config.cfg.CLIENT.game_password })
     });
+    CURRENT_STATUS = { fn: titleScreen };
 }
 
 function onSceneChange(num) {
     client.setActivity({
-        state: lang.getLocalizedString(sceneNumberToLangKey.getLocalizedString(num)),
-        details: 'In-game',
+        state: 'In-game',
+        details: lang.getLocalizedString(sceneNumberToLangKey.getLocalizedString(num)),
         startTimestamp: Date.now(),
         largeImageKey: 'untitled-1_copy',
         instance: true,
         partyId: config.cfg.CLIENT.game_room,
-        joinSecret: config.cfg.SERVER.master_server_ip + "," + config.cfg.SERVER.master_server_port + "," + config.cfg.CLIENT.game_room + "," + config.cfg.CLIENT.game_password
+        partySize: current_players,
+        partyMax: max_players,
+        joinSecret: createSecret({ server: config.cfg.SERVER.master_server_ip, port: config.cfg.SERVER.master_server_port, room: config.cfg.CLIENT.game_room, password: config.cfg.CLIENT.game_password })
     });
+    CURRENT_STATUS = { fn: onSceneChange, arg: num };
 }
 
-module.exports = { onLauncher: onLauncher, loadingGame: loadingGame, titleScreen: titleScreen, onSceneChange: onSceneChange, setup: setup, client: client };
+module.exports = { onLauncher: onLauncher, loadingGame: loadingGame, titleScreen: titleScreen, onSceneChange: onSceneChange, setup: setup, client: client, rmPlayer: removePlayer, addPlayer: addPlayer };

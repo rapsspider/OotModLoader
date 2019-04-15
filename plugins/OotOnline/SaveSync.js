@@ -64,8 +64,6 @@ class GenericBitPackHandler {
         if (!server.getRoomsArray()[room][this._table_id].hasOwnProperty(id)) {
             server.getRoomsArray()[room][this._table_id][id] = new IntegerArrayStorage(tag);
         }
-        // REPLICATE THIS SHIT CLIENT SIDE.
-        //decompress["byte"] = Number(decompress.packet_id.replace("scene_", ""));
         return server.getRoomsArray()[room][this._table_id][id].update(bits.read(data));
     }
 }
@@ -120,9 +118,9 @@ class SaveSync {
     }
 
     preinit() {
-        this._lang = localization.create(this._fileSystem.readFileSync(__dirname + "/localization/en_US.json"));
-        this._inventorySlotToLangKey = localization.create(this._fileSystem.readFileSync(__dirname + "/localization/item_numbers.json"));
-        this._icons = localization.icons(this._fileSystem.readFileSync(__dirname + "/localization/icon_coordinates.json"));
+        this._lang = localization.create("en_US", this._fileSystem.readFileSync(__dirname + "/localization/en_US.json"));
+        this._inventorySlotToLangKey = localization.create("item_numbers", this._fileSystem.readFileSync(__dirname + "/localization/item_numbers.json"));
+        this._icons = localization.icons("icon_coordinates", this._fileSystem.readFileSync(__dirname + "/localization/icon_coordinates.json"));
         (function (inst) {
             api.registerPacketRoute("requestSaveData", "savesync");
             api.registerPacketRoute("savesync_data", "savesync");

@@ -53,7 +53,7 @@ class SceneSync {
 
     preinit() {
         api.registerEvent("onSceneContextUpdate");
-        api.registerPacket(this._fileSystem.readFileSync(__dirname + "/packets/scene_flags.json"));
+        api.registerPacket(this._fileSystem.readFileSync(__dirname + "/packets/scene_flags.json", "utf8"));
         api.registerEvent("syncSafety");
         api.registerEvent("ZeldaDespawned");
         this._api.init(api);
