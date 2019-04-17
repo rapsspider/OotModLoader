@@ -42,6 +42,10 @@ class PluginSystem {
                             if (file2.indexOf(".js") > -1) {
                                 let plugin = require(path.join(params.paths[i], file, file2));
                                 plugin["_fileSystem"] = real_fs;
+                                plugin["ModLoader"] = {};
+                                plugin.ModLoader["api"] = api;
+                                plugin.ModLoader["base"] = process.cwd();
+                                plugin.ModLoader["logger"] = require("./OotLogger")(plugin._name);
                                 plugin["_payloads"] = [];
                                 inst._plugins.push(plugin);
                             }

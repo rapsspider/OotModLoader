@@ -152,17 +152,20 @@ class Client {
                 data = encoder.decompressData(data);
                 CONFIG.my_uuid = data.id;
                 logger.log("My UUID: " + CONFIG.my_uuid);
-                websocket.emit('room', encoder.compressData({ room: CONFIG.GAME_ROOM, nickname: CONFIG.nickname, patchFile: CONFIG._patchFile, password: CONFIG.getPasswordHash() }));
+                let p = { room: CONFIG.GAME_ROOM, nickname: CONFIG.nickname, patchFile: CONFIG._patchFile, password: CONFIG.getPasswordHash() };
+                if (p.patchFile !== ""){
+                    p["patchData"] = fs.readFileSync("./mods/" + p.patchFile);
+                }
+                websocket.emit('room', encoder.compressData(p));
             });
             websocket.on('room', function (data) {
                 logger.log(data.msg);
-                api.postEvent({ id: "onServerConnection", ip: CONFIG.master_server_ip, port: CONFIG.master_server_port, room: CONFIG.GAME_ROOM, isModdedLobby: data.isModdedLobby });
+                let e = { id: "onServerConnection", ip: CONFIG.master_server_ip, port: CONFIG.master_server_port, room: CONFIG.GAME_ROOM, isModdedLobby: data.isModdedLobby };
+                if (data.hasOwnProperty("patchFile")){
+                    e["patchFile"] = data.patchFile;
+                }
+                api.postEvent(e);
                 websocket.emit('room_ping', encoder.compressData({ room: CONFIG.GAME_ROOM, uuid: CONFIG.my_uuid, nickname: CONFIG.nickname, patchFile: CONFIG.patchFile }));
-            });
-            websocket.on('requestPatch', function (data) {
-                data = encoder.decompressData(data);
-                logger.log(data);
-                websocket.emit('sendPatch', { patch: fs.readFileSync("./mods/" + data.patchFile), name: data.patchFile, room: data.room });
             });
             websocket.on('receivePatch', function (data) {
                 logger.log("Loading patch from server.");

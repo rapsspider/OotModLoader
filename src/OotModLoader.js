@@ -20,7 +20,7 @@ const { app } = require('electron')
 var path = require("path");
 //const BUILD_TYPE = "GUI";
 const BUILD_TYPE = "@BUILD_TYPE@";
-const IS_DEV = false;
+const IS_DEV = true;
 const base_dir = path.dirname(app.getPath("exe"));
 
 if (BUILD_TYPE === "GUI"){
@@ -156,6 +156,7 @@ app.on('ready', function () {
 
     api.registerEvent("BPSPatchDownloaded");
     api.registerEvent("GUI_BadVersion");
+    api.registerEvent("BizHawkPreLoad");
 
     emu.setDataParseFn(parseData);
     client.setProcessFn(processData);
@@ -267,23 +268,16 @@ app.on('ready', function () {
 
     api.registerEventHandler("onServerConnection", function (event) {
         if (BUILD_TYPE === "GUI") {
-            if (!event.isModdedLobby) {
+            if (child === null){
+                if (event.hasOwnProperty("patchFile")){
+                    // Mod detected. Load it.
+                    let bps = require('./OotBPS');
+                    let patch = new bps();
+                    fs.writeFileSync("./temp/" + event.patchFile.name, Buffer.from(event.patchFile.data));
+                    rom = patch.tryPatch(path.resolve(rom), path.resolve("./temp/" + event.patchFile.name));
+                }
                 startBizHawk(rom);
             }
-        }
-    });
-
-    api.registerEventHandler("BPSPatchDownloaded", function (event) {
-        let bps_name = "./temp/" + CONFIG.GAME_ROOM + ".bps";
-        fs.writeFileSync(bps_name, event.data);
-        let bps_class = require('./OotBPS');
-        let bps = new bps_class();
-        try {
-            var newRom = bps.tryPatch(rom, bps_name);
-            mangleRomHeader(newRom, newRom);
-            startBizHawk(newRom);
-        } catch (err) {
-            logger.log(JSON.stringify(err));
         }
     });
 });
@@ -367,6 +361,8 @@ function onPlayerConnected(nickname, uuid) {
     api.postEvent({ id: "onPlayerJoined", player: { nickname: nickname, uuid: uuid } });
 }
 
+var child = null;
+
 function startBizHawk(lobby_path) {
     if (BUILD_TYPE === "GUI") {
         logger.log("Starting BizHawk...");
@@ -385,12 +381,15 @@ function startBizHawk(lobby_path) {
                 }
             }
             fs.writeFileSync("./BizHawk/config.ini", JSON.stringify(biz_config, null, 2));
-            logger.log("Loading " + path.resolve(lobby_path) + ".");
-            var child = spawn('./BizHawk/EmuHawk.exe', ['--lua=' + path.resolve("./BizHawk/Lua/OotModLoader.lua"), path.resolve(lobby_path)], { stdio: 'inherit' });
+            let evt = {id: "BizHawkPreLoad", rom: path.resolve(lobby_path)};
+            api.postEvent(evt);
+            logger.log("Loading " + evt.rom + ".");
+            child = spawn('./BizHawk/EmuHawk.exe', ['--lua=' + path.resolve("./BizHawk/Lua/OotModLoader.lua"), evt.rom], { stdio: 'inherit' });
             child.on('close', function (code, signal) {
                 logger.log("BizHawk has closed!");
                 api.postEvent({ id: "GUI_ResetButton", code: code });
                 isClientSetup = false;
+                child = null;
             });
         } catch (err) {
             api.postEvent({ id: "GUI_StartFailed" });
