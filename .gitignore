@@ -22,3 +22,4 @@ lobby_list.json
 client_list.json
 config.zip
 build_temp/
+ant/

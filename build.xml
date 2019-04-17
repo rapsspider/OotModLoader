@@ -37,6 +37,10 @@
 
   <target name="setup">
     <echo message="Setting up env..."/>
+	    <exec executable="${cmd.exec}">
+      <arg value="${cmd.con}"/>
+      <arg value="npm install -g electron"/>
+    </exec>
     <exec executable="${cmd.exec}">
       <arg value="${cmd.con}"/>
       <arg value="npm install -g asar"/>
@@ -49,11 +53,6 @@
       <arg value="${cmd.con}"/>
       <arg value="npm install"/>
     </exec>
-    <propertyfile file="build.properties">
-      <entry key="major" type="int" value="${major}" operation="="/>
-      <entry key="minor" type="int" value="${minor}" operation="="/>
-      <entry key="build.number" default="00" operation="+" pattern="0" type="int"/>
-    </propertyfile>
   </target>
 
   <target name="copy_files">
@@ -88,7 +87,7 @@
     </copy>
   </target>
 
-  <target name="compile_scripts" depends="clean">
+  <target name="compile_scripts" depends="setup, clean">
     <echo message="Compiling scripts..."/>
     <copy todir="${bin}/src">
       <fileset dir="./src"/>

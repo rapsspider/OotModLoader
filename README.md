@@ -1,41 +1,22 @@
 # OotModLoader
-A modloader for Ocarina of Time 1.0. Includes OotOnline.
 
-## Building from the source
+This is a system for loading mods in Ocarina of Time 1.0.
 
-### Apache Ant
-To build the program from the source, you will need to have [Apache Ant](https://ant.apache.org/bindownload.cgi). 
+## Features
+- Load romhacks without manually applying patches
+- Load plugins that interact with the game RAM during runtime.
+- Networked by default: Everything is made with multiplayer in mind.
 
-### Java
-To build the program from the source, you will need to have [Java](https://www.java.com/en/) installed.
+### OotOnline
+OotOnline comes bundled with the ModLoader as the first plugin created for it. This plugin gives you the ability to share your Ocarina of Time experience with friends. See your friends in the game world, share items and quest progress with them, and push them off ledges as you progress through this timeless classic together.
 
-### BizHawk Emulator
-To include BizHawk with your build, add [these](https://drive.google.com/open?id=1YQkyRr7ruvbWbM-CrgTjUtMSqAG4d2Hx) files to the bizhawk_dist Sub-Directory _(See below)_. Alternativley, you can source these files from the [BizHawk](https://github.com/TASVideos/BizHawk) repository.
+##### Installation instructions
+Download the latest release from our [releases](https://github.com/hylian-modding/OotModLoader/releases "releases") page. Unzip it and run the executable. You need an The Legend of Zelda: Ocarina of Time 1.0 NTSC English or Japanese rom in the ./rom folder in order to play. Team OotO nor its Discord will provide you with any information as to how to obtain this.
 
-### Sub-Directories
-In the root directory of the repository, you need to create child directories with the names _mods_, _rom_, _bizhawk_dist_.
-This can be quickly done by running the command 
-```shell
-mkdir mods rom bizhawk_dist
-```
-
-### Building the program
-To build the program, you simply need to call the ant executable _(Apache-Ant\bin\ant)_ with the current directory being the root of the repository.
-
-Alternativley, you can use the _build.bat_ file.
-
-#### Using build.bat
-To use the file _build.bat_, you need to change the directory in the line which reads
-```shell
-call apache-ant-1.10.5\bin\ant
-```
-to the directory of your download of Apache Ant followed by `\bin\ant`
-For example, if the Apache Ant directory is `C:\Stuff\Apache-Ant` the line would read 
-```shell
-call C:\Stuff\Apache-Ant\bin\ant
-```
-
-Following this, simply run the file!
-
-
-
+##### Build instructions for developers
+- Download [Apache Ant](https://ant.apache.org/ "Apache Ant"). This requires [Java](https://www.java.com/en/ "Java").
+- Unzip Ant into a folder named ant at the project root.
+- Install [Node](https://nodejs.org/en/ "Node").
+- Download [BizHawk](http://tasvideos.org/BizHawk/ReleaseHistory.html "BizHawk").
+- Unzip BizHawk into a folder named bizhawk_dist in the project root. The folder structure should look like ./bizhawk_dist/BizHawk/EmuHawk.exe.
+- Invoke Ant via command line or through build.bat.
