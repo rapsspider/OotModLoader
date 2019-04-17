@@ -13,6 +13,7 @@ const zlib = require('zlib');
 let max_players = 4;
 let current_players = 1;
 let CURRENT_STATUS = { fn: function () { } };
+let getJson = require('get-json');
 
 function addPlayer() {
     current_players++;
@@ -98,6 +99,13 @@ function loadingGame() {
         instance: true,
     });
     CURRENT_STATUS = { fn: loadingGame };
+    if (config.cfg.SERVER.isMaster){
+        getJson('https://api.ipify.org/?format=json', function (error, response) {
+            console.log("Setting ip to " + response.ip);
+            config.cfg.SERVER.master_server_ip = response.ip;
+            config._master_server_ip = response.ip;
+        });
+    }
 }
 
 function titleScreen() {

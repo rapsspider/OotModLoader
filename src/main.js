@@ -1,0 +1,1 @@
+module.exports = require(global.OotModLoader.asar + "/src/OotModLoader.js");

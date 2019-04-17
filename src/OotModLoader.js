@@ -20,7 +20,7 @@ const { app } = require('electron')
 var path = require("path");
 //const BUILD_TYPE = "GUI";
 const BUILD_TYPE = "@BUILD_TYPE@";
-const IS_DEV = true;
+const IS_DEV = false;
 const base_dir = path.dirname(app.getPath("exe"));
 
 if (BUILD_TYPE === "GUI"){

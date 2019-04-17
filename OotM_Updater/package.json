@@ -1,0 +1,14 @@
+{
+  "name": "ootm_updater",
+  "version": "0.0.1",
+  "description": "",
+  "main": "./src/main.js",
+  "scripts": {
+    "start": "node ./src/main.js"
+  },
+  "author": "",
+  "license": "GPL-3.0-or-later",
+  "dependencies": {
+    "adm-zip": "^0.4.13"
+  }
+}
