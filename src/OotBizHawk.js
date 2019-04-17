@@ -31,7 +31,6 @@ class EmuConnection {
         this._processDataFn = function () { };
         this._connectedtoEmuCallcack = function () { };
         this._dynamicPackets = [];
-        this._udp = udp.server(CONFIG._localPort.tcp, "BizHawkUDP");
         this._droppedPackets = 0;
         this._jSocket = null;
         if (CONFIG.isClient) {
@@ -57,8 +56,6 @@ class EmuConnection {
                 });
                 inst._zServer.listen(CONFIG._localPort.tcp, '127.0.0.1', function () {
                     logger.log("Awaiting connection. Please load the .lua script in Bizhawk.");
-                    inst._udp.setDataFn(inst._processDataFn);
-                    inst._udp.setup();
                 });
             })(this);
         }

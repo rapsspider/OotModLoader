@@ -17,7 +17,6 @@
 */
 
 const natUpnp = require("nat-upnp");
-const hri = require("human-readable-ids").hri;
 const encoder = require("./OotEncoder");
 const CONFIG = require("./OotConfig");
 const express = require("express");
@@ -26,11 +25,9 @@ const http = require("http").Server(app);
 const io = require("socket.io")(http);
 const udp = require("./OotUDP");
 const logger = require("./OotLogger")("Server");
-const time = require("./OotTimeEmulation");
 const api = require("./OotAPI");
 const version = require('./OotVersion');
 var path = require("path");
-const fs = require("fs");
 
 const _channelHandlers = {};
 

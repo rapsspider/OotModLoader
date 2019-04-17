@@ -40,7 +40,6 @@ local json = require("json")
 require("OotUtils")
 local socket = require("socket")
 local tcp
-local udp
 local triggerNext = false
 local hasDownloadedSave = false
 local save = require("SaveDataHandler")
@@ -92,22 +91,15 @@ end
 
 function sendPacket(id, data, template) _sendPacket(id, data, template, tcp) end
 
-function sendPacketUDP(id, data, template) _sendPacket(id, data, template, udp) end
-
 function downloadSaveData(flag) end
 
 function connectToNode()
     if (readFourBytesUnsigned(0x1C8514) == 0x00100000 or readFourBytesUnsigned(0x1C8514) == 0x0) then return false end
-    local port = json.decode(readall("OotModLoader-data.json")).tcp;
+    local port = json.decode(readall("OotModLoader-data.json"));
     tcp = socket.tcp()
-    udp = socket.udp()
     console.writeline("Connecting...")
-    local t = tcp:connect("127.0.0.1", 1337)
+    local t = tcp:connect("127.0.0.1", port.tcp)
     tcp:settimeout(0)
-    -- udp2:setsockname("*", 60001);
-    udp:setpeername('127.0.0.1', 1337)
-    udp:settimeout(0)
-    -- udp2:settimeout(0);
     sendPacket("onLuaStart", {}, {});
     return t == 1
 end
@@ -859,6 +851,7 @@ local checksum_cache = {}
 writehandlers["loadRom"] = function(packet) client.openrom(packet.rom) end
 
 packethandlers["registerPacket"] = function(parse)
+    console.log(parse)
     local data = parse.data
     if (data.bundles ~= nil) then
         for k, v in ipairs(data.bundles) do
@@ -871,21 +864,13 @@ packethandlers["registerPacket"] = function(parse)
                 bundle[v.key]["data"] = readhandlers[v.readHandler](v)
                 bundle[v.key]["writeHandler"] = v.readHandler
             end
-            if (data.protocol ~= nil) then
-                if (data.protocol == "udp") then sendPacketUDP(data.packet_id, bundle, data) end
-            else
-                sendPacket(data.packet_id, bundle, data)
-            end
+            sendPacket(data.packet_id, bundle, data)
         end
     else
         if (tokenStorage[data.addr] ~= nil) then data.addr = tokenStorage[data.addr] end
         packetbuilders[data.packet_id] = function()
             local d = readhandlers[data.readHandler](data)
-            if (data.protocol ~= nil) then
-                if (data.protocol == "udp") then sendPacketUDP(data.packet_id, d, data) end
-            else
-                sendPacket(data.packet_id, d, data)
-            end
+            sendPacket(data.packet_id, d, data)
         end
     end
     if (data.notEveryFrame ~= nil) then
