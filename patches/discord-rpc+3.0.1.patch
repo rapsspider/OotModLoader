@@ -1,0 +1,12 @@
+diff --git a/node_modules/discord-rpc/src/client.js b/node_modules/discord-rpc/src/client.js
+index d7ae63f..51f92bb 100644
+--- a/node_modules/discord-rpc/src/client.js
++++ b/node_modules/discord-rpc/src/client.js
+@@ -160,6 +160,7 @@ class RPCClient extends EventEmitter {
+    * @private
+    */
+   _onRpcMessage(message) {
++    this.emit('RPC_MESSAGE_RECEIVED', message)
+     if (message.cmd === RPCCommands.DISPATCH && message.evt === RPCEvents.READY) {
+       if (message.data.user) {
+         this.user = message.data.user;
