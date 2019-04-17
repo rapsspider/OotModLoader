@@ -63,9 +63,10 @@
     <copy todir="${tfolder}">
       <fileset dir="./luasocket" includes="**"/>
     </copy>
-    <copy todir="${tfolder}/plugins">
-      <fileset dir="plugins" includes="**"/>
-    </copy>
+    <exec executable="${cmd.exec}">
+      <arg value="${cmd.con}"/>
+      <arg value="asar p ./plugins/OotOnline ${tfolder}/plugins/OotOnline.asar"/>
+    </exec>
     <copy todir="${tfolder}/mods">
       <fileset dir="mods" includes="**"/>
     </copy>
