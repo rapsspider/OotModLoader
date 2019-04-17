@@ -26,6 +26,7 @@ local status_message
 function setStatusMessage(msg) status_message = msg end
 
 local update_buffer = {}
+local last_seen_items = {}
 
 function addToBuffer(fn) table.insert(update_buffer, fn) end
 
@@ -313,16 +314,19 @@ function update_inventory(bool)
         for k, v in pairs(save_handler_context_map.inventory.read) do
             setStatusMessage("Updating " .. k .. ".")
             local r = readByte(v)
-            if (bool) then
-                writeByte(
-                    save_handler_context + save_handler_context_map.inventory.write[k],
-                    r
+            if (r ~= last_seen_items[k]) then
+                if (bool) then
+                    writeByte(
+                        save_handler_context + save_handler_context_map.inventory.write[k],
+                        r
+                    )
+                end
+                last_seen_items[k] = r
+                SAVE_DATA_HANDLER["send"](
+                    k,
+                    readByte(save_handler_context + save_handler_context_map.inventory.write[k])
                 )
             end
-            SAVE_DATA_HANDLER["send"](
-                k,
-                readByte(save_handler_context + save_handler_context_map.inventory.write[k])
-            )
         end
     end)
 end
@@ -922,6 +926,7 @@ function handleInventorySlotUpdate(packet)
             save_handler_context_map.inventory.read[packet.packet_id],
             packet.data
         )
+        last_seen_items[packet.packet_id] = packet.data
         if (packet.packet_id == "inventory_slot_8") then
             -- Got bombchus. Give the player some.
             local qty = readByte(save_context + ammo_offset + 0x8)
