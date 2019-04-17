@@ -17,6 +17,18 @@
 */
 
 const { app } = require('electron')
+var path = require("path");
+//const BUILD_TYPE = "GUI";
+const BUILD_TYPE = "@BUILD_TYPE@";
+const IS_DEV = true;
+const base_dir = path.dirname(app.getPath("exe"));
+
+if (BUILD_TYPE === "GUI"){
+    if (app.getPath("exe").indexOf("node_modules") === -1){
+        process.chdir(base_dir);
+    }
+}
+
 const CONFIG = require('./OotConfig');
 
 let master = require('./OotMasterServer');
@@ -24,19 +36,12 @@ let client = require('./OotClient');
 let emu = require('./OotBizHawk');
 let api = require('./OotAPI');
 let plugins = require('./OotPluginLoader');
-const encoder = require('./OotEncoder');
-let gs = require('./GamesharkToInjectConverter');
 let logger = require('./OotLogger')('Core');
 const fs = require("fs");
-const colors = require('./OotColors');
-const localizer = require('./OotLocalizer');
-//const BUILD_TYPE = "GUI";
-const BUILD_TYPE = "@BUILD_TYPE@";
 var ncp = require('ncp').ncp;
-var path = require("path");
 const spawn = require('cross-spawn');
 const lb = require("./OotLobbyBrowser");
-const byte = require('./OotBitwise');
+const VERSION = require('./OotVersion');
 
 let packetTransformers = {};
 let packetRoutes = {};
@@ -78,7 +83,28 @@ console_hook = function (msg) {
 };
 
 app.on('ready', function () {
-    if (BUILD_TYPE === "GUI"){
+    if (BUILD_TYPE === "GUI") {
+        if (!IS_DEV){
+            var getJSON = require('get-json');
+            getJSON('http://hylianmodding.com/OotOnline/update.json', function (error, response) {
+                logger.log("Server says: " + response.version)
+                if (response.version !== VERSION){
+                    var download = require('download-file')
+                    var url = response.url;
+                    var options = {
+                        directory: "./",
+                        filename: "update.zip"
+                    }
+                    download(url, options, function (err) {
+                        if (err) throw err
+                        if (fs.existsSync(process.cwd() + "/update.zip")) {
+                            app.relaunch({ args: process.argv.slice(1).concat(['--asar=updater.asar']) })
+                            app.exit()
+                        }
+                    })
+                }
+            });
+        }
         let gui = require('./gui/OotGUI');
         gui.setupModLoader({ api: api, config: CONFIG, console: console_log, mods: mods, roms: roms_list });
     }
@@ -241,10 +267,8 @@ app.on('ready', function () {
 
     api.registerEventHandler("onServerConnection", function (event) {
         if (BUILD_TYPE === "GUI") {
-            let lobby_path = "./temp/" + event.room + path.extname(rom);
             if (!event.isModdedLobby) {
-                mangleRomHeader(rom, lobby_path);
-                startBizHawk(lobby_path);
+                startBizHawk(rom);
             }
         }
     });
@@ -343,19 +367,24 @@ function onPlayerConnected(nickname, uuid) {
     api.postEvent({ id: "onPlayerJoined", player: { nickname: nickname, uuid: uuid } });
 }
 
-function mangleRomHeader(rom, out) {
-    let lobby_path = out;
-    let clean_rom_data = fs.readFileSync(path.resolve(rom));
-    let buf = Buffer.from("4F4F544D4F444C4F414445525F424554415631", "hex");
-    buf.copy(clean_rom_data, 0x20, 0x0, buf.length);
-    fs.writeFileSync(path.resolve(lobby_path), clean_rom_data);
-    return lobby_path;
-}
-
 function startBizHawk(lobby_path) {
     if (BUILD_TYPE === "GUI") {
         logger.log("Starting BizHawk...");
         try {
+            if (!fs.existsSync("./Saves")){
+                fs.mkdirSync("./Saves");
+            }
+            if (!fs.existsSync("./Saves/" + CONFIG.GAME_ROOM)){
+                fs.mkdirSync("./Saves/" + CONFIG.GAME_ROOM);
+            }
+            let biz_config = JSON.parse(fs.readFileSync("./BizHawk/config.ini"));
+            for (let i = 0; i < biz_config.PathEntries.Paths.length; i++){
+                if (biz_config.PathEntries.Paths[i].SystemDisplayName === "N64" && biz_config.PathEntries.Paths[i].Ordinal === 3){
+                    biz_config.PathEntries.Paths[i].Path = path.join(base_dir, "./Saves/" + CONFIG.GAME_ROOM);
+                    break;
+                }
+            }
+            fs.writeFileSync("./BizHawk/config.ini", JSON.stringify(biz_config, null, 2));
             logger.log("Loading " + path.resolve(lobby_path) + ".");
             var child = spawn('./BizHawk/EmuHawk.exe', ['--lua=' + path.resolve("./BizHawk/Lua/OotModLoader.lua"), path.resolve(lobby_path)], { stdio: 'inherit' });
             child.on('close', function (code, signal) {
