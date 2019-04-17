@@ -19,31 +19,18 @@
 // DON'T MIND THIS CLASS I'M RIPPING IT APART. COME BACK LATER.
 
 const zlib = require('zlib');
-const VERSION = require('./OotVersion');
-const jpack = require('jsonpack');
-const logger = require('./OotLogger')("Encoder");
-
-class VersionMismatchError extends Error {
-    constructor(message) {
-        super(message);
-        this.name = this.constructor.name;
-        Error.captureStackTrace(this, this.constructor);
-    }
-}
 
 class Encoder {
 
     compressData(data) {
-        let pack = jpack.pack(data);
+        let pack = JSON.stringify(data)
         let compress = zlib.deflateSync(pack);
-        let base = Buffer.from(compress).toString('base64');
-        return base;
+        return compress;
     }
 
     decompressData(data) {
-        let buffer = Buffer.from(data, 'base64');
-        let decompress = zlib.inflateSync(buffer).toString();
-        let unpack = jpack.unpack(decompress);
+        let decompress = zlib.inflateSync(Buffer.from(data)).toString();
+        let unpack = JSON.parse(decompress);
         return unpack;
     }
 
