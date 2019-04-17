@@ -53,8 +53,6 @@ function setup(_ooto) {
     client.on('ready', () => {
         onLauncher();
         client.on('RPC_MESSAGE_RECEIVED', (event) => {
-            console.log("RPC_MESSAGE_RECEIVED")
-            console.log(event);
             if (event.cmd === "DISPATCH") {
                 console.log(event.evt);
                 if (event.evt === "ACTIVITY_JOIN") {
