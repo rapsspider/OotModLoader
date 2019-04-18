@@ -241,8 +241,8 @@ class OotOnline {
     // Load json files in here.
     preinit() {
         CONFIG.setPluginDefaultValue("OotOnline", "max_players", 4);
-        if (CONFIG.getPluginValue("OotOnline", "max_players") > 16) {
-            CONFIG.setPluginValue("OotOnline", "max_players", 16)
+        if (CONFIG.getPluginValue("OotOnline", "max_players") > 15) {
+            CONFIG.setPluginValue("OotOnline", "max_players", 15)
         }
         this.setupTunics();
         api.registerPacket(this._fileSystem.readFileSync(__dirname + "/packets/link_packet.json", 'utf8'));

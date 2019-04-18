@@ -581,41 +581,45 @@ function update_heart_containers(bool)
 end
 
 function update_death_counter()
-    local a = readTwoByteUnsigned(save_context + death_offset)
-    if (a > 0) then
-        writeTwoByteUnsigned(
-            save_handler_context + save_handler_context_map.death_counter.write.count,
-            a
+    addToBuffer(function()
+        local a = readTwoByteUnsigned(save_context + death_offset)
+        if (a > 0) then
+            writeTwoByteUnsigned(
+                save_handler_context + save_handler_context_map.death_counter.write.count,
+                a
+            )
+        else
+            writeTwoByteUnsigned(
+                save_handler_context + save_handler_context_map.death_counter.write.count,
+                0xFFFF
+            )
+        end
+        SAVE_DATA_HANDLER["send"](
+            "death_counter",
+            readTwoByteUnsigned(save_handler_context + save_handler_context_map.death_counter.write.count)
         )
-    else
-        writeTwoByteUnsigned(
-            save_handler_context + save_handler_context_map.death_counter.write.count,
-            0xFFFF
-        )
-    end
-    SAVE_DATA_HANDLER["send"](
-        "death_counter",
-        readTwoByteUnsigned(save_handler_context + save_handler_context_map.death_counter.write.count)
-    )
+    end)
 end
 
 function update_magic_beans()
-    local a = readByte(save_context + magic_beans_offset)
-    if (a > 0) then
-        writeByte(
-            save_handler_context + save_handler_context_map.magic_beans.write.count,
-            a
+    addToBuffer(function()
+        local a = readByte(save_context + magic_beans_offset)
+        if (a > 0) then
+            writeByte(
+                save_handler_context + save_handler_context_map.magic_beans.write.count,
+                a
+            )
+        else
+            writeByte(
+                save_handler_context + save_handler_context_map.magic_beans.write.count,
+                0xFF
+            )
+        end
+        SAVE_DATA_HANDLER["send"](
+            "magic_beans",
+            readByte(save_handler_context + save_handler_context_map.magic_beans.write.count)
         )
-    else
-        writeByte(
-            save_handler_context + save_handler_context_map.magic_beans.write.count,
-            0xFF
-        )
-    end
-    SAVE_DATA_HANDLER["send"](
-        "magic_beans",
-        readByte(save_handler_context + save_handler_context_map.magic_beans.write.count)
-    )
+    end)
 end
 
 function update_defense(bool)
@@ -643,22 +647,24 @@ function update_defense(bool)
 end
 
 function update_big_poes()
-    local a = readTwoByteUnsigned(save_context + big_poes_offset)
-    if (a > 0) then
-        writeTwoByteUnsigned(
-            save_handler_context + save_handler_context_map.big_poes.write.count,
-            a
+    addToBuffer(function()
+        local a = readTwoByteUnsigned(save_context + big_poes_offset)
+        if (a > 0) then
+            writeTwoByteUnsigned(
+                save_handler_context + save_handler_context_map.big_poes.write.count,
+                a
+            )
+        else
+            writeTwoByteUnsigned(
+                save_handler_context + save_handler_context_map.big_poes.write.count,
+                0xFFFF
+            )
+        end
+        SAVE_DATA_HANDLER["send"](
+            "big_poes",
+            readTwoByteUnsigned(save_handler_context + save_handler_context_map.big_poes.write.count)
         )
-    else
-        writeTwoByteUnsigned(
-            save_handler_context + save_handler_context_map.big_poes.write.count,
-            0xFFFF
-        )
-    end
-    SAVE_DATA_HANDLER["send"](
-        "big_poes",
-        readTwoByteUnsigned(save_handler_context + save_handler_context_map.big_poes.write.count)
-    )
+    end)
 end
 
 function update_magic(bool)
@@ -806,7 +812,7 @@ function update_skulltula()
         else
             writeTwoByteUnsigned(
                 save_handler_context + save_handler_context_map.skulltula.write.count,
-                0xFF
+                0xFFFF
             )
         end
         SAVE_DATA_HANDLER["send"](
@@ -921,47 +927,42 @@ function handleInventorySlotUpdate(packet)
     local last = readByte(save_handler_context_map.inventory.read[packet.packet_id])
     if (last == 255) then last = -1 end
     if (packet.data == 255) then packet.data = -1 end
-    if (packet.data > last) then
-        writeByte(
-            save_handler_context_map.inventory.read[packet.packet_id],
-            packet.data
-        )
-        last_seen_items[packet.packet_id] = packet.data
-        if (packet.packet_id == "inventory_slot_8") then
-            -- Got bombchus. Give the player some.
-            local qty = readByte(save_context + ammo_offset + 0x8)
-            if (qty == 0) then writeByte(save_context + ammo_offset + 0x8, 10) end
-        end
-        if (last == 0xFF or packet.data == 0xFF) then return end
-        -- Check buttons.
-        local addr = 0x600108
-        local addr2 = addr + 0x4
-        local b = readByte(0x11A638 + 0)
-        local l = readByte(0x11A638 + 1)
-        local d = readByte(0x11A638 + 2)
-        local r = readByte(0x11A638 + 3)
-        if (b == last) then
-            writeByte(0x11A638 + 0, packet.data)
-            writeFourBytesUnsigned(addr2, 0x00000000)
-            SAVE_DATA_HANDLER["console"].log("Updating " .. "B" .. " button")
-        end
-        if (l == last) then
-            writeByte(0x11A638 + 1, packet.data)
-            writeFourBytesUnsigned(addr2, 0x00000001)
-            SAVE_DATA_HANDLER["console"].log("Updating " .. "C-Left" .. " button")
-        end
-        if (d == last) then
-            writeByte(0x11A638 + 2, packet.data)
-            writeFourBytesUnsigned(addr2, 0x00000002)
-            SAVE_DATA_HANDLER["console"].log("Updating " .. "C-Down" .. " button")
-        end
-        if (r == last) then
-            writeByte(0x11A638 + 3, packet.data)
-            writeFourBytesUnsigned(addr2, 0x00000003)
-            SAVE_DATA_HANDLER["console"].log("Updating " .. "C-Right" .. " button")
-        end
-        writeFourBytesUnsigned(addr, 0x00000002)
+    writeByte(
+        save_handler_context_map.inventory.read[packet.packet_id],
+        packet.data
+    )
+    last_seen_items[packet.packet_id] = packet.data
+    if (packet.packet_id == "inventory_slot_8") then
+        -- Got bombchus. Give the player some.
+        local qty = readByte(save_context + ammo_offset + 0x8)
+        if (qty == 0) then writeByte(save_context + ammo_offset + 0x8, 10) end
     end
+    if (last == 0xFF or packet.data == 0xFF) then return end
+    -- Check buttons.
+    local addr = 0x600100
+    local addr2 = addr + 0x4
+    local l = readByte(0x11A638 + 1)
+    local d = readByte(0x11A638 + 2)
+    local r = readByte(0x11A638 + 3)
+    if (packet.data == 44) then 
+        packet.data = 0xFF;
+    end
+    if (l == last) then
+        writeByte(0x11A638 + 1, packet.data)
+        writeFourBytesUnsigned(addr2, 0x00000001)
+        SAVE_DATA_HANDLER["console"].log("Updating " .. "C-Left" .. " button")
+    end
+    if (d == last) then
+        writeByte(0x11A638 + 2, packet.data)
+        writeFourBytesUnsigned(addr2, 0x00000002)
+        SAVE_DATA_HANDLER["console"].log("Updating " .. "C-Down" .. " button")
+    end
+    if (r == last) then
+        writeByte(0x11A638 + 3, packet.data)
+        writeFourBytesUnsigned(addr2, 0x00000003)
+        SAVE_DATA_HANDLER["console"].log("Updating " .. "C-Right" .. " button")
+    end
+    writeFourBytesUnsigned(addr, 0x00000002)
 end
 
 local ammo_map = {
@@ -1134,7 +1135,8 @@ end
 
 SAVE_DATA_HANDLER["hook"] = function()
     addToBuffer(function()
-        SAVE_DATA_HANDLER["send"]("save_update_status", {bool = true})
+        SAVE_DATA_HANDLER["send"]("save_update_status", {bool = true, flag = readFourBytesUnsigned(save_context + 0x12A4)})
+        writeFourBytesUnsigned(save_context + 0x12A4, 0x4F4F544F);
     end)
     update_inventory(true)
     update_upgrades(0, true)

@@ -18,20 +18,14 @@
 
 // DON'T MIND THIS CLASS I'M RIPPING IT APART. COME BACK LATER.
 
-const zlib = require('zlib');
-
 class Encoder {
 
     compressData(data) {
-        let pack = JSON.stringify(data)
-        let compress = zlib.deflateSync(pack);
-        return compress;
+        return data;
     }
 
     decompressData(data) {
-        let decompress = zlib.inflateSync(Buffer.from(data)).toString();
-        let unpack = JSON.parse(decompress);
-        return unpack;
+        return data;
     }
 
 }

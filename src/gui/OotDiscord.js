@@ -62,6 +62,8 @@ function setup(_ooto) {
                         global.OotModLoader["OVERRIDE_PORT"] = parse.port;
                         global.OotModLoader["OVERRIDE_ROOM"] = parse.room;
                         global.OotModLoader["OVERRIDE_PASSWORD"] = parse.password;
+                        config._isMaster = false;
+                        config._isClient = true;
                         ooto.api.postEvent({ id: "GUI_DiscordJoin" });
                     } catch (err) {
                         console.log(err.stack);
@@ -97,7 +99,7 @@ function loadingGame() {
         instance: true,
     });
     CURRENT_STATUS = { fn: loadingGame };
-    if (config.cfg.SERVER.isMaster){
+    if (config._isMaster){
         getJson('https://api.ipify.org/?format=json', function (error, response) {
             console.log("Setting ip to " + response.ip);
             config.cfg.SERVER.master_server_ip = response.ip;

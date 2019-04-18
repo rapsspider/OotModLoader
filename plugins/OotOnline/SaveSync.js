@@ -172,23 +172,6 @@ class SaveSync {
                 }
                 return v2 !== value;
             };
-            inst._exceptionStorage["_inventory"]["check"]["trade_slots"] = function (inst, data) {
-                let value = inst._int;
-                if (value === 255) {
-                    value = -1;
-                }
-                let v2 = data;
-                if (v2 === 255) {
-                    v2 = -1;
-                }
-                if (v2 === 44) {
-                    return false;
-                }
-                if (value === 44) {
-                    return true;
-                }
-                return v2 > value;
-            }
             inst._exceptionStorage["_heart_containers"] = {};
             inst._exceptionStorage["_heart_containers"]["check"] = {};
             inst._exceptionStorage["_heart_containers"]["check"]["default"] = function (inst, data) {
@@ -220,7 +203,7 @@ class SaveSync {
                     if (inst._exceptionStorage._inventory.bottle_slots.includes(tag)) {
                         server.getRoomsArray()[room]["_inventory"][id]._check = inst._exceptionStorage._inventory.check.bottle_slots;
                     } else if (inst._exceptionStorage._inventory.trade_slots.includes(tag)) {
-                        server.getRoomsArray()[room]["_inventory"][id]._check = inst._exceptionStorage._inventory.check.trade_slots;
+                        server.getRoomsArray()[room]["_inventory"][id]._check = inst._exceptionStorage._inventory.check.bottle_slots;
                     }
                 }
                 let u = server.getRoomsArray()[room]["_inventory"][id].update(data);
@@ -349,7 +332,7 @@ class SaveSync {
                         if (u.bool) {
                             let icon = inst._icons.getIcon("item_piece_of_heart");
                             let str = inst._lang.getLocalizedString("item_heart_container");
-                            server._ws_server.sockets.to(room).emit('msg', { packet_id: "heart_msg", payload: encoder.compressData({ packet_id: "heart_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
+                            //server._ws_server.sockets.to(room).emit('msg', { packet_id: "heart_msg", payload: encoder.compressData({ packet_id: "heart_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
                         }
                         return u.int;
                     }
@@ -444,6 +427,7 @@ class SaveSync {
                 }
                 if (!server.getRoomsArray()[room]["_skulltulas"].hasOwnProperty(id)) {
                     server.getRoomsArray()[room]["_skulltulas"][id] = new IntegerStorage(tag);
+                    server.getRoomsArray()[room]["_skulltulas"][id]._check = inst._exceptionStorage._heart_containers.check.default;
                 }
                 let u = server.getRoomsArray()[room]["_skulltulas"][id].update(data);
                 try {
@@ -460,6 +444,31 @@ class SaveSync {
                     logger.log(err, "red");
                 }
             }
+            inst._savePacketHandlers["death_counter"] = function (server, room, id, data, tag, packet) {
+                logger.log(packet);
+                if (!server.getRoomsArray().hasOwnProperty(room)) {
+                    return;
+                }
+                if (!server.getRoomsArray()[room].hasOwnProperty("_death_counter")) {
+                    server.getRoomsArray()[room]["_death_counter"] = {};
+                }
+                if (!server.getRoomsArray()[room]["_death_counter"].hasOwnProperty(id)) {
+                    server.getRoomsArray()[room]["_death_counter"][id] = new IntegerStorage(tag);
+                    server.getRoomsArray()[room]["_death_counter"][id]._check = inst._exceptionStorage._heart_containers.check.default;
+                }
+                let u = server.getRoomsArray()[room]["_death_counter"][id].update(data);
+                try {
+                    if (u.int !== 0xFFFF) {
+                        if (u.bool) {
+                            let str = packet.nickname + " has died!";
+                            server._ws_server.sockets.to(room).emit('msg', { packet_id: "death_msg", payload: encoder.compressData({ packet_id: "death_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: 11 * 16, sy: 19 * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
+                        }
+                        return u.int;
+                    }
+                } catch (err) {
+                    logger.log(err, "red");
+                }
+            }
             api.registerServerChannel("savesync", function (server, packet) {
                 let decompress = encoder.decompressData(packet.payload);
                 var r = {};
@@ -467,7 +476,7 @@ class SaveSync {
                     let id = inst._packetNameCache[key];
                     Object.keys(inst._savePacketHandlers).forEach(function (t) {
                         if (id.indexOf(t) > -1) {
-                            r[key] = inst._savePacketHandlers[t](server, packet.room, key, decompress.data[key], id);
+                            r[key] = inst._savePacketHandlers[t](server, packet.room, key, decompress.data[key], id, packet);
                             if (r[key] === undefined) {
                                 delete r[key];
                             }
@@ -476,6 +485,9 @@ class SaveSync {
                 });
                 decompress.data = r;
                 packet.payload = encoder.compressData(decompress);
+                if (packet.payload.addr === 0x0){
+                    server._ws_server.sockets.to(packet.uuid).emit('msg', packet);
+                }
                 return true;
             });
 
@@ -484,6 +496,7 @@ class SaveSync {
                     logger.log("Collecting save data...");
                     inst._collectData = true;
                     inst._dataCache.data = {};
+                    inst._dataCache.addr = packet.data.data.flag;
                 } else {
                     logger.log("Sending save data.");
                     inst._collectData = false;

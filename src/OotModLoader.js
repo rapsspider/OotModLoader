@@ -188,6 +188,7 @@ app.on('ready', function () {
 
             logger.log("Awaiting start command from GUI.");
             api.registerEventHandler("GUI_StartButtonPressed", function (event) {
+                logger.log(event);
                 if (global.OotModLoader.OVERRIDE_IP !== "") {
                     CONFIG._master_server_ip = global.OotModLoader.OVERRIDE_IP;
                     CONFIG._master_server_port = global.OotModLoader.OVERRIDE_PORT;

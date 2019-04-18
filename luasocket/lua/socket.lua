@@ -11,7 +11,6 @@ local base = _G
 local string = require("string")
 local math = require("math")
 local socket = require("socket.core")
-module("socket")
 
 -----------------------------------------------------------------------------
 -- Exported auxiliar functions
@@ -39,7 +38,7 @@ function bind(host, port, backlog)
     return sock
 end
 
-try = newtry()
+try = socket.newtry()
 
 function choose(table)
     return function(name, opt1, opt2)
@@ -131,3 +130,4 @@ sourcet["default"] = sourcet["until-closed"]
 
 source = choose(sourcet)
 
+return socket

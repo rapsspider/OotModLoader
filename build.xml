@@ -21,12 +21,7 @@
 
   <target name="clean">
     <delete dir="${dist}"/>
-    <delete dir="${bin}"/>
-    <delete dir="${build_temp}"/>
     <mkdir dir="${dist}"/>
-    <mkdir dir="${bin}"/>
-    <mkdir dir="${bin}/Lua"/>
-    <mkdir dir="${build_temp}"/>
     <mkdir dir="./empty_folder"/>
   </target>
 
@@ -37,7 +32,7 @@
 
   <target name="setup">
     <echo message="Setting up env..."/>
-	    <exec executable="${cmd.exec}">
+    <exec executable="${cmd.exec}">
       <arg value="${cmd.con}"/>
       <arg value="npm install -g electron"/>
     </exec>
@@ -87,7 +82,11 @@
     </copy>
   </target>
 
-  <target name="compile_scripts" depends="setup, clean">
+  <target name="compile_scripts">
+    <delete dir="${bin}"/>
+    <mkdir dir="${bin}"/>
+    <delete dir="${build_temp}"/>
+    <mkdir dir="${build_temp}"/>
     <echo message="Compiling scripts..."/>
     <copy todir="${bin}/src">
       <fileset dir="./src"/>
@@ -100,14 +99,14 @@
       <replacefilter token="@minor@" property="minor"/>
       <replacefilter token="@buildNumber@" property="build.number"/>
       <replacefilter token="@release_type@" value="${release_type}"/>
-      <replacefilter token="@BUILD_TYPE@" value="GUI"/>
+      <replacefilter token="@BUILD_TYPE@" value="${type}"/>
     </replace>
     <replace file="${bin}/src/OotVersion.js" propertyFile="build.properties">
       <replacefilter token="@major@" property="major"/>
       <replacefilter token="@minor@" property="minor"/>
       <replacefilter token="@buildNumber@" property="build.number"/>
       <replacefilter token="@release_type@" value="${release_type}"/>
-      <replacefilter token="@BUILD_TYPE@" value="GUI"/>
+      <replacefilter token="@BUILD_TYPE@" value="${type}"/>
     </replace>
     <replace file="${bin}/src/gui/index.html" propertyFile="build.properties">
       <replacefilter token="@major@" property="major"/>
@@ -118,7 +117,10 @@
     <copy file="package.json" tofile="${bin}/package.json"/>
   </target>
 
-  <target name="GUI" depends="compile_scripts">
+  <target name="CLI">
+    <antcall target="compile_scripts">
+      <param name="type" value="CLI"/>
+    </antcall>
     <exec executable="${cmd.exec}">
       <arg value="${cmd.con}"/>
       <arg value="asar p ./wrapper ${build_temp}/app.asar"/>
@@ -141,23 +143,38 @@
     <antcall target="copy_files">
       <param name="tfolder" value="${build_temp}/OotModLoader-win32-x64"/>
     </antcall>
+    <property file="build.properties"/>
+    <zip destfile="${dist}/OotModLoader_${major}.${minor}.${build.number}_${release_type}_CLI_win64.zip" basedir="${build_temp}/OotModLoader-win32-x64"/>
   </target>
 
-  <target name="zip">
-    <property file="build.properties"/>
-    <!-- <zip destfile="${dist}/OotModLoader-CLI_${major}.${minor}.${build.number}_${release_type}_win64.zip" basedir="./bin/win/x64"/>
-    <zip destfile="${dist}/OotModLoader-CLI_${major}.${minor}.${build.number}_${release_type}_linux64.zip" basedir="./bin/linux/x64"/>
-    <zip destfile="${dist}/OotModLoader-CLI_${major}.${minor}.${build.number}_${release_type}_macos64.zip" basedir="./bin/macos/x64"/>
-     -->
-    <zip destfile="${dist}/OotModLoader_${major}.${minor}.${build.number}_${release_type}_win64.zip" basedir="${build_temp}/OotModLoader-win32-x64"/>
-    <copy todir="${dist}">
-      <fileset dir="./dev_portal"/>
-    </copy>
+  <target name="GUI">
+    <antcall target="compile_scripts">
+      <param name="type" value="GUI"/>
+    </antcall>
     <exec executable="${cmd.exec}">
       <arg value="${cmd.con}"/>
-      <arg value="node ${dist}/generate_list.js"/>
+      <arg value="asar p ./wrapper ${build_temp}/app.asar"/>
     </exec>
-    <zip destfile="${dist}/OotModLoader_DevPortal.war" basedir="${dist}"/>
+    <exec executable="${cmd.exec}">
+      <arg value="${cmd.con}"/>
+      <arg value="asar p ${bin} ${build_temp}/OotModLoader.asar"/>
+    </exec>
+    <exec executable="${cmd.exec}">
+      <arg value="${cmd.con}"/>
+      <arg value="asar p ./OotM_Updater ${build_temp}/updater.asar"/>
+    </exec>
+    <exec executable="${cmd.exec}">
+      <arg value="${cmd.con}"/>
+      <arg value="electron-packager ./empty_folder --all --out=${build_temp} --prebuilt-asar=${build_temp}/app.asar --electron-version=4.1.2 --icon 'OotOnline_Icon.ico'"/>
+    </exec>
+    <antcall target="copy_files">
+      <param name="tfolder" value="${build_temp}/OotModLoader-linux-x64"/>
+    </antcall>
+    <antcall target="copy_files">
+      <param name="tfolder" value="${build_temp}/OotModLoader-win32-x64"/>
+    </antcall>
+    <property file="build.properties"/>
+    <zip destfile="${dist}/OotModLoader_${major}.${minor}.${build.number}_${release_type}_GUI_win64.zip" basedir="${build_temp}/OotModLoader-win32-x64"/>
   </target>
 
 </project>
