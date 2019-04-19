@@ -8,7 +8,7 @@
   <property name="major" value="1"/>
   <property name="minor" value="1"/>
   <property name="emu" value="./src/for_emulator"/>
-  <property name="release_type" value="DEV"/>
+  <property name="release_type" value="BETA"/>
   <property name="build_temp" value="./build_temp"/>
 
   <condition property="cmd.exec" value="cmd" else="/bin/sh">
@@ -123,6 +123,35 @@
     <copy file="package.json" tofile="${bin}/package.json"/>
   </target>
 
+  <target name="Node">
+    <antcall target="compile_scripts">
+      <param name="type" value="CLI"/>
+    </antcall>
+    <copy todir="${bin}/mods">
+      <fileset dir="mods" includes="**"/>
+    </copy>
+    <copy todir="${bin}/rom">
+      <fileset dir="rom" includes="**"/>
+    </copy>
+    <copy todir="${bin}/localization">
+      <fileset dir="localization" includes="**"/>
+    </copy>
+    <copy todir="${bin}/versions">
+      <fileset dir="versions" includes="**"/>
+    </copy>
+    <delete dir="${bin}/node_modules"/>
+    <mkdir dir="${bin}/plugins"/>
+    <exec executable="${cmd.exec}">
+      <arg value="${cmd.con}"/>
+      <arg value="asar p ./plugins/OotOnline ${bin}/plugins/OotOnline.asar"/>
+    </exec>
+    <copy todir="${build_temp}">
+      <fileset dir="${bin}" includes="**"/>
+    </copy>
+    <property file="build.properties"/>
+    <zip destfile="${dist}/OotModLoader_${major}.${minor}.${build.number}_${release_type}_Node_Universal.zip" basedir="${build_temp}"/>
+  </target>
+
   <target name="CLI">
     <antcall target="compile_scripts">
       <param name="type" value="CLI"/>
@@ -144,13 +173,16 @@
       <arg value="electron-packager ./empty_folder --all --out=${build_temp} --prebuilt-asar=${build_temp}/app.asar --electron-version=4.1.2 --icon 'OotOnline_Icon.ico'"/>
     </exec>
     <antcall target="copy_files">
-      <param name="tfolder" value="${build_temp}/OotModLoader-linux-x64"/>
-    </antcall>
-    <antcall target="copy_files">
       <param name="tfolder" value="${build_temp}/OotModLoader-win32-x64"/>
     </antcall>
+    <antcall target="copy_files">
+      <param name="tfolder" value="${build_temp}/OotModLoader-linux-x64"/>
+    </antcall>
     <property file="build.properties"/>
-    <zip destfile="${dist}/OotModLoader_${major}.${minor}.${build.number}_${release_type}_CLI_win64.zip" basedir="${build_temp}/OotModLoader-win32-x64"/>
+    <delete dir="${build_temp}/OotModLoader-win32-x64/BizHawk"/>
+    <delete dir="${build_temp}/OotModLoader-linux-x64/BizHawk"/>
+    <zip destfile="${dist}/OotModLoader_${major}.${minor}.${build.number}_${release_type}_Server_win64.zip" basedir="${build_temp}/OotModLoader-win32-x64"/>
+    <zip destfile="${dist}/OotModLoader_${major}.${minor}.${build.number}_${release_type}_Server_linux64.zip" basedir="${build_temp}/OotModLoader-linux-x64"/>
   </target>
 
   <target name="GUI">
@@ -180,11 +212,11 @@
       <param name="tfolder" value="${build_temp}/OotModLoader-win32-x64"/>
     </antcall>
     <property file="build.properties"/>
-    <zip destfile="${dist}/OotModLoader_${major}.${minor}.${build.number}_${release_type}_GUI_win64.zip" basedir="${build_temp}/OotModLoader-win32-x64"/>
+    <zip destfile="${dist}/OotModLoader_${major}.${minor}.${build.number}_${release_type}_Client_win64.zip" basedir="${build_temp}/OotModLoader-win32-x64"/>
   </target>
 
   <target name="GUI_TEST">
-  <antcall target="compile_scripts">
+    <antcall target="compile_scripts">
       <param name="type" value="GUI"/>
     </antcall>
     <exec executable="${cmd.exec}">
