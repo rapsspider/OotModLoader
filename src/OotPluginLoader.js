@@ -34,6 +34,15 @@ class PluginSystem {
 
     loadPlugins(params) {
         (function (inst) {
+            // Load core plugin
+            let core = require('./embedded/OotLoaderCore');
+            core["_fileSystem"] = real_fs;
+            core["ModLoader"] = {};
+            core.ModLoader["api"] = api;
+            core.ModLoader["base"] = process.cwd();
+            core.ModLoader["logger"] = require("./OotLogger")(core._name);
+            inst._plugins.push(core);
+
             for (let i = 0; i < params.paths.length; i++) {
                 // Do first pass.
                 real_fs.readdirSync(params.paths[i]).forEach(function (file) {
@@ -46,7 +55,6 @@ class PluginSystem {
                                 plugin.ModLoader["api"] = api;
                                 plugin.ModLoader["base"] = process.cwd();
                                 plugin.ModLoader["logger"] = require("./OotLogger")(plugin._name);
-                                plugin["_payloads"] = [];
                                 inst._plugins.push(plugin);
                             }
                         });

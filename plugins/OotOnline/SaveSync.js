@@ -93,11 +93,11 @@ class IntegerArrayStorage {
 
     update(data) {
         let array = bits.read(this._byte);
-        Object.keys(array).forEach(function (key) {
-            if (array[key] === 0 && data[key] === 1) {
-                array[key] = 1;
+        for (let i = 0; i < array.length; i++) {
+            if (array[i] === 0 && data[i] === 1) {
+                array[i] = 1;
             }
-        });
+        }
         this._byte = bits.write(array);
         return array;
     }
@@ -118,9 +118,9 @@ class SaveSync {
     }
 
     preinit() {
-        this._lang = localization.create("en_US", this._fileSystem.readFileSync(__dirname + "/localization/en_US.json"));
-        this._inventorySlotToLangKey = localization.create("item_numbers", this._fileSystem.readFileSync(__dirname + "/localization/item_numbers.json"));
-        this._icons = localization.icons("icon_coordinates", this._fileSystem.readFileSync(__dirname + "/localization/icon_coordinates.json"));
+        this._lang = localization.getLoadedObject("en_US");
+        this._inventorySlotToLangKey = localization.getLoadedObject("item_numbers");
+        this._icons = localization.getLoadedObject("icon_coordinates");
         (function (inst) {
             api.registerPacketRoute("requestSaveData", "savesync");
             api.registerPacketRoute("savesync_data", "savesync");
@@ -180,10 +180,10 @@ class SaveSync {
                     value = -1;
                 }
                 let v2 = data;
-                if (v2 === 0xFFFF){
+                if (v2 === 0xFFFF) {
                     v2 = -1;
                 }
-                return data > value;
+                return v2 > value;
             }
         })(this);
     }
@@ -332,7 +332,7 @@ class SaveSync {
                         if (u.bool) {
                             let icon = inst._icons.getIcon("item_piece_of_heart");
                             let str = inst._lang.getLocalizedString("item_heart_container");
-                            //server._ws_server.sockets.to(room).emit('msg', { packet_id: "heart_msg", payload: encoder.compressData({ packet_id: "heart_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
+                            server._ws_server.sockets.to(room).emit('msg', { packet_id: "heart_msg", payload: encoder.compressData({ packet_id: "heart_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
                         }
                         return u.int;
                     }
@@ -428,10 +428,11 @@ class SaveSync {
                 if (!server.getRoomsArray()[room]["_skulltulas"].hasOwnProperty(id)) {
                     server.getRoomsArray()[room]["_skulltulas"][id] = new IntegerStorage(tag);
                     server.getRoomsArray()[room]["_skulltulas"][id]._check = inst._exceptionStorage._heart_containers.check.default;
+                    server.getRoomsArray()[room]["_skulltulas"][id]._int = 0xFFFF;
                 }
                 let u = server.getRoomsArray()[room]["_skulltulas"][id].update(data);
                 try {
-                    if (u.int !== 255) {
+                    if (u.int !== 0xFFFF) {
                         if (u.bool) {
                             let key = "item_gold_skulltula_token";
                             let icon = inst._icons.getIcon(key);
@@ -445,7 +446,6 @@ class SaveSync {
                 }
             }
             inst._savePacketHandlers["death_counter"] = function (server, room, id, data, tag, packet) {
-                logger.log(packet);
                 if (!server.getRoomsArray().hasOwnProperty(room)) {
                     return;
                 }
@@ -485,7 +485,7 @@ class SaveSync {
                 });
                 decompress.data = r;
                 packet.payload = encoder.compressData(decompress);
-                if (packet.payload.addr === 0x0){
+                if (packet.payload.addr === true) {
                     server._ws_server.sockets.to(packet.uuid).emit('msg', packet);
                 }
                 return true;
@@ -500,8 +500,6 @@ class SaveSync {
                 } else {
                     logger.log("Sending save data.");
                     inst._collectData = false;
-                    Object.keys(inst._dataCache.data).forEach(function (key) {
-                    });
                     client.sendDataToMasterOnChannel("savesync", inst._dataCache);
                 }
                 return false;

@@ -55,6 +55,7 @@ let roms_list = [];
 let mods = [];
 
 global.OotRunDir = __dirname;
+
 if (!global.hasOwnProperty("OotModLoader")) {
     global["OotModLoader"] = {};
 }

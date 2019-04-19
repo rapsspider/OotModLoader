@@ -191,6 +191,7 @@ function startClient() {
 function onIPChange() {
     SERVER_URL = "http://" + document.getElementById("_master_server_ip").value + ":8083/LobbyBrowser"
     console.log(SERVER_URL);
+    configChanged();
 }
 
 RENDER_OBJ["onIPChange"] = onIPChange;

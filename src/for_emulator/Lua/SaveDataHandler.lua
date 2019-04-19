@@ -20,6 +20,7 @@ require("OotUtils")
 SAVE_DATA_HANDLER = {}
 SAVE_DATA_HANDLER["console"] = {}
 SAVE_DATA_HANDLER["clearCache"] = function(d) end
+local NEEDS_STUFF = true;
 
 local status_message
 
@@ -730,20 +731,16 @@ end
 local scene_offset = 0x00D4
 local scene_full_send = true
 
+writeTwoByteUnsigned(
+    save_handler_context + save_handler_context_map.scene.current,
+    0xFFFF
+)
+writeTwoByteUnsigned(
+    save_handler_context + save_handler_context_map.scene.previous,
+    0xFFFF
+)
+
 function update_scenes()
-    local cur_scene = readTwoByteUnsigned(scene_addr)
-    local last_known_scene = readTwoByteUnsigned(save_handler_context + save_handler_context_map.scene.current)
-    local prev_scene = readTwoByteUnsigned(save_handler_context + save_handler_context_map.scene.previous)
-    if (cur_scene ~= last_known_scene) then
-        writeTwoByteUnsigned(
-            save_handler_context + save_handler_context_map.scene.previous,
-            last_known_scene
-        )
-        writeTwoByteUnsigned(
-            save_handler_context + save_handler_context_map.scene.current,
-            cur_scene
-        )
-    end
     if (scene_full_send) then
         addToBuffer(function()
             for i = 0, 0x0B0C, 1 do
@@ -761,36 +758,53 @@ function update_scenes()
         end)
         scene_full_send = false
     else
+        local cur = readTwoByteUnsigned(scene_addr)
         local p = readTwoByteUnsigned(save_handler_context + save_handler_context_map.scene.previous) * 0x1C
         local c = readTwoByteUnsigned(save_handler_context + save_handler_context_map.scene.current) * 0x1C
+        if (cur ~= c) then
+            writeTwoByteUnsigned(
+                save_handler_context + save_handler_context_map.scene.current,
+                cur
+            )
+            writeTwoByteUnsigned(
+                save_handler_context + save_handler_context_map.scene.previous,
+                p
+            )
+            p = c
+            c = cur
+        end
         local addr = save_context + scene_offset + p
         local addr2 = save_context + scene_offset + c
         addToBuffer(function()
-            for i = 0, 0x1C, 1 do
-                setStatusMessage("Updating previous scene " .. tostring(math.floor((i / 0x1C) * 100)) .. "%")
-                local d = readByte(addr + i)
-                writeByte(
-                    save_handler_context + save_handler_context_map.scratch.write["scratch_pad_0"],
-                    d
-                )
-                SAVE_DATA_HANDLER["send"](
-                    "scene_" .. tostring(p + i),
-                    readByte(save_handler_context + save_handler_context_map.scratch.write["scratch_pad_0"])
-                )
+            if (p ~= 0xFFFF) then
+                for i = 0, 0x1C, 1 do
+                    setStatusMessage("Updating previous scene " .. tostring(math.floor((i / 0x1C) * 100)) .. "%")
+                    local d = readByte(addr + i)
+                    writeByte(
+                        save_handler_context + save_handler_context_map.scratch.write["scratch_pad_0"],
+                        d
+                    )
+                    SAVE_DATA_HANDLER["send"](
+                        "scene_" .. tostring(p + i),
+                        readByte(save_handler_context + save_handler_context_map.scratch.write["scratch_pad_0"])
+                    )
+                end
             end
         end)
         addToBuffer(function()
-            for i = 0, 0x1C, 1 do
-                setStatusMessage("Updating current scene " .. tostring(math.floor((i / 0x1C) * 100)) .. "%")
-                local d = readByte(addr2 + i)
-                writeByte(
-                    save_handler_context + save_handler_context_map.scratch.write["scratch_pad_0"],
-                    d
-                )
-                SAVE_DATA_HANDLER["send"](
-                    "scene_" .. tostring(c + i),
-                    readByte(save_handler_context + save_handler_context_map.scratch.write["scratch_pad_0"])
-                )
+            if (c ~= 0xFFFF) then
+                for i = 0, 0x1C, 1 do
+                    setStatusMessage("Updating current scene " .. tostring(math.floor((i / 0x1C) * 100)) .. "%")
+                    local d = readByte(addr2 + i)
+                    writeByte(
+                        save_handler_context + save_handler_context_map.scratch.write["scratch_pad_0"],
+                        d
+                    )
+                    SAVE_DATA_HANDLER["send"](
+                        "scene_" .. tostring(c + i),
+                        readByte(save_handler_context + save_handler_context_map.scratch.write["scratch_pad_0"])
+                    )
+                end
             end
         end)
     end
@@ -944,9 +958,7 @@ function handleInventorySlotUpdate(packet)
     local l = readByte(0x11A638 + 1)
     local d = readByte(0x11A638 + 2)
     local r = readByte(0x11A638 + 3)
-    if (packet.data == 44) then 
-        packet.data = 0xFF;
-    end
+    if (packet.data == 44) then packet.data = 0xFF end
     if (l == last) then
         writeByte(0x11A638 + 1, packet.data)
         writeFourBytesUnsigned(addr2, 0x00000001)
@@ -1135,8 +1147,15 @@ end
 
 SAVE_DATA_HANDLER["hook"] = function()
     addToBuffer(function()
-        SAVE_DATA_HANDLER["send"]("save_update_status", {bool = true, flag = readFourBytesUnsigned(save_context + 0x12A4)})
-        writeFourBytesUnsigned(save_context + 0x12A4, 0x4F4F544F);
+        SAVE_DATA_HANDLER["send"](
+            "save_update_status",
+            {
+                bool = true,
+                flag = NEEDS_STUFF
+            }
+        )
+        writeFourBytesUnsigned(save_context + 0x12A4, 0x4F4F544F)
+        NEEDS_STUFF = false;
     end)
     update_inventory(true)
     update_upgrades(0, true)
@@ -1231,8 +1250,29 @@ SAVE_DATA_HANDLER["writeHandler"] = function(packet)
 end
 
 SAVE_DATA_HANDLER["sceneTrigger"] = function(packet)
+    addToBuffer(function()
+        SAVE_DATA_HANDLER["send"](
+            "save_update_status",
+            {
+                bool = true,
+                flag = NEEDS_STUFF
+            }
+        )
+        writeFourBytesUnsigned(save_context + 0x12A4, 0x4F4F544F)
+    end)
     update_scenes()
-    addToBuffer(function() setStatusMessage("") end)
+    addToBuffer(function()
+        setStatusMessage("")
+        SAVE_DATA_HANDLER["send"]("save_update_status", {bool = false})
+        client.saveram()
+    end)
+    for i = 1, 12, 1 do
+        for j = 1, 10, 1 do
+            addToBuffer(function()
+                drawSprite("icons/" .. tostring(i) .. ".png", 0, 0, 16, 16, 0, 20)
+            end)
+        end
+    end
 end
 
 return SAVE_DATA_HANDLER

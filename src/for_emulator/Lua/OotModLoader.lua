@@ -89,7 +89,7 @@ function _sendPacket(id, data, template, net)
     return true
 end
 
-function sendPacket(id, data, template) _sendPacket(id, data, template, tcp) end
+function sendPacket(id, data, template) return _sendPacket(id, data, template, tcp) end
 
 function downloadSaveData(flag) end
 
@@ -1078,7 +1078,7 @@ function updateSaveData()
     end
 end
 
-save["send"] = function(name, data) sendPacket(name, {data = data}, {}) end
+save["send"] = function(name, data) return sendPacket(name, {data = data}, {}) end
 save["console"] = console
 save["link_exists"] = doesLinkExist
 save["clearCache"] = writehandlers["clearCache"]

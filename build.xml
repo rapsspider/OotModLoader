@@ -80,6 +80,12 @@
     <copy todir="${tfolder}">
       <fileset dir="./bizhawk_dist"/>
     </copy>
+    <copy todir="${tfolder}/localization">
+      <fileset dir="localization" includes="**"/>
+    </copy>
+    <copy todir="${tfolder}/versions">
+      <fileset dir="versions" includes="**"/>
+    </copy>
   </target>
 
   <target name="compile_scripts">
@@ -175,6 +181,34 @@
     </antcall>
     <property file="build.properties"/>
     <zip destfile="${dist}/OotModLoader_${major}.${minor}.${build.number}_${release_type}_GUI_win64.zip" basedir="${build_temp}/OotModLoader-win32-x64"/>
+  </target>
+
+  <target name="GUI_TEST">
+  <antcall target="compile_scripts">
+      <param name="type" value="GUI"/>
+    </antcall>
+    <exec executable="${cmd.exec}">
+      <arg value="${cmd.con}"/>
+      <arg value="asar p ./wrapper ${build_temp}/app.asar"/>
+    </exec>
+    <exec executable="${cmd.exec}">
+      <arg value="${cmd.con}"/>
+      <arg value="asar p ${bin} ${build_temp}/OotModLoader.asar"/>
+    </exec>
+    <exec executable="${cmd.exec}">
+      <arg value="${cmd.con}"/>
+      <arg value="asar p ./OotM_Updater ${build_temp}/updater.asar"/>
+    </exec>
+    <exec executable="${cmd.exec}">
+      <arg value="${cmd.con}"/>
+      <arg value="electron-packager ./empty_folder --all --out=${build_temp} --prebuilt-asar=${build_temp}/app.asar --electron-version=4.1.2 --icon 'OotOnline_Icon.ico'"/>
+    </exec>
+    <antcall target="copy_files">
+      <param name="tfolder" value="${build_temp}/OotModLoader-linux-x64"/>
+    </antcall>
+    <antcall target="copy_files">
+      <param name="tfolder" value="${build_temp}/OotModLoader-win32-x64"/>
+    </antcall>
   </target>
 
 </project>

@@ -24,23 +24,27 @@ let api = require(global.OotRunDir + "/OotAPI");
 const emulator = require(global.OotRunDir + "/OotBizHawk");
 const localization = require(global.OotRunDir + "/OotLocalizer");
 const client = require(global.OotRunDir + "/OotClient");
+const path = require('path');
 let tokens;
 
 class OotLoaderCore {
     constructor() {
         this._name = "OotLoaderCore";
-        tokens = require(__dirname + '/versions/10/tokens').tokens;
-        this._lastRoomPointer = 0;
-        this._udpOk = false;
-        this._stateTimer = null;
     }
 
     preinit() {
+        tokens = require(this.ModLoader.base + '/versions/10/tokens').tokens;
+        this._lastRoomPointer = 0;
+        this._udpOk = false;
+        this._stateTimer = null;
         api.registerEvent("onPlayerJoined");
         api.registerEvent("onPlayerJoined_ServerSide");
         // fix for discord shit.
-        logger.log(__dirname + "/localization/scene_numbers.json");
-        localization.create("scene_numbers", this._fileSystem.readFileSync(__dirname + "/localization/scene_numbers.json"));
+        (function(inst){
+            inst._fileSystem.readdirSync(inst.ModLoader.base + "/localization").forEach(function(file){
+                localization.create(path.parse(file).base, inst._fileSystem.readFileSync(inst.ModLoader.base + "/localization/" + file));
+            });
+        })(this);
         Object.keys(tokens).forEach(function (key) {
             api.registerToken({
                 token: key,
