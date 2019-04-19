@@ -45,13 +45,14 @@ class Configuration {
                 goron: "",
                 zora: ""
             };
+            this.cfg.CLIENT["tunic_colors_enabled"] = true;
             this.cfg.CLIENT["patchFile"] = "";
             this.cfg.CLIENT["localPort"] = {
                 tcp: 1337,
                 udp: 60001
             };
             this.cfg.CLIENT["ROM"] = "",
-            this.cfg.PLUGINS = {};
+                this.cfg.PLUGINS = {};
             fs.writeFileSync(this.file, JSON.stringify(this.cfg, null, 2));
         }
         this._master_server_ip = this.cfg.SERVER.master_server_ip;
@@ -64,19 +65,23 @@ class Configuration {
         this._master_server_udp = 1;
         this._tunic_colors = this.cfg.CLIENT.tunic_colors;
         this._patchFile = this.cfg.CLIENT.patchFile;
-        this._rom = this.cfg.CLIENT.ROM;
-        if (!this.cfg.hasOwnProperty("PLUGINS")){
+        if (!this.cfg.hasOwnProperty("PLUGINS")) {
             this.cfg["PLUGINS"] = {};
         }
-        if (!this.cfg.CLIENT.hasOwnProperty("localPort")){
+        if (!this.cfg.CLIENT.hasOwnProperty("localPort")) {
             this.cfg.CLIENT["localPort"] = {
                 tcp: 1337,
                 udp: 60001
             };
         }
-        if (!this.cfg.CLIENT.hasOwnProperty("ROM")){
+        if (!this.cfg.CLIENT.hasOwnProperty("ROM")) {
             this.cfg.CLIENT["ROM"] = ""
         }
+        if (!this.cfg.CLIENT.hasOwnProperty("tunic_colors_enabled")) {
+            this.cfg.CLIENT["tunic_colors_enabled"] = true;
+        }
+        this._rom = this.cfg.CLIENT.ROM;
+        this._tunic_colors_enabled = this.cfg.CLIENT.tunic_colors_enabled;
         this._localPort = this.cfg.CLIENT.localPort;
         this._plugins = this.cfg.PLUGINS;
         if (this._GAME_ROOM === "") {
@@ -85,30 +90,30 @@ class Configuration {
         }
     }
 
-    setPluginDefaultValue(category, key, value){
-        if (!this._plugins.hasOwnProperty(category)){
+    setPluginDefaultValue(category, key, value) {
+        if (!this._plugins.hasOwnProperty(category)) {
             this._plugins[category] = {};
         }
-        if (!this._plugins[category].hasOwnProperty(key)){
+        if (!this._plugins[category].hasOwnProperty(key)) {
             this._plugins[category][key] = value;
         }
     }
 
-    setPluginValue(category, key, value){
-        if (!this._plugins.hasOwnProperty(category)){
+    setPluginValue(category, key, value) {
+        if (!this._plugins.hasOwnProperty(category)) {
             this._plugins[category] = {};
         }
-        if (!this._plugins[category].hasOwnProperty(key)){
+        if (!this._plugins[category].hasOwnProperty(key)) {
             this._plugins[category][key] = value;
         }
         this._plugins[category][key] = value;
     }
 
-    getPluginValue(category, key){
-        if (!this._plugins.hasOwnProperty(category)){
+    getPluginValue(category, key) {
+        if (!this._plugins.hasOwnProperty(category)) {
             this._plugins[category] = {};
         }
-        if (!this._plugins[category].hasOwnProperty(key)){
+        if (!this._plugins[category].hasOwnProperty(key)) {
             this._plugins[category][key] = "";
         }
         return this._plugins[category][key];
@@ -186,7 +191,7 @@ class Configuration {
         this._GAME_ROOM = value;
     }
 
-    get PatchFile(){
+    get PatchFile() {
         return this._patchFile;
     }
 
@@ -210,6 +215,7 @@ class Configuration {
         this.cfg.PLUGINS = this._plugins;
         this.cfg.CLIENT["ROM"] = this._rom;
         this.cfg.CLIENT["patchFile"] = this._patchFile;
+        this.cfg.CLIENT["tunic_colors_enabled"] = this._tunic_colors_enabled;
         fs.writeFileSync(this.file, JSON.stringify(this.cfg, null, 2));
     }
 }

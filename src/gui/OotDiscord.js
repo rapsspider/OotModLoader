@@ -50,6 +50,11 @@ function parseSecret(secret) {
 function setup(_ooto) {
     config = _ooto.config;
     ooto = _ooto;
+    if (config.cfg.hasOwnProperty("PLUGINS")) {
+        if (config.cfg.PLUGINS.hasOwnProperty("OotOnline")) {
+            max_players = config.cfg.PLUGINS.OotOnline.max_players;
+        }
+    }
     client.on('ready', () => {
         onLauncher();
         client.on('RPC_MESSAGE_RECEIVED', (event) => {
@@ -99,7 +104,7 @@ function loadingGame() {
         instance: true,
     });
     CURRENT_STATUS = { fn: loadingGame };
-    if (config._isMaster){
+    if (config._isMaster) {
         getJson('https://api.ipify.org/?format=json', function (error, response) {
             console.log("Setting ip to " + response.ip);
             config.cfg.SERVER.master_server_ip = response.ip;

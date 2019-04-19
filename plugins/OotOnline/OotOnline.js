@@ -320,7 +320,7 @@ class OotOnline {
             });
 
             api.registerClientSidePacketHook("OotOnline", function (packet) {
-                if (packet.data["link_tunic_color"].data in inst._tunic_colors) {
+                if ((packet.data["link_tunic_color"].data in inst._tunic_colors) && CONFIG._tunic_colors_enabled) {
                     packet.data["override"] = inst._tunic_colors[packet.data["link_tunic_color"].data];
                 }
                 return true;
@@ -571,9 +571,11 @@ class OotOnline {
                         inst.PuppetMap[player].puppet.isSpawnedInCurrentScene = false;
                     }
                 });
-                Object.keys(inst._tunic_colors).forEach(function (index) {
-                    emulator.sendViaSocket({ packet_id: "changeColor", data: inst._tunic_colors[index], writeHandler: "range", addr: "0x000F7AD8", offset: index * 3 });
-                });
+                if (CONFIG._tunic_colors_enabled) {
+                    Object.keys(inst._tunic_colors).forEach(function (index) {
+                        emulator.sendViaSocket({ packet_id: "changeColor", data: inst._tunic_colors[index], writeHandler: "range", addr: "0x000F7AD8", offset: index * 3 });
+                    });
+                }
                 inst._puppetSpawnHandle = true;
             });
 
@@ -614,19 +616,22 @@ class OotOnline {
             api.registerEventHandler("onLinkRespawn", function (event) {
                 inst._puppetSpawnHandle = true;
                 logger.log("Preparing for puppet spawning...");
-                Object.keys(inst._tunic_colors).forEach(function (index) {
-                    emulator.sendViaSocket({ packet_id: "changeColor", data: inst._tunic_colors[index], writeHandler: "range", addr: "0x000F7AD8", offset: index * 3 });
-                });
+                if (CONFIG._tunic_colors_enabled) {
+                    Object.keys(inst._tunic_colors).forEach(function (index) {
+                        emulator.sendViaSocket({ packet_id: "changeColor", data: inst._tunic_colors[index], writeHandler: "range", addr: "0x000F7AD8", offset: index * 3 });
+                    });
+                }
             });
 
             api.registerEventHandler("onFrameCount", function (event) {
                 if (event.data.data.bool) {
                     inst._puppetSpawnHandle = true;
                     logger.log("Preparing for puppet spawning...");
-                    Object.keys(inst._tunic_colors).forEach(function (index) {
-                        emulator.sendViaSocket({ packet_id: "changeColor", data: inst._tunic_colors[index], writeHandler: "range", addr: "0x000F7AD8", offset: index * 3 });
-                    });
-                    logger.log("Setting tunic colors.");
+                    if (CONFIG._tunic_colors_enabled) {
+                        Object.keys(inst._tunic_colors).forEach(function (index) {
+                            emulator.sendViaSocket({ packet_id: "changeColor", data: inst._tunic_colors[index], writeHandler: "range", addr: "0x000F7AD8", offset: index * 3 });
+                        });
+                    }
                 }
             });
 
@@ -701,9 +706,11 @@ class OotOnline {
 
             api.registerEventHandler("onConfigUpdate", function (event) {
                 inst.setupTunics();
-                Object.keys(inst._tunic_colors).forEach(function (index) {
-                    emulator.sendViaSocket({ packet_id: "changeColor", data: inst._tunic_colors[index], writeHandler: "range", addr: "0x000F7AD8", offset: index * 3 });
-                });
+                if (CONFIG._tunic_colors_enabled) {
+                    Object.keys(inst._tunic_colors).forEach(function (index) {
+                        emulator.sendViaSocket({ packet_id: "changeColor", data: inst._tunic_colors[index], writeHandler: "range", addr: "0x000F7AD8", offset: index * 3 });
+                    });
+                }
             });
         })(this);
     }

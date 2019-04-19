@@ -23,8 +23,8 @@ const BUILD_TYPE = "@BUILD_TYPE@";
 const IS_DEV = true;
 const base_dir = path.dirname(app.getPath("exe"));
 
-if (BUILD_TYPE === "GUI"){
-    if (app.getPath("exe").indexOf("node_modules") === -1){
+if (BUILD_TYPE === "GUI") {
+    if (app.getPath("exe").indexOf("node_modules") === -1) {
         process.chdir(base_dir);
     }
 }
@@ -85,26 +85,36 @@ console_hook = function (msg) {
 
 app.on('ready', function () {
     if (BUILD_TYPE === "GUI") {
-        if (!IS_DEV){
+        if (!IS_DEV) {
             var getJSON = require('get-json');
-            getJSON('http://hylianmodding.com/OotOnline/update.json', function (error, response) {
-                logger.log("Server says: " + response.version)
-                if (response.version !== VERSION){
-                    var download = require('download-file')
-                    var url = response.url;
-                    var options = {
-                        directory: "./",
-                        filename: "update.zip"
-                    }
-                    download(url, options, function (err) {
-                        if (err) throw err
-                        if (fs.existsSync(process.cwd() + "/update.zip")) {
-                            app.relaunch({ args: process.argv.slice(1).concat(['--asar=updater.asar']) })
-                            app.exit()
+            try {
+                getJSON('http://hylianmodding.com/OotOnline/update.json', function (error, response) {
+                    if (error) {
+                        logger.log("Failed to get info from Hylian Modding!", "red")
+                    } else {
+                        logger.log("Server says: " + response.version)
+                        if (response.version !== VERSION) {
+                            var download = require('download-file')
+                            var url = response.url;
+                            var options = {
+                                directory: "./",
+                                filename: "update.zip"
+                            }
+                            download(url, options, function (err) {
+                                if (err) throw err
+                                if (fs.existsSync(process.cwd() + "/update.zip")) {
+                                    app.relaunch({ args: process.argv.slice(1).concat(['--asar=updater.asar']) })
+                                    app.exit()
+                                }
+                            })
                         }
-                    })
+                    }
+                });
+            } catch (err) {
+                if (err) {
+                    logger.log("Failed to get info from Hylian Modding!", "red")
                 }
-            });
+            }
         }
         let gui = require('./gui/OotGUI');
         gui.setupModLoader({ api: api, config: CONFIG, console: console_log, mods: mods, roms: roms_list });
@@ -270,8 +280,8 @@ app.on('ready', function () {
 
     api.registerEventHandler("onServerConnection", function (event) {
         if (BUILD_TYPE === "GUI") {
-            if (child === null){
-                if (event.hasOwnProperty("patchFile")){
+            if (child === null) {
+                if (event.hasOwnProperty("patchFile")) {
                     // Mod detected. Load it.
                     let bps = require('./OotBPS');
                     let patch = new bps();
@@ -369,21 +379,21 @@ function startBizHawk(lobby_path) {
     if (BUILD_TYPE === "GUI") {
         logger.log("Starting BizHawk...");
         try {
-            if (!fs.existsSync("./Saves")){
+            if (!fs.existsSync("./Saves")) {
                 fs.mkdirSync("./Saves");
             }
-            if (!fs.existsSync("./Saves/" + CONFIG.GAME_ROOM)){
+            if (!fs.existsSync("./Saves/" + CONFIG.GAME_ROOM)) {
                 fs.mkdirSync("./Saves/" + CONFIG.GAME_ROOM);
             }
             let biz_config = JSON.parse(fs.readFileSync("./BizHawk/config.ini"));
-            for (let i = 0; i < biz_config.PathEntries.Paths.length; i++){
-                if (biz_config.PathEntries.Paths[i].SystemDisplayName === "N64" && biz_config.PathEntries.Paths[i].Ordinal === 3){
+            for (let i = 0; i < biz_config.PathEntries.Paths.length; i++) {
+                if (biz_config.PathEntries.Paths[i].SystemDisplayName === "N64" && biz_config.PathEntries.Paths[i].Ordinal === 3) {
                     biz_config.PathEntries.Paths[i].Path = path.join(base_dir, "./Saves/" + CONFIG.GAME_ROOM);
                     break;
                 }
             }
             fs.writeFileSync("./BizHawk/config.ini", JSON.stringify(biz_config, null, 2));
-            let evt = {id: "BizHawkPreLoad", rom: path.resolve(lobby_path)};
+            let evt = { id: "BizHawkPreLoad", rom: path.resolve(lobby_path) };
             api.postEvent(evt);
             logger.log("Loading " + evt.rom + ".");
             child = spawn('./BizHawk/EmuHawk.exe', ['--lua=' + path.resolve("./BizHawk/Lua/OotModLoader.lua"), evt.rom], { stdio: 'inherit' });

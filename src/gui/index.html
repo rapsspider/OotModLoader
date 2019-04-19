@@ -61,22 +61,24 @@
         </ul>
         <div id="tabs-1">
             <h2>Lobby Settings</h2>
-            <label for="nickname" align="left">Username: </label> <input type="text" name="nickname"
+            <label class="short_label" for="nickname" align="left">Username: </label> <input type="text" name="nickname"
                 id="_nickname" /><br /><br />
-            <label for="game_room">Lobby Name:</label> <input type="text" name="game_room" id="_GAME_ROOM"
+            <label class="short_label" for="game_room">Lobby Name:</label> <input type="text" name="game_room" id="_GAME_ROOM"
                 title="Pick a unique name and give it to your friends! This is case sensitive." /><br /><br />
-            <label for="game_password">Lobby Password: </label> <input type="password" name="game_password"
+            <label class="short_label" for="game_password">Lobby Password: </label> <input type="password" name="game_password"
                 id="_game_password" /><br /><br />
 
             <h2>Game Settings</h2>
 
-            <label for="_isMaster">Host Local Server</label><input type="checkbox" id="_isMaster" title="You don't need to host your own server to play."/>
-            <label for="_isClient">Run Game</label><input type="checkbox" id="_isClient" title="Uncheck this to be a dedicated host."/>
-            <br /><br/>
-            <label for="rom">Rom: </label> <select id="rom">
+            <label class="short_label" for="_isMaster">Host Local Server</label><input type="checkbox" id="_isMaster"
+                title="You don't need to host your own server to play." />
+            <label class="short_label" for="_isClient">Run Game</label><input type="checkbox" id="_isClient"
+                title="Uncheck this to be a dedicated host." />
+            <br /><br />
+            <label class="short_label" for="rom">Rom: </label> <select id="rom">
                 <option>None</option>
             </select><br /><br />
-            <label for="mod">Mod: </label> <select id="mod" title=".bps patches only">
+            <label class="short_label" for="mod">Mod: </label> <select id="mod" title=".bps patches only">
                 <option>None</option>
             </select>
             <br /><br />
@@ -86,9 +88,9 @@
         </div>
         <div id="tabs-server">
             <h2>Server Settings</h2>
-            <label for="server">Server: </label> <input type="text" name="server" id="_master_server_ip"
+            <label class="short_label" for="server">Server: </label> <input type="text" name="server" id="_master_server_ip"
                 title="The IP address for the master server. Most players don't need to change this." /><br /><br />
-            <label for="port">Port: </label> <input type="text" name="port" id="_master_server_port"
+            <label class="short_label" for="port">Port: </label> <input type="text" name="port" id="_master_server_port"
                 title="The port for the master server. Most players don't need to change this." /><br /><br />
             <div class="widget">
                 <button id="server_save" onclick="hooks.onIPChange()">Save</button>
@@ -97,12 +99,14 @@
             </div>
         </div>
         <div id="tabs-2">
-            <label for="kokiri">Kokiri Tunic Color:</label> <input type="color" id="kokiri" value="#ffffff"
+            <label class="short_label" for="kokiri">Kokiri Tunic Color:</label> <input type="color" id="kokiri" value="#ffffff"
                 onchange="hooks.onConfigChanged()" /><br />
-            <label for="goron">Goron Tunic Color:</label> <input type="color" id="goron" value="#aaaaaa"
+            <label class="short_label" for="goron">Goron Tunic Color:</label> <input type="color" id="goron" value="#aaaaaa"
                 onchange="hooks.onConfigChanged()" /><br />
-            <label for="zora">Zora Tunic Color:</label> <input type="color" id="zora" value="#000000"
+            <label class="short_label" for="zora">Zora Tunic Color:</label> <input type="color" id="zora" value="#000000"
                 onchange="hooks.onConfigChanged()" /><br />
+            <label for="_tunic_colors_enabled">Enable custom colors: </label><input type="checkbox"
+                id="_tunic_colors_enabled" title="Use rom colors or custom?" />
         </div>
         <div id="tabs-6">
             <pre id="faq">
