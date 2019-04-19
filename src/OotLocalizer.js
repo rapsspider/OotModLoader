@@ -16,16 +16,12 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-const fs = require("fs");
-const logger = require('./OotLogger')("Localization");
-
 const loaded_files = {};
 
 class OotLocalizer {
 
-    constructor(id, str) {
+    constructor(str) {
         this._data = JSON.parse(str);
-        loaded_files[id] = this;
     }
 
     getLocalizedString(key) {
@@ -34,22 +30,10 @@ class OotLocalizer {
 
 }
 
-class OotIconizer {
-    constructor(id, str) {
-        this._data = JSON.parse(str);
-        loaded_files[id] = this;
-    }
-
-    getIcon(key) {
-        return this._data[key];
-    }
-}
-
 module.exports = {
     create: function (id, file) {
-        return new OotLocalizer(id, file);
-    }, icons: function (id, file) {
-        return new OotIconizer(id, file);
+        loaded_files[id] = new OotLocalizer(file)
+        return loaded_files[id];
     }, getLoadedObject: function (id) {
         return loaded_files[id];
     }

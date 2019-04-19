@@ -146,7 +146,7 @@ class Client {
             websocket.on('versionMisMatch', function(data){
                 logger.log("Your version does not match the server!", "red");
                 logger.log(data, "red");
-                api.postEvent({id: "GUI_BadVersion", data});
+                api.postEvent({id: "GUI_BadVersion", data: data});
             })
             websocket.on('id', function (data) {
                 data = encoder.decompressData(data);

@@ -42,7 +42,8 @@ class OotLoaderCore {
         // fix for discord shit.
         (function(inst){
             inst._fileSystem.readdirSync(inst.ModLoader.base + "/localization").forEach(function(file){
-                localization.create(path.parse(file).base, inst._fileSystem.readFileSync(inst.ModLoader.base + "/localization/" + file));
+                logger.log("Loading " + file + " into object " + path.parse(file).name + ".")
+                localization.create(path.parse(file).name, inst._fileSystem.readFileSync(inst.ModLoader.base + "/localization/" + file))
             });
         })(this);
         Object.keys(tokens).forEach(function (key) {

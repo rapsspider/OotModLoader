@@ -84,6 +84,7 @@ ipcRenderer.on('GUI_updateLobbyBrowser_Reply', function (wtfisthis, event) {
 ipcRenderer.on('GUI_BadVersion', function (wtfisthis, event) {
     document.getElementById("connect").disabled = true;
     document.getElementById("connect").textContent = "Version mismatch! :(";
+    alert("Server says v" + event.data.server + " required!")
 });
 
 ipcRenderer.on('onServerConnection', function (wtfisthis, event) {

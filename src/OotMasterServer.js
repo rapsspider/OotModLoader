@@ -26,7 +26,7 @@ const io = require("socket.io")(http);
 const udp = require("./OotUDP");
 const logger = require("./OotLogger")("Server");
 const api = require("./OotAPI");
-const version = require('./OotVersion');
+const version = require('./OotVersion').split(".");
 var path = require("path");
 
 const _channelHandlers = {};
@@ -189,7 +189,8 @@ class MasterServer {
             );
             server.on("connection", function (socket) {
                 socket.on('version', function (data) {
-                    if (data.version === version) {
+                    let cv = data.version.split(".");
+                    if (cv[0] === version[0] && cv[1] === version[1]) {
                         logger.log("Client " + socket.id + " version verified.");
                         server.to(socket.id).emit("id", encoder.compressData({ id: socket.id }));
                     } else {
@@ -209,7 +210,7 @@ class MasterServer {
                         inst.getRoomsArray()[data.room]["password"] = data.password;
                         let p = { msg: "Joined room " + data.room + ".", isModdedLobby: data.patchFile !== "" };
                         if (data.hasOwnProperty("patchFile") && data.hasOwnProperty("patchData")) {
-                            inst.getRoomsArray()[data.room]["patchFile"] = {name: data.patchFile, data: data.patchData};
+                            inst.getRoomsArray()[data.room]["patchFile"] = { name: data.patchFile, data: data.patchData };
                             p["patchFile"] = inst.getRoomsArray()[data.room]["patchFile"];
                         }
                         server.to(socket.id).emit("room", p);
