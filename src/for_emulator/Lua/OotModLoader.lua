@@ -851,7 +851,6 @@ local checksum_cache = {}
 writehandlers["loadRom"] = function(packet) client.openrom(packet.rom) end
 
 packethandlers["registerPacket"] = function(parse)
-    console.log(parse)
     local data = parse.data
     if (data.bundles ~= nil) then
         for k, v in ipairs(data.bundles) do
