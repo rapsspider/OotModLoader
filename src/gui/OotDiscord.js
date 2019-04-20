@@ -14,6 +14,7 @@ let max_players = 4;
 let current_players = 1;
 let CURRENT_STATUS = { fn: function () { } };
 let getJson = require('get-json');
+let start_time = Date.now();
 
 function addPlayer() {
     current_players++;
@@ -97,9 +98,10 @@ function onLauncher() {
 }
 
 function loadingGame() {
+    start_time = Date.now();
     client.setActivity({
         state: 'Loading game',
-        startTimestamp: Date.now(),
+        startTimestamp: start_time,
         largeImageKey: 'untitled-1_copy',
         instance: true,
     });
@@ -117,7 +119,7 @@ function titleScreen() {
     client.setActivity({
         state: 'In-game',
         details: 'On the title screen',
-        startTimestamp: Date.now(),
+        startTimestamp: start_time,
         largeImageKey: 'untitled-1_copy',
         instance: true,
         partyId: config.cfg.CLIENT.game_room,
@@ -132,7 +134,7 @@ function onSceneChange(num) {
     client.setActivity({
         state: 'In-game',
         details: lang.getLocalizedString(sceneNumberToLangKey.getLocalizedString(num)),
-        startTimestamp: Date.now(),
+        startTimestamp: start_time,
         largeImageKey: 'untitled-1_copy',
         instance: true,
         partyId: config.cfg.CLIENT.game_room,
