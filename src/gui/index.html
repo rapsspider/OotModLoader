@@ -63,10 +63,11 @@
             <h2>Lobby Settings</h2>
             <label class="short_label" for="nickname" align="left">Username: </label> <input type="text" name="nickname"
                 id="_nickname" /><br /><br />
-            <label class="short_label" for="game_room">Lobby Name:</label> <input type="text" name="game_room" id="_GAME_ROOM"
+            <label class="short_label" for="game_room">Lobby Name:</label> <input type="text" name="game_room"
+                id="_GAME_ROOM"
                 title="Pick a unique name and give it to your friends! This is case sensitive." /><br /><br />
-            <label class="short_label" for="game_password">Lobby Password: </label> <input type="password" name="game_password"
-                id="_game_password" /><br /><br />
+            <label class="short_label" for="game_password">Lobby Password: </label> <input type="password"
+                name="game_password" id="_game_password" /><br /><br />
 
             <h2>Game Settings</h2>
 
@@ -88,7 +89,8 @@
         </div>
         <div id="tabs-server">
             <h2>Server Settings</h2>
-            <label class="short_label" for="server">Server: </label> <input type="text" name="server" id="_master_server_ip"
+            <label class="short_label" for="server">Server: </label> <input type="text" name="server"
+                id="_master_server_ip"
                 title="The IP address for the master server. Most players don't need to change this." /><br /><br />
             <label class="short_label" for="port">Port: </label> <input type="text" name="port" id="_master_server_port"
                 title="The port for the master server. Most players don't need to change this." /><br /><br />
@@ -99,12 +101,12 @@
             </div>
         </div>
         <div id="tabs-2">
-            <label class="short_label" for="kokiri">Kokiri Tunic Color:</label> <input type="color" id="kokiri" value="#ffffff"
-                onchange="hooks.onConfigChanged()" /><br />
-            <label class="short_label" for="goron">Goron Tunic Color:</label> <input type="color" id="goron" value="#aaaaaa"
-                onchange="hooks.onConfigChanged()" /><br />
-            <label class="short_label" for="zora">Zora Tunic Color:</label> <input type="color" id="zora" value="#000000"
-                onchange="hooks.onConfigChanged()" /><br />
+            <label class="short_label" for="kokiri">Kokiri Tunic Color:</label> <input type="color" id="kokiri"
+                value="#ffffff" onchange="hooks.onConfigChanged()" /><br />
+            <label class="short_label" for="goron">Goron Tunic Color:</label> <input type="color" id="goron"
+                value="#aaaaaa" onchange="hooks.onConfigChanged()" /><br />
+            <label class="short_label" for="zora">Zora Tunic Color:</label> <input type="color" id="zora"
+                value="#000000" onchange="hooks.onConfigChanged()" /><br />
             <label for="_tunic_colors_enabled">Enable custom colors: </label><input type="checkbox"
                 id="_tunic_colors_enabled" title="Use rom colors or custom?" />
         </div>
@@ -148,7 +150,6 @@
                 name: 'OotModLoader',
                 prompt: '> '
             });
-        //🔒
         var lobby_browser = new Tabulator("#lobby_browser", {
             index: "index",
             layout: "fitColumns",
@@ -168,14 +169,18 @@
                         //formatterParams - parameters set for the column
                         //onRendered - function to call when the formatter has been rendered
                         if (cell.getValue()) {
-                            return "\🔐";
+                            return "&#x1f510;";
                         }
-                        return "\🌐";
+                        return "&#x1F310;";
                     }
                 },
                 { title: "Players", field: "playerCount", sorter: "number" },
                 { title: "Mod", field: "patchFile", sorter: "string" }
-            ]
+            ],
+            rowClick: function (e, row) {
+                document.getElementById("_GAME_ROOM").value = row._row.data.name;
+                $("#tabs").tabs({ active: 0 });
+            },
         });
         //lobby_browser.setData([{ index: 0, name: "Test", isPrivate: true, playerCount: 255, patchFile: "" }]);
         let hooks = require(__dirname + '/OotGUI_Renderer.js');

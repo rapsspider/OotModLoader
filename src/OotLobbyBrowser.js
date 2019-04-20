@@ -17,11 +17,11 @@ class OotLobbyBrowser {
         app.get("/", function (req, res) {
         });
         app.get("/LobbyBrowser", function (req, res) {
-            res.status(200).send(JSON.stringify(master.getAllRoomInfo()));
+            res.status(200).send(JSON.stringify(master._roomInfoCache));
         });
         http.listen(Number(Number(CONFIG.master_server_port) + 1), function () {
             logger.log(
-                "Lobby data hosted on port ".concat(Number(CONFIG.master_server_port ) + 1)
+                "Lobby data hosted on port ".concat(Number(CONFIG.master_server_port) + 1)
             );
         });
     }

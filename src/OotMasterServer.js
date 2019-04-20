@@ -36,6 +36,7 @@ class MasterServer {
         this._upnp_client = natUpnp.createClient();
         this._ws_server = {};
         this._udp = udp.server(60000, "MasterUDP");
+        this._roomInfoCache = [];
     }
 
     preSetup() {
@@ -158,12 +159,7 @@ class MasterServer {
         this._ws_server = io;
         (function (server, inst) {
             setInterval(function () {
-                let data = inst.getAllRoomInfo();
-                let count = 0;
-                for (let i = 0; i < data.length; i++) {
-                    count += data[i].playerCount;
-                }
-                logger.log(data.length + " lobbies. " + count + " total players.");
+                inst._roomInfoCache = inst.getAllRoomInfo();
             }, 30 * 1000);
             inst._upnp_client.portMapping(
                 {

@@ -16,9 +16,11 @@ onTabOpen["Lobby Browser"] = {
         if (!lobby_browser_loaded) {
             console.log("Refreshing lobby list...");
             lobby_browser_loaded = true;
-            $.getJSON(SERVER_URL, function (data) {
-                RENDER_OBJ.lobby_browser(data);
-            });
+            try {
+                $.getJSON(SERVER_URL, function (data) {
+                    RENDER_OBJ.lobby_browser(data);
+                });
+            } catch (err) { }
         }
     }
 };
