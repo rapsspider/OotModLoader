@@ -41,11 +41,11 @@ class Configuration {
             this.cfg.CLIENT["game_room"] = hri.random();
             this.cfg.CLIENT["game_password"] = "";
             this.cfg.CLIENT["tunic_colors"] = {
-                kokiri: "",
-                goron: "",
-                zora: ""
+                kokiri: "#1E691B",
+                goron: "#641400",
+                zora: "#003C64"
             };
-            this.cfg.CLIENT["tunic_colors_enabled"] = true;
+            this.cfg.CLIENT["tunic_colors_enabled"] = false;
             this.cfg.CLIENT["patchFile"] = "";
             this.cfg.CLIENT["localPort"] = {
                 tcp: 1337,

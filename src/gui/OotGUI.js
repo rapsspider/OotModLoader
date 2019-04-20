@@ -45,7 +45,6 @@ function setup(instance){
   discord.setup(ooto);
   let event_reg = function (id) {
     ooto.api.registerEventHandler(id, function (event) {
-      console.log(event)
       if (mainWindow !== null) {
         mainWindow.webContents.send(event.id, event);
       }

@@ -24,12 +24,12 @@ const crypto = require('crypto');
 const fs = require("fs");
 const jpack = require('jsonpack');
 
-let master_server_ip = "192.99.70.23";
+let master_server_ip = "127.0.0.1";
 let master_server_port = "8082";
-let GAME_ROOM = "dev_help";
+let GAME_ROOM = "bad-kangaroo-27";
 let nickname = "Lynn";
 let my_uuid = "";
-let version = "1.0.3-BETA";
+let version = "1.1.0-BETA";
 let logger = require('./OotLogger')("Lynn");
 
 let encoder = require('./OotEncoder');

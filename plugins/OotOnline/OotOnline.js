@@ -323,6 +323,7 @@ class OotOnline {
                 if ((packet.data["link_tunic_color"].data in inst._tunic_colors) && CONFIG._tunic_colors_enabled) {
                     packet.data["override"] = inst._tunic_colors[packet.data["link_tunic_color"].data];
                 }
+                packet.data["tunic_config"] = CONFIG._tunic_colors_enabled;
                 return true;
             });
 
@@ -351,7 +352,7 @@ class OotOnline {
                     data.payload.data["link_rot"]["offset"] = "0xB4";
                     data.payload.data["link_rot"]["isPointer"] = true;
 
-                    if (data.payload.data.override !== null) {
+                    if (data.payload.data.tunic_config) {
                         data.payload.data["link_tunic_color"]["addr"] =
                             inst.PuppetMap[inst._playerToPuppetMap[data.uuid]].puppet._pointer;
                         data.payload.data.link_tunic_color["data"] = data.payload.data.override;
@@ -451,6 +452,7 @@ class OotOnline {
 
                     delete data.payload.data["link_health"];
                     delete data.payload.data["link_age"];
+                    delete data.payload.data["tunic_config"];
                 }
                 return data;
             });
