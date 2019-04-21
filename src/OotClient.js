@@ -58,7 +58,6 @@ class Client {
             inst._packetTick = setInterval(function () {
                 if (!isEmptyObject(inst._packetBuffer)) {
                     Object.keys(inst._packetBuffer).forEach(function (key) {
-                        inst._bandwidth += Buffer.byteLength(JSON.stringify(inst._packetBuffer[key]), 'utf8');
                         if (inst._packetBuffer[key].protocol === "tcp") {
                             inst.websocket().emit('msg', inst._packetBuffer[key]);
                         } else if (inst._packetBuffer[key].protocol === "udp") {
@@ -72,10 +71,6 @@ class Client {
                     });
                 }
             }, 50);
-            inst._bandwidth_tick = setInterval(function () {
-                api.postEvent({ id: "bandwidthUpdate", bandwidth: inst._bandwidth })
-                inst._bandwidth = 0;
-            }, 1000);
         })(this);
     }
 
@@ -125,12 +120,12 @@ class Client {
 
     setup() {
         (function (inst) {
-            if (CONFIG.isMaster){
+            if (CONFIG.isMaster) {
                 CONFIG.master_server_ip = "127.0.0.1";
             }
             inst._udpIP = CONFIG.master_server_ip;
             inst._udpPort = CONFIG.master_server_udp;
-            inst._disconnectEventHandlerId = api.registerEventHandler("GUI_ResetButton", function(event){
+            inst._disconnectEventHandlerId = api.registerEventHandler("GUI_ResetButton", function (event) {
                 websocket.disconnect();
                 inst._udp.close();
                 inst._packetBuffer = {};
@@ -138,22 +133,22 @@ class Client {
             });
             websocket = IO_Client.connect("http://" + CONFIG.master_server_ip + ":" + CONFIG.master_server_port);
             websocket.on('connect', function () {
-                websocket.emit('version', {version: version});
+                websocket.emit('version', { version: version });
             });
             websocket.on('left', function (data) {
                 api.postEvent({ id: "onPlayerDisconnected", player: { uuid: data.uuid } });
             });
-            websocket.on('versionMisMatch', function(data){
+            websocket.on('versionMisMatch', function (data) {
                 logger.log("Your version does not match the server!", "red");
                 logger.log(data, "red");
-                api.postEvent({id: "GUI_BadVersion", data: data});
+                api.postEvent({ id: "GUI_BadVersion", data: data });
             })
             websocket.on('id', function (data) {
                 data = encoder.decompressData(data);
                 CONFIG.my_uuid = data.id;
                 logger.log("My UUID: " + CONFIG.my_uuid);
                 let p = { room: CONFIG.GAME_ROOM, nickname: CONFIG.nickname, patchFile: CONFIG._patchFile, password: CONFIG.getPasswordHash() };
-                if (p.patchFile !== ""){
+                if (p.patchFile !== "") {
                     p["patchData"] = fs.readFileSync("./mods/" + p.patchFile);
                 }
                 websocket.emit('room', encoder.compressData(p));
@@ -161,7 +156,7 @@ class Client {
             websocket.on('room', function (data) {
                 logger.log(data.msg);
                 let e = { id: "onServerConnection", ip: CONFIG.master_server_ip, port: CONFIG.master_server_port, room: CONFIG.GAME_ROOM, isModdedLobby: data.isModdedLobby };
-                if (data.hasOwnProperty("patchFile")){
+                if (data.hasOwnProperty("patchFile")) {
                     e["patchFile"] = data.patchFile;
                 }
                 api.postEvent(e);
@@ -182,7 +177,7 @@ class Client {
                 data = encoder.decompressData(data);
                 inst._onPlayerConnected(data.nickname, data.uuid);
             });
-            websocket.on('BAD_PASSWORD', function(data){
+            websocket.on('BAD_PASSWORD', function (data) {
                 logger.log("Lobby join rejected. Bad password", "red");
             });
             websocket.on('msg', function (data) {
@@ -209,8 +204,6 @@ class Client {
                         logger.log("Sending UDP test to " + CONFIG.master_server_ip + ".")
                         inst._udp.sendTo(CONFIG.master_server_ip, data.port, { packet_id: "udpPunch", room: CONFIG.GAME_ROOM, uuid: CONFIG.my_uuid, nickname: CONFIG.nickname, punchthrough: inst._udp.port });
                         api.postEvent({ id: "onUDPTest", data: inst._udp.port });
-                        // This is intentional. Disabling UDP mode for now.
-                        inst.UDP_DISABLED = true;
                     }
                 });
             });

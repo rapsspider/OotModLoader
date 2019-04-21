@@ -40,8 +40,8 @@ class OotLoaderCore {
         api.registerEvent("onPlayerJoined");
         api.registerEvent("onPlayerJoined_ServerSide");
         // fix for discord shit.
-        (function(inst){
-            inst._fileSystem.readdirSync(inst.ModLoader.base + "/localization").forEach(function(file){
+        (function (inst) {
+            inst._fileSystem.readdirSync(inst.ModLoader.base + "/localization").forEach(function (file) {
                 logger.log("Loading " + file + " into object " + path.parse(file).name + ".")
                 localization.create(path.parse(file).name, inst._fileSystem.readFileSync(inst.ModLoader.base + "/localization/" + file))
             });
@@ -177,8 +177,8 @@ class OotLoaderCore {
             return false;
         });
 
-        api.registerClientSidePacketHook("softReset_Post", function(data){
-            setTimeout(function(){
+        api.registerClientSidePacketHook("softReset_Post", function (data) {
+            setTimeout(function () {
                 api.postEvent({ id: "onSoftReset_Post", data: true });
             }, 2000);
             return false;
@@ -237,19 +237,22 @@ class OotLoaderCore {
 
             api.registerEventHandler("onUDPTest", function (data) {
                 setTimeout(function () {
-                    if (!inst._udpOk) {
-                        logger.log("Failed to punch hole.", "red");
-                        logger.log("Switching to TCP mode.", "green");
+                    if (CONFIG._tcp_mode) {
                         client.UDP_DISABLED = true;
                     } else {
-                        logger.log("Networking looks good.", "green");
+                        if (!inst._udpOk) {
+                            logger.log("Failed to punch hole.", "red");
+                            logger.log("Switching to TCP mode.", "green");
+                            client.UDP_DISABLED = true;
+                        } else {
+                            logger.log("Networking looks good.", "green");
+                        }
                     }
                 }, 10 * 1000);
             });
-            
 
-            api.registerClientSidePacketHook("onLuaStart", function(packet){
-                api.postEvent({id: "onLuaStart", data: packet})
+            api.registerClientSidePacketHook("onLuaStart", function (packet) {
+                api.postEvent({ id: "onLuaStart", data: packet })
             });
         })(this);
 

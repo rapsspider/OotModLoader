@@ -51,8 +51,9 @@ class Configuration {
                 tcp: 1337,
                 udp: 60001
             };
-            this.cfg.CLIENT["ROM"] = "",
-                this.cfg.PLUGINS = {};
+            this.cfg.CLIENT["TCP_Mode"] = false;
+            this.cfg.CLIENT["ROM"] = "";
+            this.cfg.PLUGINS = {};
             fs.writeFileSync(this.file, JSON.stringify(this.cfg, null, 2));
         }
         this._master_server_ip = this.cfg.SERVER.master_server_ip;
@@ -80,10 +81,14 @@ class Configuration {
         if (!this.cfg.CLIENT.hasOwnProperty("tunic_colors_enabled")) {
             this.cfg.CLIENT["tunic_colors_enabled"] = true;
         }
+        if (!this.cfg.CLIENT.hasOwnProperty("TCP_Mode")){
+            this.cfg.CLIENT["TCP_Mode"] = false;
+        }
         this._rom = this.cfg.CLIENT.ROM;
         this._tunic_colors_enabled = this.cfg.CLIENT.tunic_colors_enabled;
         this._localPort = this.cfg.CLIENT.localPort;
         this._plugins = this.cfg.PLUGINS;
+        this._tcp_mode = this.cfg.CLIENT.TCP_Mode;
         if (this._GAME_ROOM === "") {
             this._GAME_ROOM = hri.random();
             this.save();

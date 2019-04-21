@@ -113,7 +113,7 @@ class SaveSync {
         this._packetNameCache_reverse = {};
         this._packetNameToHandlerMap = {};
         this._collectData = false;
-        this._dataCache = { packet_id: "savesync_data", writeHandler: "Null", data: {}, addr: 0, offset: 0 };
+        this._dataCache = { packet_id: "savesync_data", writeHandler: "Null", data: {}, addr: 0, offset: 0, ignoreBuffer: true};
         this._exceptionStorage = {};
     }
 
@@ -210,10 +210,14 @@ class SaveSync {
                 if (u.int !== 255) {
 
                     if (u.bool) {
-                        let key = inst._inventorySlotToLangKey.getLocalizedString(u.int);
-                        let icon = inst._icons.getLocalizedString(key);
-                        let str = inst._lang.getLocalizedString(key);
-                        server._ws_server.sockets.to(room).emit('msg', { packet_id: "inventory_msg", payload: encoder.compressData({ packet_id: "inventory_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
+                        try {
+                            let key = inst._inventorySlotToLangKey.getLocalizedString(u.int);
+                            let icon = inst._icons.getLocalizedString(key);
+                            let str = inst._lang.getLocalizedString(key);
+                            server._ws_server.sockets.to(room).emit('msg', { packet_id: "inventory_msg", payload: encoder.compressData({ packet_id: "inventory_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
+                        } catch (err) {
+
+                        }
                     }
                     return u.int;
                 }
@@ -232,9 +236,13 @@ class SaveSync {
                 try {
                     if (u.int !== 255) {
                         if (u.bool) {
-                            let icon = inst._icons.getLocalizedString(tag + "_" + data.toString());
-                            let str = inst._lang.getLocalizedString(tag + "_" + data.toString());
-                            server._ws_server.sockets.to(room).emit('msg', { packet_id: "upgrade_msg", payload: encoder.compressData({ packet_id: "upgrade_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
+                            try {
+                                let icon = inst._icons.getLocalizedString(tag + "_" + data.toString());
+                                let str = inst._lang.getLocalizedString(tag + "_" + data.toString());
+                                server._ws_server.sockets.to(room).emit('msg', { packet_id: "upgrade_msg", payload: encoder.compressData({ packet_id: "upgrade_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
+                            } catch (err) {
+
+                            }
                         }
                         return u.int;
                     }
@@ -256,9 +264,13 @@ class SaveSync {
                 try {
                     if (u.int !== 255) {
                         if (u.bool) {
-                            let icon = inst._icons.getLocalizedString(tag);
-                            let str = inst._lang.getLocalizedString(tag);
-                            server._ws_server.sockets.to(room).emit('msg', { packet_id: "equipment_msg", payload: encoder.compressData({ packet_id: "equipment_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
+                            try {
+                                let icon = inst._icons.getLocalizedString(tag);
+                                let str = inst._lang.getLocalizedString(tag);
+                                server._ws_server.sockets.to(room).emit('msg', { packet_id: "equipment_msg", payload: encoder.compressData({ packet_id: "equipment_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
+                            } catch (err) {
+
+                            }
                         }
                         return u.int;
                     }
@@ -280,9 +292,13 @@ class SaveSync {
                 try {
                     if (u.int !== 255) {
                         if (u.bool) {
-                            let icon = inst._icons.getLocalizedString(tag);
-                            let str = inst._lang.getLocalizedString(tag);
-                            server._ws_server.sockets.to(room).emit('msg', { packet_id: "quest_msg", payload: encoder.compressData({ packet_id: "quest_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
+                            try {
+                                let icon = inst._icons.getLocalizedString(tag);
+                                let str = inst._lang.getLocalizedString(tag);
+                                server._ws_server.sockets.to(room).emit('msg', { packet_id: "quest_msg", payload: encoder.compressData({ packet_id: "quest_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
+                            } catch (err) {
+
+                            }
                         }
                         return u.int;
                     }
@@ -304,9 +320,13 @@ class SaveSync {
                 try {
                     if (u.int !== 255) {
                         if (u.bool) {
-                            let icon = inst._icons.getLocalizedString("equipment_slot_12");
-                            let str = inst._lang.getLocalizedString("equipment_slot_12_quest");
-                            server._ws_server.sockets.to(room).emit('msg', { packet_id: "biggoron_msg", payload: encoder.compressData({ packet_id: "biggoron_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
+                            try {
+                                let icon = inst._icons.getLocalizedString("equipment_slot_12");
+                                let str = inst._lang.getLocalizedString("equipment_slot_12_quest");
+                                server._ws_server.sockets.to(room).emit('msg', { packet_id: "biggoron_msg", payload: encoder.compressData({ packet_id: "biggoron_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
+                            } catch (err) {
+
+                            }
                         }
                         return u.int;
                     }
@@ -330,9 +350,13 @@ class SaveSync {
                 try {
                     if (u.int !== 0xFFFF) {
                         if (u.bool) {
-                            let icon = inst._icons.getLocalizedString("item_piece_of_heart");
-                            let str = inst._lang.getLocalizedString("item_heart_container");
-                            server._ws_server.sockets.to(room).emit('msg', { packet_id: "heart_msg", payload: encoder.compressData({ packet_id: "heart_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
+                            try {
+                                let icon = inst._icons.getLocalizedString("item_piece_of_heart");
+                                let str = inst._lang.getLocalizedString("item_heart_container");
+                                server._ws_server.sockets.to(room).emit('msg', { packet_id: "heart_msg", payload: encoder.compressData({ packet_id: "heart_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
+                            } catch (err) {
+
+                            }
                         }
                         return u.int;
                     }
@@ -354,9 +378,13 @@ class SaveSync {
                 try {
                     if (u.int !== 255) {
                         if (u.bool) {
-                            let icon = inst._icons.getLocalizedString(tag);
-                            let str = inst._lang.getLocalizedString(tag);
-                            server._ws_server.sockets.to(room).emit('msg', { packet_id: "dd_msg", payload: encoder.compressData({ packet_id: "dd_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
+                            try {
+                                let icon = inst._icons.getLocalizedString(tag);
+                                let str = inst._lang.getLocalizedString(tag);
+                                server._ws_server.sockets.to(room).emit('msg', { packet_id: "dd_msg", payload: encoder.compressData({ packet_id: "dd_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
+                            } catch (err) {
+
+                            }
                         }
                         return u.int;
                     }
@@ -378,9 +406,13 @@ class SaveSync {
                 try {
                     if (u.int !== 255) {
                         if (u.bool) {
-                            let icon = inst._icons.getLocalizedString("item_small_magic_jar");
-                            let str = inst._lang.getLocalizedString("item_small_magic_jar");
-                            server._ws_server.sockets.to(room).emit('msg', { packet_id: "magic_msg", payload: encoder.compressData({ packet_id: "magic_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
+                            try {
+                                let icon = inst._icons.getLocalizedString("item_small_magic_jar");
+                                let str = inst._lang.getLocalizedString("item_small_magic_jar");
+                                server._ws_server.sockets.to(room).emit('msg', { packet_id: "magic_msg", payload: encoder.compressData({ packet_id: "magic_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
+                            } catch (err) {
+
+                            }
                         }
                         return u.int;
                     }
@@ -402,9 +434,13 @@ class SaveSync {
                 try {
                     if (u.int !== 255) {
                         if (u.bool) {
-                            let icon = inst._icons.getLocalizedString("item_large_magic_jar");
-                            let str = inst._lang.getLocalizedString("item_large_magic_jar");
-                            server._ws_server.sockets.to(room).emit('msg', { packet_id: "magic_msg", payload: encoder.compressData({ packet_id: "magic_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
+                            try {
+                                let icon = inst._icons.getLocalizedString("item_large_magic_jar");
+                                let str = inst._lang.getLocalizedString("item_large_magic_jar");
+                                server._ws_server.sockets.to(room).emit('msg', { packet_id: "magic_msg", payload: encoder.compressData({ packet_id: "magic_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
+                            } catch (err) {
+
+                            }
                         }
                         return u.int;
                     }
@@ -434,10 +470,14 @@ class SaveSync {
                 try {
                     if (u.int !== 0xFFFF) {
                         if (u.bool) {
-                            let key = "item_gold_skulltula_token";
-                            let icon = inst._icons.getLocalizedString(key);
-                            let str = inst._lang.getLocalizedString(key);
-                            server._ws_server.sockets.to(room).emit('msg', { packet_id: "inventory_msg", payload: encoder.compressData({ packet_id: "inventory_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4843" }) });
+                            try {
+                                let key = "item_gold_skulltula_token";
+                                let icon = inst._icons.getLocalizedString(key);
+                                let str = inst._lang.getLocalizedString(key);
+                                server._ws_server.sockets.to(room).emit('msg', { packet_id: "inventory_msg", payload: encoder.compressData({ packet_id: "inventory_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4843" }) });
+                            } catch (err) {
+
+                            }
                         }
                         return u.int;
                     }
@@ -460,8 +500,12 @@ class SaveSync {
                 try {
                     if (u.int !== 0xFFFF) {
                         if (u.bool) {
-                            let str = packet.nickname + " has died!";
-                            server._ws_server.sockets.to(room).emit('msg', { packet_id: "death_msg", payload: encoder.compressData({ packet_id: "death_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: 11 * 16, sy: 19 * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
+                            try {
+                                let str = packet.nickname + " has died!";
+                                server._ws_server.sockets.to(room).emit('msg', { packet_id: "death_msg", payload: encoder.compressData({ packet_id: "death_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: 11 * 16, sy: 19 * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
+                            } catch (err) {
+
+                            }
                         }
                         return u.int;
                     }
