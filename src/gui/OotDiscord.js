@@ -70,7 +70,7 @@ function setup(_ooto) {
                         global.OotModLoader["OVERRIDE_PASSWORD"] = parse.password;
                         config._isMaster = false;
                         config._isClient = true;
-                        ooto.api.postEvent({ id: "GUI_DiscordJoin" });
+                        ooto.api.postEvent({ id: "GUI_DiscordJoin", data: parse});
                     } catch (err) {
                         console.log(err.stack);
                     }

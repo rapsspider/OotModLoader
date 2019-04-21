@@ -185,12 +185,14 @@ class MasterServer {
             );
             server.on("connection", function (socket) {
                 socket.on('version', function (data) {
+                    logger.log(data.version);
                     let cv = data.version.split(".");
                     if (cv[0] === version[0] && cv[1] === version[1]) {
                         logger.log("Client " + socket.id + " version verified.");
                         server.to(socket.id).emit("id", encoder.compressData({ id: socket.id }));
                     } else {
                         server.to(socket.id).emit("versionMisMatch", { client: data.version, server: version });
+                        socket.disconnect();
                     }
                 });
                 socket.on("room", function (data) {

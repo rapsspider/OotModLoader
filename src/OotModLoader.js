@@ -88,7 +88,7 @@ app.on('ready', function () {
         if (!IS_DEV) {
             var getJSON = require('get-json');
             try {
-                getJSON('http://hylianmodding.com/OotOnline/update.json', function (error, response) {
+                getJSON('http://192.99.70.23/OotOnline/update.json', function (error, response) {
                     if (error) {
                         logger.log("Failed to get info from Hylian Modding!", "red")
                     } else {

@@ -472,6 +472,7 @@ class SaveSync {
             api.registerServerChannel("savesync", function (server, packet) {
                 let decompress = encoder.decompressData(packet.payload);
                 var r = {};
+                //logger.log(packet);
                 Object.keys(decompress.data).forEach(function (key) {
                     let id = inst._packetNameCache[key];
                     Object.keys(inst._savePacketHandlers).forEach(function (t) {

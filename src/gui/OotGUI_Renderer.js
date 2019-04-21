@@ -162,6 +162,7 @@ function configChanged() {
 }
 
 ipcRenderer.on('GUI_DiscordJoin', function (wtfisthis, event) {
+    document.getElementById("_GAME_ROOM").value = event.data.room;
     startClient();
 });
 

@@ -225,16 +225,19 @@ class OotOnline {
             logger.log("Setting Kokiri tunic color to " + CONFIG.TunicColors.kokiri + ".");
             temp = colors.toRBG(CONFIG.TunicColors.kokiri);
             this._tunic_colors[0] = [temp.red, temp.green, temp.blue];
+            logger.log(this._tunic_colors[0]);
         }
         if (CONFIG.TunicColors.goron !== "") {
             logger.log("Setting Goron tunic color to " + CONFIG.TunicColors.goron + ".");
             temp = colors.toRBG(CONFIG.TunicColors.goron);
             this._tunic_colors[1] = [temp.red, temp.green, temp.blue];
+            logger.log(this._tunic_colors[1]);
         }
         if (CONFIG.TunicColors.zora !== "") {
             logger.log("Setting Zora tunic color to " + CONFIG.TunicColors.zora + ".");
             temp = colors.toRBG(CONFIG.TunicColors.zora);
             this._tunic_colors[2] = [temp.red, temp.green, temp.blue];
+            logger.log(this._tunic_colors[2]);
         }
     }
 
@@ -372,23 +375,6 @@ class OotOnline {
                         data.payload.data["link_tunic_color"]["data_offset"] = "0x154";
                         data.payload.data["link_tunic_color"]["size"] = "0x3";
                     }
-
-                    /*if (data.payload.data["link_health"].data === 0) {
-                        if (!inst.PuppetMap[inst._playerToPuppetMap[data.uuid]].puppet._isDead) {
-                            inst.PuppetMap[inst._playerToPuppetMap[data.uuid]].puppet._isDead = true;
-                            setTimeout(function () {
-                                inst.PuppetMap[inst._playerToPuppetMap[data.uuid]].puppet.shovelPuppet();
-                                inst._forbidSync = true;
-                            }, 3000);
-                        }
-                    } else {
-                        if (inst.PuppetMap[inst._playerToPuppetMap[data.uuid]].puppet._isDead) {
-                            inst.PuppetMap[inst._playerToPuppetMap[data.uuid]].puppet._isDead = false;
-                            setTimeout(function () {
-                                inst._forbidSync = false;
-                            }, 5000);
-                        }
-                    }*/
 
                     data.payload.data.puppet_0x140.addr = inst.PuppetMap[inst._playerToPuppetMap[data.uuid]].puppet._pointer;
                     data.payload.data.puppet_0x140["isPointer"] = true;
@@ -707,8 +693,8 @@ class OotOnline {
             });
 
             api.registerEventHandler("onConfigUpdate", function (event) {
-                inst.setupTunics();
                 if (CONFIG._tunic_colors_enabled) {
+                    inst.setupTunics();
                     Object.keys(inst._tunic_colors).forEach(function (index) {
                         emulator.sendViaSocket({ packet_id: "changeColor", data: inst._tunic_colors[index], writeHandler: "range", addr: "0x000F7AD8", offset: index * 3 });
                     });
