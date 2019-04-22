@@ -64,7 +64,7 @@ class Client {
                             if (inst.UDP_DISABLED) {
                                 inst.websocket().emit('msg', inst._packetBuffer[key]);
                             } else {
-                                inst._udp.sendTo(inst._udpIP, inst._udpPort, inst._packetBuffer[key]);
+                                inst._udp.sendTo(CONFIG.master_server_ip, CONFIG.master_server_udp, inst._packetBuffer[key]);
                             }
                         }
                         delete inst._packetBuffer[key];
@@ -123,8 +123,6 @@ class Client {
             if (CONFIG.isMaster) {
                 CONFIG.master_server_ip = "127.0.0.1";
             }
-            inst._udpIP = CONFIG.master_server_ip;
-            inst._udpPort = CONFIG.master_server_udp;
             inst._disconnectEventHandlerId = api.registerEventHandler("GUI_ResetButton", function (event) {
                 websocket.disconnect();
                 inst._udp.close();

@@ -79,7 +79,7 @@ class Configuration {
             this.cfg.CLIENT["ROM"] = ""
         }
         if (!this.cfg.CLIENT.hasOwnProperty("tunic_colors_enabled")) {
-            this.cfg.CLIENT["tunic_colors_enabled"] = true;
+            this.cfg.CLIENT["tunic_colors_enabled"] = false;
         }
         if (!this.cfg.CLIENT.hasOwnProperty("TCP_Mode")){
             this.cfg.CLIENT["TCP_Mode"] = false;

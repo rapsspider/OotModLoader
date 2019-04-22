@@ -213,6 +213,7 @@ class OotOnline {
         this._puppetsAwaitingSpawn = [];
         this._puppetsAwaitingSpawn_task = {};
         this._nicknames = {};
+        this._sendPuppetData = false;
     }
 
     get PuppetMap() {
@@ -293,6 +294,16 @@ class OotOnline {
                 logger.log("Locking/Unlocking puppet data stream.");
             });
 
+            setInterval(function () {
+                let someone_here = false;
+                Object.keys(inst._sceneList).forEach(function (player) {
+                    if (inst._sceneList[player].current === inst._scene) {
+                        someone_here = true;
+                    }
+                });
+                inst._sendPuppetData = someone_here;
+            }, 1000);
+
             api.registerClientSidePacketHook("link_sound", function (packet) {
                 if (packet.data.sfx.data > 0) {
                     emulator.sendViaSocket({
@@ -302,7 +313,7 @@ class OotOnline {
                         offset: 0x88,
                         data: 0
                     });
-                    return true;
+                    return inst._sendPuppetData;
                 }
                 return false;
             });
@@ -327,7 +338,7 @@ class OotOnline {
                     packet.data["override"] = inst._tunic_colors[packet.data["link_tunic_color"].data];
                 }
                 packet.data["tunic_config"] = CONFIG._tunic_colors_enabled;
-                return true;
+                return inst._sendPuppetData;
             });
 
             api.registerPacketTransformer("OotOnline", function (data) {

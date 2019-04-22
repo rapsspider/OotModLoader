@@ -37,6 +37,8 @@ class OotLoaderCore {
         this._lastRoomPointer = 0;
         this._udpOk = false;
         this._stateTimer = null;
+        this._udpPing = null;
+        this._expectingPong = false;
         api.registerEvent("onPlayerJoined");
         api.registerEvent("onPlayerJoined_ServerSide");
         // fix for discord shit.
@@ -246,9 +248,34 @@ class OotLoaderCore {
                             client.UDP_DISABLED = true;
                         } else {
                             logger.log("Networking looks good.", "green");
+                            logger.log("Setting up UDP keepalive...")
+                            inst._udpPing = setInterval(function () {
+                                if (inst._expectingPong) {
+                                    logger.log("Failed to receieve UDP keepalive within specified interval.")
+                                    logger.log("Switching to TCP mode.", "green");
+                                    client.UDP_DISABLED = true;
+                                    clearInterval(inst._udpPing);
+                                    inst._udpPing = null;
+                                } else {
+                                    inst._expectingPong = true;
+                                    client._udp.sendTo(CONFIG.master_server_ip, CONFIG.master_server_udp, { packet_id: "udpPing", data: "ping", room: CONFIG.GAME_ROOM, uuid: CONFIG._my_uuid });
+                                }
+                            }, 10 * 1000);
                         }
                     }
                 }, 10 * 1000);
+            });
+
+            api.registerPacketTransformer("udpPong", function (packet) {
+                if (inst._expectingPong) {
+                    inst._expectingPong = false;
+                }
+                return packet;
+            });
+
+            api.registerEventHandler("GUI_ResetButton", function (event) {
+                clearInterval(inst._udpPing);
+                inst._udpPing = null;
             });
 
             api.registerClientSidePacketHook("onLuaStart", function (packet) {

@@ -281,27 +281,48 @@ class MasterServer {
                             })
                         }
                     );
+                } else if (msg.packet_id === "udpPing") {
+                    inst._udp.sendTo(
+                        inst.getRoomsArray()[msg.room]["clientList"][msg.uuid].ip,
+                        inst.getRoomsArray()[msg.room]["clientList"][msg.uuid].port,
+                        {
+                            packet_id: "udpPong",
+                            payload: encoder.compressData({
+                                packet_id: "udpPong",
+                                writeHandler: "null",
+                                data: "pong"
+                            })
+                        }
+                    );
                 } else {
                     if (_channelHandlers.hasOwnProperty(msg.channel)) {
                         if (_channelHandlers[msg.channel](inst, msg)) {
                             Object.keys(inst.getRoomsArray()[msg.room]["clientList"]).forEach(function (key) {
                                 if (key !== msg.uuid) {
-                                    inst._udp.sendTo(
-                                        inst.getRoomsArray()[msg.room]["clientList"][key].ip,
-                                        msg.punchthrough,
-                                        msg
-                                    );
+                                    if (inst.getRoomsArray()[msg.room]["clientList"][key].port !== "unknown") {
+                                        inst._udp.sendTo(
+                                            inst.getRoomsArray()[msg.room]["clientList"][key].ip,
+                                            inst.getRoomsArray()[msg.room]["clientList"][key].port,
+                                            msg
+                                        );
+                                    } else {
+                                        inst._ws_server.sockets.to(key).emit(msg);
+                                    }
                                 }
                             });
                         }
                     } else {
                         Object.keys(inst.getRoomsArray()[msg.room]["clientList"]).forEach(function (key) {
                             if (key !== msg.uuid) {
-                                inst._udp.sendTo(
-                                    inst.getRoomsArray()[msg.room]["clientList"][key].ip,
-                                    msg.punchthrough,
-                                    msg
-                                );
+                                if (inst.getRoomsArray()[msg.room]["clientList"][key].port !== "unknown") {
+                                    inst._udp.sendTo(
+                                        inst.getRoomsArray()[msg.room]["clientList"][key].ip,
+                                        inst.getRoomsArray()[msg.room]["clientList"][key].port,
+                                        msg
+                                    );
+                                } else {
+                                    inst._ws_server.sockets.to(key).emit(msg);
+                                }
                             }
                         });
                     }
