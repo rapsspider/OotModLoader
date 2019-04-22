@@ -20,8 +20,9 @@ const { app } = require('electron')
 var path = require("path");
 //const BUILD_TYPE = "GUI";
 const BUILD_TYPE = "@BUILD_TYPE@";
-const IS_DEV = false;
+const IS_DEV = true;
 const base_dir = path.dirname(app.getPath("exe"));
+const originalFs = require('original-fs')
 
 if (BUILD_TYPE === "GUI") {
     if (app.getPath("exe").indexOf("node_modules") === -1) {
@@ -67,6 +68,9 @@ global.OotModLoader["OVERRIDE_PORT"] = "";
 global.OotModLoader["OVERRIDE_ROOM"] = "";
 global.OotModLoader["OVERRIDE_PASSWORD"] = "";
 
+global["OotMPatcher"] = {};
+global.OotMPatcher["dir"] = "./";
+
 const original_console = console.log;
 let console_hook = function (msg) { };
 
@@ -88,9 +92,9 @@ app.on('ready', function () {
         if (!IS_DEV) {
             var getJSON = require('get-json');
             try {
-                getJSON('http://192.99.70.23/OotOnline/update.json', function (error, response) {
+                getJSON('https://nexus.inpureprojects.info/OotOnline/update.json', function (error, response) {
                     if (error) {
-                        logger.log("Failed to get info from Hylian Modding!", "red")
+                        logger.log("Failed to get info from update server!", "red")
                     } else {
                         logger.log("Server says: " + response.version)
                         if (response.version !== VERSION) {
@@ -154,8 +158,10 @@ app.on('ready', function () {
         logger.log(rom);
     }
 
-    fs.readdirSync("./mods").forEach(file => {
-        if (file.indexOf(".bps") > -1) {
+    originalFs.readdirSync("./mods").forEach(file => {
+        if (file.indexOf(".asar") > -1) {
+            mods.push(file);
+        } else if (file.indexOf(".bps") > -1) {
             mods.push(file);
         }
     });
@@ -283,10 +289,21 @@ app.on('ready', function () {
             if (child === null) {
                 if (event.hasOwnProperty("patchFile")) {
                     // Mod detected. Load it.
-                    let bps = require('./OotBPS');
-                    let patch = new bps();
-                    fs.writeFileSync("./temp/" + event.patchFile.name, Buffer.from(event.patchFile.data));
-                    rom = patch.tryPatch(path.resolve(rom), path.resolve("./temp/" + event.patchFile.name));
+                    if (event.patchFile.name.indexOf(".bps") > -1) {
+                        let bps = require('./OotBPS');
+                        let patch = new bps();
+                        fs.writeFileSync("./temp/" + event.patchFile.name, Buffer.from(event.patchFile.data));
+                        rom = patch.tryPatch(path.resolve(rom), path.resolve("./temp/" + event.patchFile.name));
+                        startBizHawk(rom);
+                    } else if (event.patchFile.name.indexOf(".asar") > -1) {
+                        let ootmrom = require('./patcher/OotRom');
+                        let cur_rom = new ootmrom(path.resolve(rom));
+                        originalFs.writeFileSync(path.join("./temp/", event.patchFile.name), Buffer.from(event.patchFile.data));
+                        fs.writeFileSync(path.join("./temp/", path.parse(event.patchFile.name).name + ".bps"), fs.readFileSync(path.join("./temp/", event.patchFile.name, "/bin/main.bps")));
+                        let bps = require('./OotBPS');
+                        let patch = new bps();
+                        rom = patch.tryPatch(path.resolve(cur_rom), path.join("./temp/", path.parse(event.patchFile.name).name + ".bps"));
+                    }
                 }
                 startBizHawk(rom);
             }
@@ -402,6 +419,8 @@ function startBizHawk(lobby_path) {
                 api.postEvent({ id: "GUI_ResetButton", code: code });
                 isClientSetup = false;
                 child = null;
+                plugins._pluginSystem.clearTemporaryPayloads();
+                logger.log("Cleared BizHawk data.")
             });
         } catch (err) {
             api.postEvent({ id: "GUI_StartFailed" });

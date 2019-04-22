@@ -27,9 +27,18 @@ class PluginSystem {
     constructor() {
         this._plugins = [];
         this._payloads = [];
+        this._tempPayloads = [];
         api.registerEvent("onPluginPreinit");
         api.registerEvent("onPluginInit");
         api.registerEvent("onPluginPostinit");
+    }
+
+    injectTemporaryPayload(payload) {
+        this._tempPayloads.push(gameshark.read(real_fs.readFileSync(payload).toString()));
+    }
+
+    clearTemporaryPayloads() {
+        this._tempPayloads.length = 0;
     }
 
     loadPlugins(params) {
@@ -123,30 +132,21 @@ class PluginLoader {
                 }
                 logger.log("Plugin loading complete.", "green");
                 callback();
-            })
-        let p = this._pluginSystem._payloads;
-        emulator.setConnectedFn(function () {
-            for (let i = 0; i < p.length; i++) {
-                if (p[i].params.event !== undefined) {
-                    api.registerEventHandler(p[i].params.event, function (event) {
-                        emulator.sendViaSocket({ packet_id: "gs", codes: p[i].codes });
-                    });
-                } else {
-                    if (p[i].params.delay !== undefined) {
-                        emulator.sendViaSocket({ packet_id: "gs", codes: p[i].codes, delay: Number(p[i].params.delay) });
-                    } else {
-                        emulator.sendViaSocket({ packet_id: "gs", codes: p[i].codes });
-                    }
-                    api.registerEventHandler("onSoftReset_Post", function (event) {
-                        if (p[i].params.delay !== undefined) {
-                            emulator.sendViaSocket({ packet_id: "gs", codes: p[i].codes, delay: Number(p[i].params.delay) });
-                        } else {
-                            emulator.sendViaSocket({ packet_id: "gs", codes: p[i].codes });
-                        }
-                    });
+            });
+        (function (inst) {
+            let fn = function () {
+                let p = [];
+                p = p.concat(inst._pluginSystem._payloads);
+                p = p.concat(inst._pluginSystem._tempPayloads);
+                for (let i = 0; i < p.length; i++) {
+                    emulator.sendViaSocket({ packet_id: "gs", codes: p[i].codes });
                 }
-            }
-        });
+            };
+            emulator.setConnectedFn(fn);
+            api.registerEventHandler("onSoftReset_Post", function (event) {
+                fn();
+            });
+        })(this);
     }
 }
 

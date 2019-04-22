@@ -28,6 +28,7 @@ let websocket;
 const natUpnp = require('nat-upnp');
 var https = require('https');
 var url = require('url');
+const originalFs = require('original-fs')
 
 function isEmptyObject(obj) {
     return !Object.keys(obj).length;
@@ -147,7 +148,7 @@ class Client {
                 logger.log("My UUID: " + CONFIG.my_uuid);
                 let p = { room: CONFIG.GAME_ROOM, nickname: CONFIG.nickname, patchFile: CONFIG._patchFile, password: CONFIG.getPasswordHash() };
                 if (p.patchFile !== "") {
-                    p["patchData"] = fs.readFileSync("./mods/" + p.patchFile);
+                    p["patchData"] = originalFs.readFileSync("./mods/" + p.patchFile);
                 }
                 websocket.emit('room', encoder.compressData(p));
             });

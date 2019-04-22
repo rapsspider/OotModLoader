@@ -192,7 +192,9 @@ class MasterServer {
                         server.to(socket.id).emit("id", encoder.compressData({ id: socket.id }));
                     } else {
                         server.to(socket.id).emit("versionMisMatch", { client: data.version, server: version });
-                        socket.disconnect();
+                        setTimeout(function(){
+                            socket.disconnect();
+                        }, 100);
                     }
                 });
                 socket.on("room", function (data) {
