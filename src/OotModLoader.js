@@ -114,6 +114,7 @@ app.on('ready', function () {
                                         let hasher = crypto.createHash('sha256');
                                         let pathname = path.resolve("./update.zip");
                                         let rs = fs.createReadStream(pathname);
+                                        let signature = fs.readFileSync("./update.sig", 'base64');
                                         rs.on('data', data => hasher.update(data))
                                         rs.on('end', () => {
                                             let digest = hasher.digest('hex');
