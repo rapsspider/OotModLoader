@@ -23,3 +23,5 @@ client_list.json
 config.zip
 build_temp/
 ant/
+passphrase.txt
+private_key.pem

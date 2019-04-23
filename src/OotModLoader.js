@@ -106,10 +106,28 @@ app.on('ready', function () {
                             }
                             download(url, options, function (err) {
                                 if (err) throw err
-                                if (fs.existsSync(process.cwd() + "/update.zip")) {
-                                    app.relaunch({ args: process.argv.slice(1).concat(['--asar=updater.asar']) })
-                                    app.exit()
-                                }
+                                options.filename = "update.sig";
+                                download(response.sig, options, function (err) {
+                                    if (err) throw err
+                                    if (fs.existsSync(process.cwd() + "/update.zip") && fs.existsSync(process.cwd() + "/update.sig")) {
+                                        let crypto = require('crypto');
+                                        let hasher = crypto.createHash('sha256');
+                                        let pathname = path.resolve("./update.zip");
+                                        let rs = fs.createReadStream(pathname);
+                                        rs.on('data', data => hasher.update(data))
+                                        rs.on('end', () => {
+                                            let digest = hasher.digest('hex');
+                                            let publicKey = fs.readFileSync('./public_key.pem');
+                                            let verifier = crypto.createVerify('RSA-SHA256');
+                                            verifier.update(digest);
+                                            let testSignature = verifier.verify(publicKey, signature, 'base64');
+                                            if (testSignature) {
+                                                app.relaunch({ args: process.argv.slice(1).concat(['--asar=updater.asar']) })
+                                                app.exit()
+                                            }
+                                        });
+                                    }
+                                });
                             })
                         }
                     }
@@ -299,10 +317,9 @@ app.on('ready', function () {
                         let ootmrom = require('./patcher/OotRom');
                         let cur_rom = new ootmrom(path.resolve(rom));
                         originalFs.writeFileSync(path.join("./temp/", event.patchFile.name), Buffer.from(event.patchFile.data));
-                        fs.writeFileSync(path.join("./temp/", path.parse(event.patchFile.name).name + ".bps"), fs.readFileSync(path.join("./temp/", event.patchFile.name, "/bin/main.bps")));
                         let bps = require('./OotBPS');
                         let patch = new bps();
-                        rom = patch.tryPatch(path.resolve(cur_rom), path.join("./temp/", path.parse(event.patchFile.name).name + ".bps"));
+                        rom = patch.tryPatch(path.resolve(cur_rom), path.join("./temp/", event.patchFile.name, "/bin/main.bps"));
                     }
                 }
                 startBizHawk(rom);
