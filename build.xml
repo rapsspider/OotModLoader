@@ -8,7 +8,7 @@
   <property name="major" value="1"/>
   <property name="minor" value="1"/>
   <property name="emu" value="./src/for_emulator"/>
-  <property name="release_type" value="BETA"/>
+  <property name="release_type" value="DEV"/>
   <property name="build_temp" value="./build_temp"/>
 
   <condition property="cmd.exec" value="cmd" else="/bin/sh">
@@ -74,7 +74,6 @@
       <replacefilter token="@release_type@" value="${release_type}"/>
       <replacefilter token="@BUILD_TYPE@" value="CLI"/>
     </replace>
-    <copy file="config.ini" tofile="${tfolder}/config.ini"/>
     <copy file="${build_temp}/OotModLoader.asar" tofile="${tfolder}/resources/OotModLoader.asar"/>
     <copy file="${build_temp}/updater.asar" tofile="${tfolder}/resources/updater.asar"/>
     <copy todir="${tfolder}">
@@ -86,6 +85,7 @@
     <copy todir="${tfolder}/versions">
       <fileset dir="versions" includes="**"/>
     </copy>
+    <copy file="config.ini" tofile="${tfolder}/config.ini"/>
   </target>
 
   <target name="compile_scripts">

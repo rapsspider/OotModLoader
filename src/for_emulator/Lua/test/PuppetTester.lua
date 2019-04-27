@@ -6,40 +6,37 @@ local buffer_offset = 0x90
 local link_instance = 0x1DAA30
 
 function getPuppet(slot)
-	local slots = {}
-	local s = 0;
-	for i=1,3,1 do 
-		if (i == 1) then 
-			s = s + 4;
-		else
-			s = s + 8;
-		end
-		table.insert(slots, s);
-	end
-	console.log(slots);
+    local slots = {}
+    local s = 0
+    for i = 1, 3, 1 do
+        if (i == 1) then
+            s = s + 4
+        else
+            s = s + 8
+        end
+        table.insert(slots, s)
+    end
+    console.log(slots)
     return readPointer(context + buffer_offset + tonumber(slots[slot]))
 end
 
 function hex2rgb(hex)
     hex = hex:gsub("#", "")
-    return tonumber("0x" .. hex:sub(1, 2)), tonumber("0x" .. hex:sub(3, 4)), tonumber("0x" .. hex:sub(5, 6))
+    return tonumber("0x" .. hex:sub(1, 2)), tonumber("0x" .. hex:sub(3, 4)),
+           tonumber("0x" .. hex:sub(5, 6))
 end
 
-function ranndomHexColor() 
-	local r = math.random(255);
-	local g = math.random(255);
-	local b = math.random(255);
-	return r, g, b
+function ranndomHexColor()
+    local r = math.random(255)
+    local g = math.random(255)
+    local b = math.random(255)
+    return r, g, b
 end
 
 local run = true
 
-form = forms.newform(
-    250,
-    500,
-    "OotOnline Puppet Debugger",
-    function() run = false end
-)
+form = forms.newform(250, 500, "OotOnline Puppet Debugger",
+                     function() run = false end)
 local ypos = 0
 
 function increasePos() ypos = ypos + 20 end
@@ -56,18 +53,10 @@ local locked_puppet = getPuppet(1)
 drawString("Puppet Found: " .. DEC_HEX(locked_puppet), ypos)
 increasePos()
 
-forms.button(
-    form,
-    "Move Puppet to me.",
-    function()
-        local pos = readByteRange(link_instance + 0x24, 0xC)
-        writeByteRange(locked_puppet + 0x24, pos)
-    end,
-    0,
-    ypos,
-    200,
-    20
-)
+forms.button(form, "Move Puppet to me.", function()
+    local pos = readByteRange(link_instance + 0x24, 0xC)
+    writeByteRange(locked_puppet + 0x24, pos)
+end, 0, ypos, 200, 20)
 increasePos()
 
 local anim_box = forms.checkbox(form, "Animate it.", 5, ypos)
@@ -79,14 +68,9 @@ local color = forms.textbox(form, "#eb41f4", 50, 50, nil, 5, ypos)
 increasePos()
 drawLabel("Right Hand", ypos)
 increasePos()
-local rhand = forms.dropdown(
-    form,
-    {"Empty", "OoT", "Closed Fist", "Bow", "Hookshot"},
-    5,
-    ypos,
-    100,
-    20
-)
+local rhand = forms.dropdown(form,
+                             {"Empty", "OoT", "Closed Fist", "Bow", "Hookshot"},
+                             5, ypos, 100, 20)
 increasePos()
 
 local rhand_table = {}
@@ -116,7 +100,9 @@ sheath_table["Master Sword"] = 0x800F77F8
 
 local frameHooks = {}
 
-function addFramehook(fn, max) table.insert(frameHooks, {fn = fn, max = max, count = 0}) end
+function addFramehook(fn, max)
+    table.insert(frameHooks, {fn = fn, max = max, count = 0})
+end
 
 while run do
     if (forms.ischecked(anim_box)) then
@@ -129,18 +115,12 @@ while run do
         writeByte(locked_puppet + 0x155, g)
         writeByte(locked_puppet + 0x156, b)
     end)
-    --[[writeFourBytesUnsigned(
-        locked_puppet + 0x140,
-        rhand_table[forms.gettext(rhand)]
-    )
-    writeFourBytesUnsigned(
-        locked_puppet + 0x144,
-        lhand_table[forms.gettext(lhand)]
-    )
-    writeFourBytesUnsigned(
-        locked_puppet + 0x148,
-        sheath_table[forms.gettext(sheath)]
-    )--]]
+    writeFourBytesUnsigned(locked_puppet + 0x140,
+                           rhand_table[forms.gettext(rhand)])
+    writeFourBytesUnsigned(locked_puppet + 0x144,
+                           lhand_table[forms.gettext(lhand)])
+    writeFourBytesUnsigned(locked_puppet + 0x148,
+                           sheath_table[forms.gettext(sheath)])
     if (next(frameHooks) ~= nil) then
         if (frameHooks[1].count >= frameHooks[1].max) then
             local n = table.remove(frameHooks, 1)

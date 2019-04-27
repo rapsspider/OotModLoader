@@ -113,7 +113,7 @@ class SaveSync {
         this._packetNameCache_reverse = {};
         this._packetNameToHandlerMap = {};
         this._collectData = false;
-        this._dataCache = { packet_id: "savesync_data", writeHandler: "Null", data: {}, addr: 0, offset: 0, ignoreBuffer: true};
+        this._dataCache = { packet_id: "savesync_data", writeHandler: "Null", data: {}, addr: 0, offset: 0, ignoreBuffer: true };
         this._exceptionStorage = {};
     }
 
@@ -121,6 +121,7 @@ class SaveSync {
         this._lang = localization.getLoadedObject("en_US");
         this._inventorySlotToLangKey = localization.getLoadedObject("item_numbers");
         this._icons = localization.getLoadedObject("icon_coordinates");
+        this._small_key_scenes = localization.getLoadedObject("small_key_scenes");
         (function (inst) {
             api.registerPacketRoute("requestSaveData", "savesync");
             api.registerPacketRoute("savesync_data", "savesync");
@@ -153,6 +154,7 @@ class SaveSync {
             temp("item_flag_packets.txt", "item_flags");
             temp("scene_packets.txt", "scene");
             temp("dungeon_packets.txt", "dungeon_items");
+            temp("small_key_packets.txt", "small_keys");
             for (let i = 0; i < inst._packetNameCache.length; i++) {
                 inst._packetNameCache_reverse[inst._packetNameCache[i]] = i;
             }
@@ -161,7 +163,6 @@ class SaveSync {
             inst._exceptionStorage["_inventory"]["trade_slots"] = ["inventory_slot_23"];
             inst._exceptionStorage["_inventory"]["check"] = {};
             inst._exceptionStorage["_inventory"]["check"]["bottle_slots"] = function (inst, data) {
-                // 20
                 let value = inst._int;
                 if (value === 255) {
                     value = -1;
@@ -505,6 +506,39 @@ class SaveSync {
                                 server._ws_server.sockets.to(room).emit('msg', { packet_id: "death_msg", payload: encoder.compressData({ packet_id: "death_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: 11 * 16, sy: 19 * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
                             } catch (err) {
 
+                            }
+                        }
+                        return u.int;
+                    }
+                } catch (err) {
+                    logger.log(err, "red");
+                }
+            }
+            inst._savePacketHandlers["small_keys"] = function (server, room, id, data, tag, packet) {
+                if (!server.getRoomsArray().hasOwnProperty(room)) {
+                    return;
+                }
+                if (!server.getRoomsArray()[room].hasOwnProperty("_small_keys")) {
+                    server.getRoomsArray()[room]["_small_keys"] = {};
+                }
+                if (!server.getRoomsArray()[room]["_small_keys"].hasOwnProperty(id)) {
+                    server.getRoomsArray()[room]["_small_keys"][id] = new IntegerStorage(tag);
+                    server.getRoomsArray()[room]["_small_keys"][id]._check = inst._exceptionStorage["_inventory"]["check"]["bottle_slots"];
+                }
+                let u = server.getRoomsArray()[room]["_small_keys"][id].update(data);
+                try {
+                    if (u.int !== 255) {
+                        if (u.bool) {
+                            try {
+                                if (u.int > data) {
+                                    let index = parseInt(tag.replace("small_keys_", ""));
+                                    let key = inst._small_key_scenes.getLocalizedString(index);
+                                    let icon = inst._icons.getLocalizedString("item_small_key");
+                                    let str = inst._lang.getLocalizedString("item_small_key") + " (" + inst._lang.getLocalizedString(key) + ")";
+                                    server._ws_server.sockets.to(room).emit('msg', { packet_id: "key_msg", payload: encoder.compressData({ packet_id: "key_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: icon.x * 16, sy: icon.y * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
+                                }
+                            } catch (err) {
+                                logger.log(err.stack, "red")
                             }
                         }
                         return u.int;

@@ -129,7 +129,7 @@ app.on('ready', function () {
                                         });
                                     }
                                 });
-                            })
+                            });
                         }
                     }
                 });
@@ -317,10 +317,14 @@ app.on('ready', function () {
                     } else if (event.patchFile.name.indexOf(".asar") > -1) {
                         let ootmrom = require('./patcher/OotRom');
                         let cur_rom = new ootmrom(path.resolve(rom));
+                        rom = cur_rom._file;
                         originalFs.writeFileSync(path.join("./temp/", event.patchFile.name), Buffer.from(event.patchFile.data));
                         let bps = require('./OotBPS');
                         let patch = new bps();
-                        rom = patch.tryPatch(path.resolve(cur_rom), path.join("./temp/", event.patchFile.name, "/bin/main.bps"));
+                        fs.readdirSync(path.join("./temp/", event.patchFile.name, "/payloads")).forEach(function (payload) {
+                            plugins._pluginSystem.injectTemporaryPayload(path.join("./temp/", event.patchFile.name, "/payloads", payload));
+                        });
+                        rom = patch.tryPatch(path.resolve(rom), path.join("./temp/", event.patchFile.name, "/bin/main.bps"));
                     }
                 }
                 startBizHawk(rom);
