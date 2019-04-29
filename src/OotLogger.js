@@ -16,14 +16,33 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+const util = require('util');
 const chalk = require('chalk');
+const rfs = require("rotating-file-stream");
+
+const LEVEL = {
+  DEBG: 0,
+  INFO: 1,
+  WARN: 2,
+  ERRO: 3
+}
+
+global_logstream = rfs(util.format("ootmodloader.log"), {
+  size: "1M", // rotate every 10 MegaBytes written
+  interval: "1d", // rotate daily
+  path: "logs/",
+  maxFiles: 10
+});
+
+original_console = console;
 
 class OotLogger {
-    constructor(name) {
-        this._name = name;
+    constructor(name, _stdout_console) {
+
+      this._name = name;
     }
 
-    log(str, color = "white") {
+    stdout(str, color = "white") {
         if (typeof (str) === "string") {
             console.log("[" + this._name + "]: " + chalk[color](str));
         } else {
@@ -31,15 +50,81 @@ class OotLogger {
         }
     }
 
-    logQuietly(str, color = "white") {
-        if (typeof (str) === "string") {
-            console.log(chalk[color](str));
-        } else {
-            console.log(chalk[color](JSON.stringify(str)));
+    defaultlog(str, level, color){
+      var time = new Date().toISOString();
+      level = Object.keys(LEVEL).find(key => LEVEL[key] === level);
+
+      if (typeof (str) === Object) {
+        try {
+          str = JSON.stringify(str);
+        } catch (e) {
+          str = toString(str);
         }
+      }
+
+      var color_level = "white";
+      switch (level) {
+        case "DEBG":
+          color_level = "green"
+          break;
+        case "INFO":
+          color_level = "blue"
+          break;
+        case "WARN":
+          color_level = "orange"
+          break;
+        case "ERRO":
+          color_level = "red"
+          break;
+        default:
+          color_level = "white"
+      }
+
+      // Write to log file, without colors
+      global_logstream.write(util.format("[%s] %s - (%s): %s\n\r", time, level, this._name, str));
+
+      level = chalk[color_level](level);
+      if(color !== undefined){
+        str = chalk[color](str);
+      }
+      // Write to STDOUT with colors
+      original_console.log(util.format("[%s] %s - (%s): %s", time, level, this._name, str));
     }
+
+
+    debug(str, color){
+      this.defaultlog(str, LEVEL.DEBG, color);
+    }
+
+    log(str, color){
+      this.debug(str, color);
+    }
+
+    info(str, color){
+      this.defaultlog(str, LEVEL.INFO, color);
+    }
+
+    warning(str, color){
+      this.defaultlog(str, LEVEL.WARN, color);
+    }
+
+    error(str, color){
+      this.defaultlog(str, LEVEL.ERRO, color);
+    }
+
+
+    // logQuietly(str, color = "white") {
+    //     if (typeof (str) === "string") {
+    //         console.log(chalk[color](str));
+    //     } else {
+    //         console.log(chalk[color](JSON.stringify(str)));
+    //     }
+    // }
 }
 
 module.exports = function (str) {
     return new OotLogger(str);
 };
+
+// Init OotLogger & overwrite default console
+console = new OotLogger("CONSOLE");

@@ -21,11 +21,13 @@ const logger = require('./OotLogger')("Core");
 class Version {
     constructor() {
         this._VERSION = "@major@.@minor@.@buildNumber@.@release_type@";
-        logger.logQuietly("Oot Mod Loader", "green");
-        logger.logQuietly("v" + this._VERSION + " loading...", "green");
-        logger.logQuietly("Coded by: denoflions, MelonSpeedruns, Ideka, and glank", "green");
-        logger.logQuietly("Testers: Psi-Hate.", "green");
-        logger.logQuietly("Notification icons drawn by: Nikki.", "green");
+        logger.info("==================================", "green");
+        logger.info("Oot Mod Loader", "green");
+        logger.info("v" + this._VERSION + " loading...", "green");
+        logger.info("Coded by: denoflions, MelonSpeedruns, Ideka, and glank", "green");
+        logger.info("Testers: Psi-Hate.", "green");
+        logger.info("Notification icons drawn by: Nikki.", "green");
+        logger.info("==================================", "green");
     }
 
     get VERSION() {

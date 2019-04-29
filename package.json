@@ -9,6 +9,7 @@
     "postinstall": "patch-package"
   },
   "dependencies": {
+    "rotating-file-stream": "1.4.1",
     "bitwise": "^2.0.3",
     "body-parser": "^1.18.3",
     "chalk": "^2.4.1",
