@@ -71,22 +71,6 @@ global.OotModLoader["OVERRIDE_PASSWORD"] = "";
 global["OotMPatcher"] = {};
 global.OotMPatcher["dir"] = "./";
 
-const original_console = console.log;
-let console_hook = function (msg) { };
-
-console.log = function (msg) {
-    original_console(msg);
-    console_hook(msg);
-}
-
-console_hook = function (msg) {
-    if (typeof (str) === "string") {
-        console_log.push(msg)
-    } else {
-        console_log.push(JSON.stringify(msg))
-    }
-};
-
 app.on('ready', function () {
     if (BUILD_TYPE === "GUI") {
         if (!IS_DEV) {
