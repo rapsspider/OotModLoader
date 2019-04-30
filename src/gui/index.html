@@ -17,6 +17,7 @@
     <script>
         var onTabOpen = {};
         var onTabClosed = {};
+        const hri = require('human-readable-ids').hri;
         $(function () {
             let tabs = $("#tabs").tabs();
             tabs.on("tabsbeforeactivate", function (event, ui) {
@@ -34,7 +35,19 @@
                     }
                 }
             });
+            $('#show_pw').change(function() {
+              if($(this).is(":checked")) {
+                $("#_game_password").prop("type", "text");
+                return;
+              }
+              $("#_game_password").prop("type", "password");
+              return;
+            });
         });
+
+        function randomName(){
+          $("#_GAME_ROOM").val(hri.random());
+        }
         function resetMasterServerInfo(data) {
             document.getElementById("_master_server_ip").value = "192.99.70.23";
             document.getElementById("_master_server_port").value = "8082";
@@ -62,11 +75,25 @@
             <h2>Lobby Settings</h2>
             <label class="short_label" for="nickname" align="left">Username: </label> <input type="text" name="nickname"
                 id="_nickname" /><br /><br />
-            <label class="short_label" for="game_room">Lobby Name:</label> <input type="text" name="game_room"
-                id="_GAME_ROOM"
-                title="Pick a unique name and give it to your friends! This is case sensitive." /><br /><br />
+
+            <label class="short_label" for="game_room">Lobby Name:</label>
+
+            <input type="text" name="game_room" id="_GAME_ROOM" list="_GAME_ROOM_ARRAY" title="Pick a unique name and give it to your friends! This is case sensitive." />
+
+            <datalist id="_GAME_ROOM_ARRAY">
+            </datalist>
+
+            <span class="widget">
+              <button id="lobby_tracker" onclick="this.blur();randomName();">Generate Name</button>
+            </span>
+            <span class="widget">
+              <button id="lobby_tracker" onclick="this.blur();alert('comming soon')">Show Tracker</button>
+            </span>
+            <br /><br />
             <label class="short_label" for="game_password">Lobby Password: </label> <input type="password"
-                name="game_password" id="_game_password" /><br /><br />
+                name="game_password" id="_game_password" />
+                <label class="short_label" for="show_pw">Show Password</label><input type="checkbox" id="show_pw" />
+            <br /><br />
 
             <h2>Game Settings</h2>
 
@@ -94,8 +121,8 @@
             <label class="short_label" for="port">Port: </label> <input type="text" name="port" id="_master_server_port"
                 title="The port for the master server. Most players don't need to change this." /><br /><br />
             <div class="widget">
-                <button id="server_save" onclick="hooks.onIPChange()">Save</button>
-                <button id="server_reset" onclick="resetMasterServerInfo()"
+                <button id="server_save" onclick="this.blur();hooks.onIPChange();">Save</button>
+                <button id="server_reset" onclick="this.blur();resetMasterServerInfo();"
                     title="Reset to the official master server info.">Reset</button>
             </div>
         </div>
