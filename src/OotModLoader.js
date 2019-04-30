@@ -124,7 +124,7 @@ app.on('ready', function () {
             }
         }
         let gui = require('./gui/OotGUI');
-        gui.setupModLoader({ api: api, config: CONFIG, console: console_log, mods: mods, roms: roms_list });
+        gui.setupModLoader({ api: api, config: CONFIG, console: global.gui_console_stack, mods: mods, roms: roms_list });
     }
 
     if (!fs.existsSync("./temp")) {
@@ -435,4 +435,4 @@ function startBizHawk(lobby_path) {
     }
 }
 
-module.exports = { api: api, config: CONFIG, console: console_log, mods: mods, roms: roms_list };
+module.exports = { api: api, config: CONFIG, console: global.gui_console_stack, mods: mods, roms: roms_list };

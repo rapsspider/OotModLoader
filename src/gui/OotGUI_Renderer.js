@@ -10,6 +10,31 @@ let CONNECTED = false;
 var $ = global.jQuery = require('./js/jquery-3.3.1.min.js');
 var SERVER_URL = "http://localhost:8083/LobbyBrowser"
 
+original_console = console;
+console = {
+  log: function(msg){
+    ipcRenderer.send("onLogMessage", msg, "log");
+    original_console.log(msg);
+  },
+  debug: function(msg){
+    ipcRenderer.send("onLogMessage", msg, "debug");
+    original_console.debug(msg);
+  },
+  info: function(msg){
+    ipcRenderer.send("onLogMessage", msg, "info");
+    original_console.info(msg);
+  },
+  warning: function(msg){
+    ipcRenderer.send("onLogMessage", msg, "warning");
+    original_console.warning(msg);
+  },
+  error: function(msg){
+    ipcRenderer.send("onLogMessage", msg, "error");
+    original_console.error(msg);
+  }
+}
+
+
 onTabOpen["Lobby Browser"] = {
     tag: "Lobby Browser", callback: function () {
         allow_lobby_refresh = true;

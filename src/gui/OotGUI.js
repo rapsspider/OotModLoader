@@ -1,5 +1,6 @@
 // Modules to control application life and create native browser window
 const { BrowserWindow, ipcMain } = require('electron')
+const logger = require('../OotLogger')("GUI");
 let ooto = null;
 let discord;
 
@@ -81,6 +82,9 @@ function setup(instance){
       discord.onSceneChange(event.scene);
     }
   })
+  ooto.api.registerEventHandler("onConsoleMessage", function(event){
+      console.log(event.msg);
+  });
   ipcMain.on('postEvent', (event, arg) => {
     ooto.api.postEvent(arg);
   })
@@ -88,6 +92,20 @@ function setup(instance){
     global.OotModLoader[arg.id] = arg.value;
     console.log(arg);
   });
+  ipcMain.on('onLogMessage', (event, msg, type) => {
+    if(type === "log"){
+      logger.log(msg);
+    } else if (type === "debug") {
+      logger.debug(msg);
+    } else if (type === "info") {
+      logger.info(msg);
+    } else if (type === "warning") {
+      logger.warning(msg);
+    } else if (type === "error") {
+      logger.error(msg);
+    }
+  })
+
   if (ooto !== null) {
     if (mainWindow !== null) {
       mainWindow.webContents.send("GUI_ConfigLoaded", ooto);
@@ -97,7 +115,9 @@ function setup(instance){
   setInterval(function () {
     if (ooto.console.length > 0) {
       if (mainWindow !== null) {
-        mainWindow.webContents.send("onConsoleMessage", { id: "onConsoleMessage", msg: ooto.console.shift() })
+        while(ooto.console.length){
+            mainWindow.webContents.send("onConsoleMessage", { id: "onConsoleMessage", msg: ooto.console.shift() })
+        }
       }
     }
   }, 100);

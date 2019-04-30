@@ -27,18 +27,23 @@ const LEVEL = {
   ERRO: 3
 }
 
-global_logstream = rfs(util.format("ootmodloader.log"), {
-  size: "1M", // rotate every 10 MegaBytes written
-  interval: "1d", // rotate daily
-  path: "logs/",
-  maxFiles: 10
-});
+if(global.logstream === undefined){
+  console.log("INIT LOGSTREAM")
+  global.logstream = rfs(util.format("ootmodloader.log"), {
+    size: "1M", // rotate every 10 MegaBytes written
+    interval: "1d", // rotate daily
+    path: "logs/",
+    maxFiles: 10
+  });
+}
+if(global.gui_console_stack === undefined){
+  global.gui_console_stack = [];
+}
 
 original_console = console;
 
 class OotLogger {
     constructor(name, _stdout_console) {
-
       this._name = name;
     }
 
@@ -80,8 +85,10 @@ class OotLogger {
           color_level = "white"
       }
 
-      // Write to log file, without colors
-      global_logstream.write(util.format("[%s] %s - (%s): %s\n\r", time, level, this._name, str));
+      // Write to log file & gui-console, without colors
+      let raw_msg = util.format("[%s] %s - (%s): %s", time, level, this._name, str);
+      global.logstream.write(raw_msg + "\n\r");
+      global.gui_console_stack.push(raw_msg);
 
       level = chalk[color_level](level);
       if(color !== undefined){
