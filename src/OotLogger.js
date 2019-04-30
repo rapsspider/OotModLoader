@@ -59,7 +59,7 @@ class OotLogger {
       var time = new Date().toISOString();
       level = Object.keys(LEVEL).find(key => LEVEL[key] === level);
 
-      if (typeof (str) === Object) {
+      if (typeof (str) === "object") {
         try {
           str = JSON.stringify(str);
         } catch (e) {

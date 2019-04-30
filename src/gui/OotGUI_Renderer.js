@@ -8,9 +8,12 @@ let allow_lobby_refresh = false;
 let lobby_browser_loaded = false;
 let CONNECTED = false;
 var $ = global.jQuery = require('./js/jquery-3.3.1.min.js');
+
+const util = require('util');
 var SERVER_URL = "http://localhost:8083/LobbyBrowser"
 
-original_console = console;
+// HOOK CONSOLE ...
+original_console = window.console;
 console = {
   log: function(msg){
     ipcRenderer.send("onLogMessage", msg, "log");
@@ -32,6 +35,18 @@ console = {
     ipcRenderer.send("onLogMessage", msg, "error");
     original_console.error(msg);
   }
+}
+window.console = console;
+
+// HOOK ERRORS ...
+original_onerror = window.onerror;
+window.onerror = function myErrorHandler(errorMsg, url, lineNumber) {
+    let arr = url.split("/")
+    let file = arr.slice(arr.length-1)
+    format = util.format("%s\n\nFile:  %s:%s", errorMsg, file, lineNumber);
+    console.error(format);//or any message
+    alert(format);
+    return original_onerror(errorMsg, url, lineNumber)
 }
 
 
