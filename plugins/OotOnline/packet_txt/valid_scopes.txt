@@ -1,0 +1,14 @@
+_inventory
+_upgrades
+_equipment
+_quest
+_heart_containers
+_magic
+_scene
+_events
+_item_flags
+_inf_flags
+_dungeon_items
+_skulltulas
+_death_counter
+_small_keys

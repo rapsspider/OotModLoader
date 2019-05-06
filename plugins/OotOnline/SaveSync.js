@@ -24,6 +24,59 @@ const encoder = require(global.OotRunDir + "/OotEncoder");
 const CONFIG = require(global.OotRunDir + "/OotConfig");
 const client = require(global.OotRunDir + "/OotClient");
 const bits = require(global.OotRunDir + "/OotBitwise");
+const jsonEndpoint = require(global.OotRunDir + "/OotEndpoint");
+
+class SaveEndpointHandler {
+    constructor(plugin) {
+        this._parent = plugin;
+        this._scopes = {};
+        let original = plugin._fileSystem.readFileSync(__dirname + '/packet_txt/' + "valid_scopes.txt", "utf8");
+        let items = original.split(/\r?\n/);
+        for (let i = 0; i < items.length; i++){
+            this._scopes[items[i]] = true;
+        }
+    }
+
+    setup() {
+        (function (inst) {
+            jsonEndpoint._endpoint.get("/SaveSync", function (req, res) {
+                let lobby = req.query.lobby;
+                let scope = req.query.scope;
+                let scopes = [];
+                if (scope.indexOf(" ") > -1){
+                    scopes = scopes.concat(scope.split(" "));
+                }else{
+                    scopes.push(scope);
+                }
+                let error = "";
+                let data = {};
+                for (let i = 0; i < scopes.length; i++){
+                    if (!inst._scopes.hasOwnProperty(scopes[i])){
+                        error = "invalid scope";
+                        break;
+                    }
+                    let storage = api.getServerSideStorage(lobby);
+                    if (storage !== null && storage !== undefined) {
+                        if (storage.hasOwnProperty(scopes[i])) {
+                            data[scopes[i]] = storage[scopes[i]];
+                        } else {
+                            error = "lobby does not contain scope";
+                            break;
+                        }
+                    } else {
+                        error = "invalid lobby";
+                        break;
+                    }
+                }
+                if (error !== ""){
+                    res.status(400).send({error: error});
+                }else{
+                    res.status(200).send(data);
+                }
+            });
+        })(this);
+    }
+}
 
 function default_int_check(inst, data) {
     let value = inst._int;
@@ -76,11 +129,9 @@ class IntegerStorage {
 
     update(data) {
         let bool = false;
-        if (data !== 255) {
-            if (this._check(this, data)) {
-                bool = data !== this._int;
-                this._int = data;
-            }
+        if (this._check(this, data)) {
+            bool = data !== this._int;
+            this._int = data;
         }
         return { int: this._int, bool: bool };
     }
@@ -209,7 +260,6 @@ class SaveSync {
                 }
                 let u = server.getRoomsArray()[room]["_inventory"][id].update(data);
                 if (u.int !== 255) {
-
                     if (u.bool) {
                         try {
                             let key = inst._inventorySlotToLangKey.getLocalizedString(u.int);
@@ -342,7 +392,7 @@ class SaveSync {
                 if (!server.getRoomsArray()[room].hasOwnProperty("_heart_containers")) {
                     server.getRoomsArray()[room]["_heart_containers"] = {};
                 }
-                if (!server.getRoomsArray()[room].hasOwnProperty(id)) {
+                if (!server.getRoomsArray()[room]["_heart_containers"].hasOwnProperty(id)) {
                     server.getRoomsArray()[room]["_heart_containers"][id] = new IntegerStorage(tag);
                     server.getRoomsArray()[room]["_heart_containers"][id]._check = inst._exceptionStorage._heart_containers.check.default;
                     server.getRoomsArray()[room]["_heart_containers"][id]._int = 0xFFFF;
@@ -550,7 +600,6 @@ class SaveSync {
             api.registerServerChannel("savesync", function (server, packet) {
                 let decompress = encoder.decompressData(packet.payload);
                 var r = {};
-                //logger.log(packet);
                 Object.keys(decompress.data).forEach(function (key) {
                     let id = inst._packetNameCache[key];
                     Object.keys(inst._savePacketHandlers).forEach(function (t) {
@@ -584,18 +633,18 @@ class SaveSync {
                 return false;
             });
 
+            api.registerClientSideChannelHandler("savesync", function (packet) {
+                if (inst._collectData) {
+                    inst._dataCache.data[inst._packetNameCache_reverse[packet.packet_id]] = packet.data.data;
+                }
+                return null;
+            });
+
             api.registerPacketTransformer("savesync_data", function (packet) {
                 Object.keys(packet.payload.data).forEach(function (key) {
                     let packet_id = inst._packetNameCache[key];
                     emulator.sendViaSocket({ packet_id: packet_id, writeHandler: "saveData", typeHandler: inst._packetNameToHandlerMap[packet_id], data: packet.payload.data[key] });
                 });
-                return null;
-            });
-
-            api.registerClientSideChannelHandler("savesync", function (packet) {
-                if (inst._collectData) {
-                    inst._dataCache.data[inst._packetNameCache_reverse[packet.packet_id]] = packet.data.data;
-                }
                 return null;
             });
         })(this);
@@ -619,6 +668,8 @@ class SaveSync {
                 emulator.sendViaSocket({ packet_id: "forceUpdateScene3", data: perm_switch, writeHandler: "rangeCache", addr: api.getTokenStorage()["@save_data@"], offset: target + 0xC });
                 emulator.sendViaSocket({ packet_id: "forceSceneUpdate", data: 0, writeHandler: "sceneTrigger", addr: 0, offset: 0 });
             });
+            inst._saveEndpoint = new SaveEndpointHandler(inst);
+            inst._saveEndpoint.setup();
         })(this);
     }
 }

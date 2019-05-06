@@ -41,7 +41,7 @@ let logger = require('./OotLogger')('Core');
 const fs = require("fs");
 var ncp = require('ncp').ncp;
 const spawn = require('cross-spawn');
-const lb = require("./OotLobbyBrowser");
+const lb = require("./OotEndpoint");
 const VERSION = require('./OotVersion');
 
 let packetTransformers = {};
@@ -188,12 +188,14 @@ app.on('ready', function () {
     master.preSetup();
     logger.log(process.cwd());
     logger.log("Loading plugins...");
+    if (CONFIG.isMaster){
+        lb.setup();
+    }
     plugins.load(function () {
         CONFIG.save();
         if (BUILD_TYPE !== "GUI") {
             if (CONFIG.isMaster) {
                 master.setup();
-                lb.setup();
             }
             if (CONFIG.isClient) {
                 client.setProcessFn(processData);
