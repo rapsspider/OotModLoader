@@ -9,7 +9,6 @@
     "postinstall": "patch-package"
   },
   "dependencies": {
-    "rotating-file-stream": "1.4.1",
     "bitwise": "^2.0.3",
     "body-parser": "^1.18.3",
     "chalk": "^2.4.1",
@@ -17,6 +16,7 @@
     "discord-rich-presence": "0.0.8",
     "download-file": "^0.1.5",
     "express": "^4.16.3",
+    "express-ws": "^4.0.0",
     "get-json": "^1.0.1",
     "hex-rgb": "^3.0.0",
     "human-readable-ids": "^1.0.4",
@@ -25,6 +25,7 @@
     "nat-upnp": "^1.1.1",
     "ncp": "^2.0.0",
     "restify": "^7.2.1",
+    "rotating-file-stream": "1.4.1",
     "serve-static-restify": "^2.1.0",
     "socket.io": "^2.1.1",
     "socket.io-client": "^2.1.1"
