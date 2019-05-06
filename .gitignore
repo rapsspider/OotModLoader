@@ -25,3 +25,5 @@ ant/
 passphrase.txt
 private_key.pem
 Legend of Zelda, The - Ocarina of Time (USA).SaveRAM
+logs/ootmodloader.log
+build.number

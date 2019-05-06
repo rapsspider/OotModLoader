@@ -6,18 +6,7 @@ local buffer_offset = 0x90
 local link_instance = 0x1DAA30
 
 function getPuppet(slot)
-    local slots = {}
-    local s = 0
-    for i = 1, 3, 1 do
-        if (i == 1) then
-            s = s + 4
-        else
-            s = s + 8
-        end
-        table.insert(slots, s)
-    end
-    console.log(slots)
-    return readPointer(context + buffer_offset + tonumber(slots[slot]))
+    return readPointer(0x6000A4);
 end
 
 function hex2rgb(hex)
@@ -115,12 +104,6 @@ while run do
         writeByte(locked_puppet + 0x155, g)
         writeByte(locked_puppet + 0x156, b)
     end)
-    writeFourBytesUnsigned(locked_puppet + 0x140,
-                           rhand_table[forms.gettext(rhand)])
-    writeFourBytesUnsigned(locked_puppet + 0x144,
-                           lhand_table[forms.gettext(lhand)])
-    writeFourBytesUnsigned(locked_puppet + 0x148,
-                           sheath_table[forms.gettext(sheath)])
     if (next(frameHooks) ~= nil) then
         if (frameHooks[1].count >= frameHooks[1].max) then
             local n = table.remove(frameHooks, 1)

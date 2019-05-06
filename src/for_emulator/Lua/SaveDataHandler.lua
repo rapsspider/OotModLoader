@@ -51,6 +51,7 @@ local defense_offset = 0x00CF
 local big_poes_offset = 0x0EBE
 local scene_addr = 0x1C8544
 local c_button_offset = 0x0068
+local ammo_offset = 0x008C
 
 local magic_offsets = {bool = 0x3A, size = 0x3C, limit = 0x13F4, qty = 0x0033}
 
@@ -113,6 +114,9 @@ save_handler_context_map["heart_containers"] = {}
 save_handler_context_map["heart_containers"]["write"] = {}
 save_handler_context_map["heart_containers"]["write"]["count"] = assignByte()
 save_handler_context_map["heart_containers"]["write"]["this_is_two_bytes"] = assignByte()
+save_handler_context_map["heart_containers"]["pieces"] = {};
+save_handler_context_map["heart_containers"]["pieces"]["write"] = {};
+save_handler_context_map["heart_containers"]["pieces"]["write"]["count"] = assignByte()
 
 save_handler_context_map["death_counter"] = {}
 save_handler_context_map["death_counter"]["write"] = {}
@@ -858,6 +862,16 @@ function update_dungeon_items()
     )
 end
 
+local heart_piece_offset = 0x00A4;
+
+function update_heart_pieces() 
+  addToBuffer(function() 
+    local b = readByte(save_context + heart_piece_offset);
+    writeByte(save_handler_context + save_handler_context_map["heart_containers"]["pieces"]["write"]["count"], b)
+    SAVE_DATA_HANDLER["send"]("heart_pieces", readByte(save_handler_context + save_handler_context_map["heart_containers"]["pieces"]["write"]["count"]))
+  end)
+end
+
 SAVE_DATA_HANDLER["link_exists"] = function()
     return false
 end
@@ -934,8 +948,6 @@ local ammo_item_map = {
     upgrade_deku_stick = 0,
     upgrade_deku_nuts = 1
 }
-
-local ammo_offset = 0x008C
 
 function handleUpgradeSlotUpdate(packet)
     local key = upgrade_lookup_table[packet.packet_id]
@@ -1161,7 +1173,7 @@ end
 registerSaveUpdateHandler("inventory", handleInventorySlotUpdate)
 registerSaveUpdateHandler("upgrade", handleUpgradeSlotUpdate)
 registerSaveUpdateHandler("equipment", handleEquipmentSlotUpgrade)
-registerSaveUpdateHandler("quest", handleInventorySlotUpdate)
+registerSaveUpdateHandler("quest", handleQuestSlotUpgrade)
 registerSaveUpdateHandler("biggoron", handleBiggoronSlotUpgrade)
 registerSaveUpdateHandler("heart_containers", handleHeartContainerSlotUpgrade)
 registerSaveUpdateHandler("double_defense", handleDoubleDefenseSlotUpgrade)
@@ -1175,6 +1187,7 @@ registerSaveUpdateHandler("dungeon_items", handleDungeonItemSlotUpgrade)
 registerSaveUpdateHandler("skulltula_flag", handleSkulltulaFlagSlotUpgrade)
 registerSaveUpdateHandler("skulltula_count", handleSkulltulaCountSlotUpgrade)
 registerSaveUpdateHandler("small_keys", handleSmallKeyCountSlotUpgrade)
+registerSaveUpdateHandler("NYI", function(packet) end)
 
 SAVE_DATA_HANDLER["writeHandler"] = function(packet)
     saveUpdateHandlers[packet.typeHandler](packet)
