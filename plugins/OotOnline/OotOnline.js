@@ -23,7 +23,6 @@ const client = require(global.OotRunDir + "/OotClient");
 const emulator = require(global.OotRunDir + "/OotBizHawk");
 const encoder = require(global.OotRunDir + "/OotEncoder");
 const logger = require(global.OotRunDir + "/OotLogger")("OotOnline");
-const colors = require(global.OotRunDir + "/OotColors");
 
 let ears;
 let shadow;
@@ -206,7 +205,6 @@ class OotOnline {
         this._scene = -1;
         this._sceneList = {};
         this._forbidSync = false;
-        this._tunic_colors = [];
         this._age = -1;
         this._puppetSpawnHandle = null;
         this._lastSeenState = -1;
@@ -214,41 +212,18 @@ class OotOnline {
         this._puppetsAwaitingSpawn_task = {};
         this._nicknames = {};
         this._sendPuppetData = false;
+        this._loaderCore = null;
     }
 
     get PuppetMap() {
         return this._PuppetMap;
     }
-
-    setupTunics() {
-        let temp = {};
-        if (CONFIG.TunicColors.kokiri !== "") {
-            logger.log("Setting Kokiri tunic color to " + CONFIG.TunicColors.kokiri + ".");
-            temp = colors.toRBG(CONFIG.TunicColors.kokiri);
-            this._tunic_colors[0] = [temp.red, temp.green, temp.blue];
-            logger.log(this._tunic_colors[0]);
-        }
-        if (CONFIG.TunicColors.goron !== "") {
-            logger.log("Setting Goron tunic color to " + CONFIG.TunicColors.goron + ".");
-            temp = colors.toRBG(CONFIG.TunicColors.goron);
-            this._tunic_colors[1] = [temp.red, temp.green, temp.blue];
-            logger.log(this._tunic_colors[1]);
-        }
-        if (CONFIG.TunicColors.zora !== "") {
-            logger.log("Setting Zora tunic color to " + CONFIG.TunicColors.zora + ".");
-            temp = colors.toRBG(CONFIG.TunicColors.zora);
-            this._tunic_colors[2] = [temp.red, temp.green, temp.blue];
-            logger.log(this._tunic_colors[2]);
-        }
-    }
-
     // Load json files in here.
     preinit() {
         CONFIG.setPluginDefaultValue("OotOnline", "max_players", 4);
         if (CONFIG.getPluginValue("OotOnline", "max_players") > 15) {
             CONFIG.setPluginValue("OotOnline", "max_players", 15)
         }
-        this.setupTunics();
         api.registerPacket(this._fileSystem.readFileSync(__dirname + "/packets/link_packet.json", 'utf8'));
         api.registerPacket(this._fileSystem.readFileSync(__dirname + "/packets/link_loading.json", 'utf8'));
         api.registerPacket(this._fileSystem.readFileSync(__dirname + "/packets/link_sound.json", 'utf8'));
@@ -271,6 +246,7 @@ class OotOnline {
     init() {
         //CLIENT SIDE
         (function (inst) {
+            inst._loaderCore = api.getPlugin("OotLoaderCore");
             api.registerEvent("onPuppetSpawn");
             api.registerEvent("onLinkLoading");
             api.registerEvent("OotOnline_forceSetTunicColor");
@@ -334,8 +310,8 @@ class OotOnline {
             });
 
             api.registerClientSidePacketHook("OotOnline", function (packet) {
-                if ((packet.data["link_tunic_color"].data in inst._tunic_colors) && CONFIG._tunic_colors_enabled) {
-                    packet.data["override"] = inst._tunic_colors[packet.data["link_tunic_color"].data];
+                if ((packet.data["link_tunic_color"].data in inst._loaderCore._tunic_colors) && CONFIG._tunic_colors_enabled) {
+                    packet.data["override"] = inst._loaderCore._tunic_colors[packet.data["link_tunic_color"].data];
                 }
                 packet.data["tunic_config"] = CONFIG._tunic_colors_enabled;
                 return inst._sendPuppetData;
@@ -570,11 +546,6 @@ class OotOnline {
                         inst.PuppetMap[player].puppet.isSpawnedInCurrentScene = false;
                     }
                 });
-                if (CONFIG._tunic_colors_enabled) {
-                    Object.keys(inst._tunic_colors).forEach(function (index) {
-                        emulator.sendViaSocket({ packet_id: "changeColor", data: inst._tunic_colors[index], writeHandler: "range", addr: "0x000F7AD8", offset: index * 3 });
-                    });
-                }
                 inst._puppetSpawnHandle = true;
             });
 
@@ -615,22 +586,12 @@ class OotOnline {
             api.registerEventHandler("onLinkRespawn", function (event) {
                 inst._puppetSpawnHandle = true;
                 logger.log("Preparing for puppet spawning...");
-                if (CONFIG._tunic_colors_enabled) {
-                    Object.keys(inst._tunic_colors).forEach(function (index) {
-                        emulator.sendViaSocket({ packet_id: "changeColor", data: inst._tunic_colors[index], writeHandler: "range", addr: "0x000F7AD8", offset: index * 3 });
-                    });
-                }
             });
 
             api.registerEventHandler("onFrameCount", function (event) {
                 if (event.data.data.bool) {
                     inst._puppetSpawnHandle = true;
                     logger.log("Preparing for puppet spawning...");
-                    if (CONFIG._tunic_colors_enabled) {
-                        Object.keys(inst._tunic_colors).forEach(function (index) {
-                            emulator.sendViaSocket({ packet_id: "changeColor", data: inst._tunic_colors[index], writeHandler: "range", addr: "0x000F7AD8", offset: index * 3 });
-                        });
-                    }
                 }
             });
 
@@ -672,7 +633,7 @@ class OotOnline {
                 if (event.uuid === 54849632) {
                     setTimeout(function () {
                         Object.keys(inst.PuppetMap).forEach(function (player) {
-                            //inst.PuppetMap[player].puppet.despawn();
+                            inst.PuppetMap[player].puppet.despawn();
                         });
                     }, 1000);
                 }
@@ -701,15 +662,6 @@ class OotOnline {
             });
 
             api.registerEventHandler("onServerConnection", function (event) {
-            });
-
-            api.registerEventHandler("onConfigUpdate", function (event) {
-                if (CONFIG._tunic_colors_enabled) {
-                    inst.setupTunics();
-                    Object.keys(inst._tunic_colors).forEach(function (index) {
-                        emulator.sendViaSocket({ packet_id: "changeColor", data: inst._tunic_colors[index], writeHandler: "range", addr: "0x000F7AD8", offset: index * 3 });
-                    });
-                }
             });
         })(this);
     }

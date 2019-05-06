@@ -25,6 +25,7 @@ const emulator = require(global.OotRunDir + "/OotBizHawk");
 const localization = require(global.OotRunDir + "/OotLocalizer");
 const client = require(global.OotRunDir + "/OotClient");
 const path = require('path');
+const colors = require(global.OotRunDir + "/OotColors");
 let tokens;
 
 class OotLoaderCore {
@@ -39,10 +40,12 @@ class OotLoaderCore {
         this._stateTimer = null;
         this._udpPing = null;
         this._expectingPong = false;
+        this._tunic_colors = [];
         api.registerEvent("onPlayerJoined");
         api.registerEvent("onPlayerJoined_ServerSide");
         // fix for discord shit.
         (function (inst) {
+            inst.setupTunics();
             inst._fileSystem.readdirSync(inst.ModLoader.base + "/localization").forEach(function (file) {
                 logger.log("Loading " + file + " into object " + path.parse(file).name + ".")
                 localization.create(path.parse(file).name, inst._fileSystem.readFileSync(inst.ModLoader.base + "/localization/" + file))
@@ -281,11 +284,84 @@ class OotLoaderCore {
             api.registerClientSidePacketHook("onLuaStart", function (packet) {
                 api.postEvent({ id: "onLuaStart", data: packet })
             });
+
+
+            // Cap these off so if SaveSync isn't present we don't crash.
+            api.registerClientSidePacketHook("save_update_status", function (packet) {
+                return false;
+            });
+
+            api.registerClientSideChannelHandler("savesync", function (packet) {
+                return null;
+            });
+
+            api.registerPacketTransformer("savesync_data", function (packet) {
+                return null;
+            });
         })(this);
 
     }
 
-    init() { }
+    setupTunics() {
+        let temp = {};
+        if (CONFIG.TunicColors.kokiri !== "") {
+            logger.log("Setting Kokiri tunic color to " + CONFIG.TunicColors.kokiri + ".");
+            temp = colors.toRBG(CONFIG.TunicColors.kokiri);
+            this._tunic_colors[0] = [temp.red, temp.green, temp.blue];
+            logger.log(this._tunic_colors[0]);
+        }
+        if (CONFIG.TunicColors.goron !== "") {
+            logger.log("Setting Goron tunic color to " + CONFIG.TunicColors.goron + ".");
+            temp = colors.toRBG(CONFIG.TunicColors.goron);
+            this._tunic_colors[1] = [temp.red, temp.green, temp.blue];
+            logger.log(this._tunic_colors[1]);
+        }
+        if (CONFIG.TunicColors.zora !== "") {
+            logger.log("Setting Zora tunic color to " + CONFIG.TunicColors.zora + ".");
+            temp = colors.toRBG(CONFIG.TunicColors.zora);
+            this._tunic_colors[2] = [temp.red, temp.green, temp.blue];
+            logger.log(this._tunic_colors[2]);
+        }
+    }
+
+    init() {
+        (function (inst) {
+            api.registerEventHandler("onSoftReset_Post", function (event) {
+                if (CONFIG._tunic_colors_enabled) {
+                    Object.keys(inst._tunic_colors).forEach(function (index) {
+                        emulator.sendViaSocket({ packet_id: "changeColor", data: inst._tunic_colors[index], writeHandler: "range", addr: "0x000F7AD8", offset: index * 3 });
+                    });
+                }
+            });
+
+            api.registerEventHandler("onLinkRespawn", function (event) {
+                if (CONFIG._tunic_colors_enabled) {
+                    Object.keys(inst._tunic_colors).forEach(function (index) {
+                        emulator.sendViaSocket({ packet_id: "changeColor", data: inst._tunic_colors[index], writeHandler: "range", addr: "0x000F7AD8", offset: index * 3 });
+                    });
+                }
+            });
+
+            api.registerEventHandler("onFrameCount", function (event) {
+                if (event.data.data.bool) {
+                    if (CONFIG._tunic_colors_enabled) {
+                        Object.keys(inst._tunic_colors).forEach(function (index) {
+                            emulator.sendViaSocket({ packet_id: "changeColor", data: inst._tunic_colors[index], writeHandler: "range", addr: "0x000F7AD8", offset: index * 3 });
+                        });
+                    }
+                }
+            });
+
+            api.registerEventHandler("onConfigUpdate", function (event) {
+                if (CONFIG._tunic_colors_enabled) {
+                    inst.setupTunics();
+                    Object.keys(inst._tunic_colors).forEach(function (index) {
+                        emulator.sendViaSocket({ packet_id: "changeColor", data: inst._tunic_colors[index], writeHandler: "range", addr: "0x000F7AD8", offset: index * 3 });
+                    });
+                }
+            });
+        })(this);
+    }
 
     postinit() {
     }

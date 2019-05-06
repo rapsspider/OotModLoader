@@ -51,6 +51,8 @@ class PluginSystem {
             core.ModLoader["base"] = process.cwd();
             core.ModLoader["logger"] = require("./OotLogger")(core._name);
             inst._plugins.push(core);
+            logger.log("Loading payload: " + "OotLoaderCore.payload" + ".");
+            inst._payloads.push(gameshark.read(real_fs.readFileSync(path.dirname(__filename) + "/embedded/OotLoaderCore.payload").toString()));
 
             for (let i = 0; i < params.paths.length; i++) {
                 // Do first pass.
