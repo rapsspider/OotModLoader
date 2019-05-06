@@ -34,8 +34,8 @@ class OotAPI {
         this._clientSideChannelHandlers = {};
     }
 
-    registerPlugin(name, m) {
-        this._ModuleStorage[name] = m;
+    registerPlugin(m) {
+        this._ModuleStorage[m._name] = m;
     }
 
     getPlugin(name) {
