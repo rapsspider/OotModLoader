@@ -17,7 +17,6 @@ turned_off_plugins/
 .vscode/
 bizhawk_dist/
 src/movement_test.json
-build.properties
 lobby_list.json
 client_list.json
 config.zip

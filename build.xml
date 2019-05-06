@@ -10,6 +10,7 @@
   <property name="emu" value="./src/for_emulator"/>
   <property name="release_type" value="DEV"/>
   <property name="build_temp" value="./build_temp"/>
+   <buildnumber/>
 
   <condition property="cmd.exec" value="cmd" else="/bin/sh">
     <os family="windows"/>
@@ -70,7 +71,7 @@
     <replace file="${tfolder}/Lua/OotModLoader.lua" propertyFile="build.properties">
       <replacefilter token="@major@" property="major"/>
       <replacefilter token="@minor@" property="minor"/>
-      <replacefilter token="@buildNumber@" property="build.number"/>
+      <replacefilter token="@buildNumber@" property="hotfix"/>
       <replacefilter token="@release_type@" value="${release_type}"/>
       <replacefilter token="@BUILD_TYPE@" value="CLI"/>
     </replace>
@@ -103,14 +104,14 @@
     <replace file="${bin}/src/OotModLoader.js" propertyFile="build.properties">
       <replacefilter token="@major@" property="major"/>
       <replacefilter token="@minor@" property="minor"/>
-      <replacefilter token="@buildNumber@" property="build.number"/>
+      <replacefilter token="@buildNumber@" property="hotfix"/>
       <replacefilter token="@release_type@" value="${release_type}"/>
       <replacefilter token="@BUILD_TYPE@" value="${type}"/>
     </replace>
     <replace file="${bin}/src/OotVersion.js" propertyFile="build.properties">
       <replacefilter token="@major@" property="major"/>
       <replacefilter token="@minor@" property="minor"/>
-      <replacefilter token="@buildNumber@" property="build.number"/>
+      <replacefilter token="@buildNumber@" property="hotfix"/>
       <replacefilter token="@release_type@" value="${release_type}"/>
       <replacefilter token="@BUILD_TYPE@" value="${type}"/>
     </replace>
@@ -118,7 +119,7 @@
       <replacefilter token="@major@" property="major"/>
       <replacefilter token="@minor@" property="minor"/>
       <replacefilter token="@release_type@" value="${release_type}"/>
-      <replacefilter token="@buildNumber@" property="build.number"/>
+      <replacefilter token="@buildNumber@" property="hotfix"/>
     </replace>
     <copy file="package.json" tofile="${bin}/package.json"/>
   </target>
@@ -149,7 +150,7 @@
       <fileset dir="${bin}" includes="**"/>
     </copy>
     <property file="build.properties"/>
-    <zip destfile="${dist}/OotModLoader_${major}.${minor}.${build.number}_${release_type}_Node_Universal.zip" basedir="${build_temp}"/>
+    <zip destfile="${dist}/OotModLoader_${major}.${minor}.${hotfix}.${build.number}_${release_type}_Node_Universal.zip" basedir="${build_temp}"/>
   </target>
 
   <target name="CLI">
@@ -181,8 +182,8 @@
     <property file="build.properties"/>
     <delete dir="${build_temp}/OotModLoader-win32-x64/BizHawk"/>
     <delete dir="${build_temp}/OotModLoader-linux-x64/BizHawk"/>
-    <zip destfile="${dist}/OotModLoader_${major}.${minor}.${build.number}_${release_type}_Server_win64.zip" basedir="${build_temp}/OotModLoader-win32-x64"/>
-    <zip destfile="${dist}/OotModLoader_${major}.${minor}.${build.number}_${release_type}_Server_linux64.zip" basedir="${build_temp}/OotModLoader-linux-x64"/>
+    <zip destfile="${dist}/OotModLoader_${major}.${minor}.${hotfix}.${build.number}_${release_type}_Server_win64.zip" basedir="${build_temp}/OotModLoader-win32-x64"/>
+    <zip destfile="${dist}/OotModLoader_${major}.${minor}.${hotfix}.${build.number}_${release_type}_Server_linux64.zip" basedir="${build_temp}/OotModLoader-linux-x64"/>
   </target>
 
   <target name="GUI">
@@ -212,7 +213,7 @@
       <param name="tfolder" value="${build_temp}/OotModLoader-win32-x64"/>
     </antcall>
     <property file="build.properties"/>
-    <zip destfile="${dist}/OotModLoader_${major}.${minor}.${build.number}_${release_type}_Client_win64.zip" basedir="${build_temp}/OotModLoader-win32-x64"/>
+    <zip destfile="${dist}/OotModLoader_${major}.${minor}.${hotfix}.${build.number}_${release_type}_Client_win64.zip" basedir="${build_temp}/OotModLoader-win32-x64"/>
   </target>
 
   <target name="GUI_TEST">
