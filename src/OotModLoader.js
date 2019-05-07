@@ -48,7 +48,6 @@ let packetTransformers = {};
 let packetRoutes = {};
 let clientsideHooks = {};
 let rom = "";
-let console_log = [];
 let isMasterSetup = false;
 let isClientSetup = false;
 let rom_dir = "./rom";
@@ -123,8 +122,6 @@ app.on('ready', function () {
                 }
             }
         }
-        let gui = require('./gui/OotGUI');
-        gui.setupModLoader({ api: api, config: CONFIG, console: global.gui_console_stack, mods: mods, roms: roms_list });
     }
 
     if (!fs.existsSync("./temp")) {
@@ -188,7 +185,7 @@ app.on('ready', function () {
     master.preSetup();
     logger.log(process.cwd());
     logger.log("Loading plugins...");
-    if (CONFIG.isMaster){
+    if (CONFIG.isMaster) {
         lb.setup();
     }
     plugins.load(function () {
@@ -202,13 +199,36 @@ app.on('ready', function () {
                 client.setup();
             }
         } else {
+            let gui = require('./gui/OotGUI');
+            gui.setupModLoader({ api: api, config: CONFIG, console: global.gui_console_stack, mods: mods, roms: roms_list });
             var LUA_LOC = ".";
             ncp.limit = 16;
             api.registerEvent("GUI_StartButtonPressed");
             api.registerEvent("GUI_StartFailed");
             api.registerEvent("GUI_ResetButton");
-
             logger.log("Awaiting start command from GUI.");
+            api.registerEvent("GUI_ConfigChanged");
+            api.registerEvent("onConfigUpdate");
+            api.registerEventHandler("GUI_ConfigChanged", function (event) {
+                logger.log(event);
+                Object.keys(event.config).forEach(function (key) {
+                    if (CONFIG.hasOwnProperty(key)) {
+                        if (event.config[key] == 'on') {
+                            event.config[key] = true;
+                        }
+                        if (event.config[key] == "off") {
+                            event.config[key] = false;
+                        }
+                        CONFIG[key] = event.config[key];
+                    } else if (CONFIG._tunic_colors.hasOwnProperty(key)) {
+                        CONFIG._tunic_colors[key] = event.config[key];
+                    }
+                });
+                CONFIG.save();
+                setTimeout(function () {
+                    api.postEvent({ id: "onConfigUpdate", config: CONFIG });
+                }, 1000);
+            });
             api.registerEventHandler("GUI_StartButtonPressed", function (event) {
                 logger.log(event);
                 if (global.OotModLoader.OVERRIDE_IP !== "") {
@@ -243,28 +263,6 @@ app.on('ready', function () {
                         isClientSetup = true;
                     }
                 }
-            });
-            api.registerEvent("GUI_ConfigChanged");
-            api.registerEvent("onConfigUpdate");
-            api.registerEventHandler("GUI_ConfigChanged", function (event) {
-                logger.log(event);
-                Object.keys(event.config).forEach(function (key) {
-                    if (CONFIG.hasOwnProperty(key)) {
-                        if (event.config[key] == 'on') {
-                            event.config[key] = true;
-                        }
-                        if (event.config[key] == "off") {
-                            event.config[key] = false;
-                        }
-                        CONFIG[key] = event.config[key];
-                    } else if (CONFIG._tunic_colors.hasOwnProperty(key)) {
-                        CONFIG._tunic_colors[key] = event.config[key];
-                    }
-                });
-                CONFIG.save();
-                setTimeout(function () {
-                    api.postEvent({ id: "onConfigUpdate", config: CONFIG });
-                }, 1000);
             });
             ncp(LUA_LOC + "/Lua", "./BizHawk/Lua", function (err) {
                 if (err) {

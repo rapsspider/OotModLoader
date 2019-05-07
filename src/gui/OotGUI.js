@@ -40,7 +40,7 @@ function createWindow(instance) {
 
 }
 
-function setup(instance){
+function setup(instance) {
   ooto = instance;
   discord = require('./OotDiscord');
   discord.setup(ooto);
@@ -60,30 +60,30 @@ function setup(instance){
   event_reg("GUI_ResetButton");
   event_reg("GUI_DiscordJoin")
 
-  ooto.api.registerEventHandler("onPlayerJoined", function(event){
+  ooto.api.registerEventHandler("onPlayerJoined", function (event) {
     discord.addPlayer();
   })
 
-  ooto.api.registerEventHandler("onPlayerDisconnected", function(event){
+  ooto.api.registerEventHandler("onPlayerDisconnected", function (event) {
     discord.rmPlayer();
   })
 
-  ooto.api.registerEventHandler("GUI_StartButtonPressed", function(event){
+  ooto.api.registerEventHandler("GUI_StartButtonPressed", function (event) {
     discord.loadingGame();
   })
-  ooto.api.registerEventHandler("onLuaStart", function(event){
+  ooto.api.registerEventHandler("onLuaStart", function (event) {
     discord.titleScreen();
   })
-  ooto.api.registerEventHandler("GUI_ResetButton", function(event){
+  ooto.api.registerEventHandler("GUI_ResetButton", function (event) {
     discord.onLauncher();
   })
-  ooto.api.registerEventHandler("onSceneChange", function(event){
-    if (event.player.isMe){
+  ooto.api.registerEventHandler("onSceneChange", function (event) {
+    if (event.player.isMe) {
       discord.onSceneChange(event.scene);
     }
   })
-  ooto.api.registerEventHandler("onConsoleMessage", function(event){
-      console.log(event.msg);
+  ooto.api.registerEventHandler("onConsoleMessage", function (event) {
+    console.log(event.msg);
   });
   ipcMain.on('postEvent', (event, arg) => {
     ooto.api.postEvent(arg);
@@ -93,7 +93,7 @@ function setup(instance){
     console.log(arg);
   });
   ipcMain.on('onLogMessage', (event, msg, type) => {
-    if(type === "log"){
+    if (type === "log") {
       logger.log(msg);
     } else if (type === "debug") {
       logger.debug(msg);
@@ -115,8 +115,8 @@ function setup(instance){
   setInterval(function () {
     if (ooto.console.length > 0) {
       if (mainWindow !== null) {
-        while(ooto.console.length){
-            mainWindow.webContents.send("onConsoleMessage", { id: "onConsoleMessage", msg: ooto.console.shift() })
+        if (ooto.console.length > 0) {
+          mainWindow.webContents.send("onConsoleMessage", { id: "onConsoleMessage", msg: ooto.console.shift() })
         }
       }
     }
@@ -127,4 +127,4 @@ function setupModLoader(instance) {
   createWindow(instance);
 }
 
-module.exports = {setupModLoader: setupModLoader};
+module.exports = { setupModLoader: setupModLoader };

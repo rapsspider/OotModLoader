@@ -32,7 +32,7 @@ class SaveEndpointHandler {
         this._scopes = {};
         let original = plugin._fileSystem.readFileSync(__dirname + '/packet_txt/' + "valid_scopes.txt", "utf8");
         let items = original.split(/\r?\n/);
-        for (let i = 0; i < items.length; i++){
+        for (let i = 0; i < items.length; i++) {
             this._scopes[items[i]] = true;
         }
     }
@@ -43,15 +43,15 @@ class SaveEndpointHandler {
                 let lobby = req.query.lobby;
                 let scope = req.query.scope;
                 let scopes = [];
-                if (scope.indexOf(" ") > -1){
+                if (scope.indexOf(" ") > -1) {
                     scopes = scopes.concat(scope.split(" "));
-                }else{
+                } else {
                     scopes.push(scope);
                 }
                 let error = "";
                 let data = {};
-                for (let i = 0; i < scopes.length; i++){
-                    if (!inst._scopes.hasOwnProperty(scopes[i])){
+                for (let i = 0; i < scopes.length; i++) {
+                    if (!inst._scopes.hasOwnProperty(scopes[i])) {
                         error = "invalid scope";
                         break;
                     }
@@ -68,9 +68,9 @@ class SaveEndpointHandler {
                         break;
                     }
                 }
-                if (error !== ""){
-                    res.status(400).send({error: error});
-                }else{
+                if (error !== "") {
+                    res.status(400).send({ error: error });
+                } else {
                     res.status(200).send(data);
                 }
             });
@@ -668,8 +668,10 @@ class SaveSync {
                 emulator.sendViaSocket({ packet_id: "forceUpdateScene3", data: perm_switch, writeHandler: "rangeCache", addr: api.getTokenStorage()["@save_data@"], offset: target + 0xC });
                 emulator.sendViaSocket({ packet_id: "forceSceneUpdate", data: 0, writeHandler: "sceneTrigger", addr: 0, offset: 0 });
             });
-            inst._saveEndpoint = new SaveEndpointHandler(inst);
-            inst._saveEndpoint.setup();
+            if (CONFIG.isMaster) {
+                inst._saveEndpoint = new SaveEndpointHandler(inst);
+                inst._saveEndpoint.setup();
+            }
         })(this);
     }
 }
