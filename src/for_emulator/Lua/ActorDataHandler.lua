@@ -18,21 +18,25 @@
 require("OotUtils")
 
 local context = 0x600000
-local counter = -1;
+writeFourBytesUnsigned(context + 0x11E0 + 8, 0xFFFFFFFF);
 local offset = 0x1E0
 
 local ACTOR_DATA_HANDLER = {}
-ACTOR_DATA_HANDLER["console"] = {}
+ACTOR_DATA_HANDLER["console"] = {}  
 ACTOR_DATA_HANDLER.console["log"] = function(msg) end
 ACTOR_DATA_HANDLER["send"] = function(data) end
-ACTOR_DATA_HANDLER["reset"] = function() counter = 0 end
+ACTOR_DATA_HANDLER["reset"] = function() 
+    writeFourBytesUnsigned(context + 0x11E0 + 8, 0xFFFFFFFF);
+    ACTOR_DATA_HANDLER.console.log("RESETTING");
+end
 
 ACTOR_DATA_HANDLER["hook"] = function()
     process();
 end
 
 function process()
-    if (counter == -1) then 
+    local counter = readByte(context + 0x11E0 + 8);
+    if (counter == 0xFF) then 
         counter = readByte(context + 0x11E0);
     end
     local addr = context + offset + (counter * 16)
@@ -72,7 +76,10 @@ function process()
         end
         counter = counter + 1
         if (counter == 0x100) then counter = 0x0 end
+        writeByte(context + 0x11E0 + 8, counter);
     end
+    gui.drawString(0, 20, readByte(context + 0x11E0 + 8))
+    gui.drawString(0, 40, readByte(context + 0x11E0))
 end
 
 return ACTOR_DATA_HANDLER
