@@ -77,8 +77,6 @@ function process()
         if (counter == 0x100) then counter = 0x0 end
         writeByte(context + 0x11E0 + 8, counter);
     end
-    gui.drawString(0, 20, readByte(context + 0x11E0 + 8))
-    gui.drawString(0, 40, readByte(context + 0x11E0))
 end
 
 return ACTOR_DATA_HANDLER
