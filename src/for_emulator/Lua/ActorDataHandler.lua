@@ -27,7 +27,6 @@ ACTOR_DATA_HANDLER.console["log"] = function(msg) end
 ACTOR_DATA_HANDLER["send"] = function(data) end
 ACTOR_DATA_HANDLER["reset"] = function() 
     writeFourBytesUnsigned(context + 0x11E0 + 8, 0xFFFFFFFF);
-    ACTOR_DATA_HANDLER.console.log("RESETTING");
 end
 
 ACTOR_DATA_HANDLER["hook"] = function()
