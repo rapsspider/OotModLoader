@@ -546,6 +546,7 @@ class SaveSync {
                 if (!server.getRoomsArray()[room]["_death_counter"].hasOwnProperty(id)) {
                     server.getRoomsArray()[room]["_death_counter"][id] = new IntegerStorage(tag);
                     server.getRoomsArray()[room]["_death_counter"][id]._check = inst._exceptionStorage._heart_containers.check.default;
+                    server.getRoomsArray()[room]["_death_counter"][id]._int = 0xFFFF;
                 }
                 let u = server.getRoomsArray()[room]["_death_counter"][id].update(data);
                 try {
@@ -555,7 +556,6 @@ class SaveSync {
                                 let str = packet.nickname + " has died!";
                                 server._ws_server.sockets.to(room).emit('msg', { packet_id: "death_msg", payload: encoder.compressData({ packet_id: "death_msg", writeHandler: "msg", icon: "pixel_icons.png", sx: 11 * 16, sy: 19 * 16, sw: 16, sh: 16, msg: str, sound: "0x4831" }) });
                             } catch (err) {
-
                             }
                         }
                         return u.int;
