@@ -17,6 +17,7 @@ Download the latest release from our [releases](https://github.com/hylian-moddin
 - Download [Apache Ant](https://ant.apache.org/ "Apache Ant"). This requires [Java](https://www.java.com/en/ "Java").
 - Unzip Ant into a folder named ant at the project root.
 - Install [Node](https://nodejs.org/en/ "Node").
+- Install asar and electron-packager as global : `npm install -g asar electron-packager`
 - Download [BizHawk](http://tasvideos.org/BizHawk/ReleaseHistory.html "BizHawk").
 - Unzip BizHawk into a folder named bizhawk_dist in the project root. The folder structure should look like ./bizhawk_dist/BizHawk/EmuHawk.exe.
 - Invoke Ant via command line or through build.bat.
