@@ -62,12 +62,14 @@
       <arg value="${cmd.con}"/>
       <arg value="asar p ./plugins/OotOnline ${tfolder}/plugins/OotOnline.asar"/>
     </exec>
-    <copy todir="${tfolder}/mods">
+    <copy todir="${tfolder}/mods" failonerror="false">
       <fileset dir="mods" includes="**"/>
     </copy>
-    <copy todir="${tfolder}/rom">
+    <mkdir dir="${tfolder}/mods" />
+    <copy todir="${tfolder}/rom" failonerror="false">
       <fileset dir="rom" includes="**"/>
     </copy>
+    <mkdir dir="${tfolder}/rom" />
     <replace file="${tfolder}/Lua/OotModLoader.lua" propertyFile="build.properties">
       <replacefilter token="@major@" property="major"/>
       <replacefilter token="@minor@" property="minor"/>
